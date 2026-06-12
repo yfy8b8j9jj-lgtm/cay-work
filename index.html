@@ -41,7 +41,8 @@ body::before{content:'';position:fixed;inset:0;background:
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
 .logo .sub{font-family:var(--mono);font-size:10px;color:var(--t3);font-weight:400;letter-spacing:1px;margin-left:2px}
 .topbar .sp{flex:1}
-.today-pill{font-family:var(--mono);font-size:11px;color:var(--t2);background:var(--bg1);border:1px solid var(--line);padding:6px 10px;border-radius:99px}
+.today-pill{font-family:var(--mono);font-size:11px;color:var(--t2);background:var(--bg1);border:1px solid var(--line);padding:6px 10px;border-radius:99px;white-space:nowrap}
+.topbar-tools{display:flex;align-items:center;gap:8px;flex-shrink:0}
 
 /* ---------- LAYOUT ---------- */
 .main{flex:1;overflow-y:auto;padding:4px 16px 90px;-webkit-overflow-scrolling:touch}
@@ -49,7 +50,7 @@ body::before{content:'';position:fixed;inset:0;background:
   #app{flex-direction:row}
   .sidewrap{width:212px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--line);padding:18px 12px}
   .main{padding:18px 26px 40px}
-  .topbar{padding:0 0 14px 6px;flex-wrap:wrap;row-gap:9px}
+  .topbar{padding:0 0 16px 4px;flex-direction:column;align-items:flex-start;gap:9px}
   .topbar .logo{width:100%;flex-wrap:wrap;row-gap:2px}
   .topbar .sp{display:none}
   .topbar .today-pill{font-size:10px;padding:5px 9px}
@@ -251,8 +252,10 @@ body::before{content:'';position:fixed;inset:0;background:
     <div class="topbar">
       <div class="logo"><span class="dot"></span>CAY WORK <span class="sub">GESTIONALE</span></div>
       <div class="sp"></div>
-      <div class="today-pill" id="todaypill"></div>
-      <div class="today-pill" style="cursor:pointer" onclick="openSearch()">🔍</div>
+      <div class="topbar-tools">
+        <div class="today-pill" id="todaypill"></div>
+        <div class="today-pill" style="cursor:pointer" onclick="openSearch()">🔍</div>
+      </div>
     </div>
     <div class="nav-side" id="navside"></div>
   </div>
@@ -265,6 +268,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const APP_VERSION='2026.06.12-224100';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -2182,12 +2186,32 @@ function csvSites(){
     S.sites.map(s=>[s.name,cName(s.clientId)||s.clientRaw||'',s.status,siteHours(s),s.estHours||'',s.amount||'',s.startDate||'',s.dueDate||'']));
 }
 
+/* ================= AUTO-AGGIORNAMENTO ================= */
+let _updChk=0;
+async function checkUpdate(){
+  const now=Date.now();
+  if(now-_updChk<30000)return; _updChk=now;
+  try{
+    const r=await fetch('./version.json?t='+now,{cache:'no-store'});
+    if(!r.ok)return;
+    const j=await r.json();
+    if(j&&j.version&&j.version!==APP_VERSION){
+      if(sessionStorage.getItem('cw_upd')===j.version)return; /* gia' tentato: evita loop */
+      sessionStorage.setItem('cw_upd',j.version);
+      try{toast('Aggiornamento in corso…');}catch(e){}
+      setTimeout(()=>location.reload(),1300);
+    }
+  }catch(e){/* offline o errore: ignora, l'app continua a funzionare */}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
+
 /* ================= BOOT ================= */
 (async()=>{
   try{
     const{data:{session}}=await sb.auth.getSession();
     if(session){postAuth();}else{renderLock();}
   }catch(e){renderLock();}
+  setTimeout(checkUpdate,4000);
 })();
 </script>
 </body>
