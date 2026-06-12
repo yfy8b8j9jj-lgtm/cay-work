@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cay Work — Gestionale</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#040B16; --bg1:#081323; --bg2:#0D1D33; --bg3:#122742;
+  --line:rgba(0,212,255,.10); --line2:rgba(0,212,255,.22);
+  --cy:#00D4FF; --teal:#00E5C0; --amber:#FFB547; --fire:#FF8A3D; --coral:#FF5C7A; --blue:#6FA8FF;
+  --t1:#EAF6FF; --t2:#8FB3CC; --t3:#52718A;
+  --glow:0 0 18px rgba(0,212,255,.25);
+  --r:14px;
+  --disp:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg0);color:var(--t1);font-family:var(--body);font-size:14px;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(1100px 600px at 80% -10%,rgba(0,212,255,.07),transparent 60%),
+  radial-gradient(900px 500px at -10% 110%,rgba(0,229,192,.05),transparent 60%);
+  pointer-events:none;z-index:0}
+#app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column}
+
+/* ---------- TOPBAR ---------- */
+.topbar{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;flex-shrink:0}
+.logo{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.logo .dot{width:9px;height:9px;border-radius:50%;background:var(--cy);box-shadow:0 0 10px var(--cy);animation:pulse 2.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.logo .sub{font-family:var(--mono);font-size:10px;color:var(--t3);font-weight:400;letter-spacing:1px;margin-left:2px}
+.topbar .sp{flex:1}
+.today-pill{font-family:var(--mono);font-size:11px;color:var(--t2);background:var(--bg1);border:1px solid var(--line);padding:6px 10px;border-radius:99px}
+
+/* ---------- LAYOUT ---------- */
+.main{flex:1;overflow-y:auto;padding:4px 16px 90px;-webkit-overflow-scrolling:touch}
+@media(min-width:900px){
+  #app{flex-direction:row}
+  .sidewrap{width:212px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--line);padding:18px 12px}
+  .main{padding:18px 26px 40px}
+  .topbar{padding:0 0 18px 6px}
+  .nav-bottom{display:none!important}
+}
+@media(max-width:899px){.sidewrap .nav-side{display:none}.sidewrap{padding:0}}
+
+.nav-side{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.nav-side .ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;color:var(--t2);cursor:pointer;font-size:13px;font-weight:500;border:1px solid transparent}
+.nav-side .ni:hover{background:var(--bg1)}
+.nav-side .ni.act{background:var(--bg2);color:var(--t1);border-color:var(--line2);box-shadow:var(--glow)}
+.nav-side .ni .ic{width:18px;text-align:center}
+
+.nav-bottom{position:fixed;bottom:0;left:0;right:0;background:rgba(6,15,28,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50}
+.nav-bottom .nb{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--t3);font-size:9.5px;font-weight:600;cursor:pointer;padding:2px 6px;min-width:48px}
+.nav-bottom .nb .ic{font-size:18px;line-height:1}
+.nav-bottom .nb.act{color:var(--cy);text-shadow:0 0 12px rgba(0,212,255,.6)}
+
+/* ---------- CARDS ---------- */
+.card{background:linear-gradient(180deg,var(--bg1),var(--bg0));border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.card.hl{border-color:var(--line2)}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sh .t{font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:.3px}
+.sh .a{font-size:12px;color:var(--cy);cursor:pointer;font-weight:600}
+.pagetitle{font-family:var(--disp);font-weight:700;font-size:22px;margin:8px 0 14px;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
+.pagetitle .accent{width:4px;height:22px;border-radius:2px;background:var(--cy);box-shadow:0 0 12px var(--cy)}
+
+/* ---------- HUB INPUT (signature) ---------- */
+.hub{position:relative;margin:6px 0 16px}
+.hub .ring{position:absolute;inset:-1px;border-radius:18px;background:linear-gradient(120deg,rgba(0,212,255,.5),rgba(0,229,192,.2),rgba(0,212,255,.5));opacity:.35;filter:blur(6px);pointer-events:none;transition:opacity .3s}
+.hub.live .ring{opacity:.8}
+.hub-box{position:relative;background:var(--bg1);border:1px solid var(--line2);border-radius:18px;padding:14px}
+.hub-box textarea{width:100%;background:transparent;border:none;outline:none;color:var(--t1);font-family:var(--body);font-size:15px;resize:none;min-height:46px;line-height:1.45}
+.hub-box textarea::placeholder{color:var(--t3)}
+.hub-foot{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.hub-foot .sp{flex:1}
+.chip{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg2)}
+.chip.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 10px rgba(0,212,255,.25)}
+.chip.warn{border-color:var(--amber);color:var(--amber)}
+.btn{font-family:var(--disp);font-weight:600;font-size:13px;padding:9px 16px;border-radius:11px;border:1px solid var(--line2);background:var(--bg2);color:var(--t1);cursor:pointer}
+.btn.pri{background:linear-gradient(135deg,#00B8E0,#00D4FF);color:#03121F;border:none;box-shadow:0 0 16px rgba(0,212,255,.35)}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
+.btn.danger{border-color:rgba(255,92,122,.4);color:var(--coral)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;pointer-events:none}
+
+/* parse preview */
+.preview{margin-top:10px;border-top:1px dashed var(--line2);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.preview .row{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap}
+.preview .k{font-family:var(--mono);font-size:10px;color:var(--t3);width:74px;letter-spacing:.5px}
+.preview .v{color:var(--t1);font-weight:500}
+.preview .v.miss{color:var(--t3);font-style:italic;font-weight:400}
+
+/* ---------- LISTS ---------- */
+.item{display:flex;align-items:flex-start;gap:11px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.item:last-child{border-bottom:none}
+.item .led{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.item .bd{flex:1;min-width:0}
+.item .ti{font-weight:600;font-size:13.5px;line-height:1.35}
+.item .su{font-size:11.5px;color:var(--t2);margin-top:2px;line-height:1.4}
+.item .mt{font-family:var(--mono);font-size:10.5px;color:var(--t3);margin-top:3px}
+.item .right{text-align:right;flex-shrink:0}
+.item .right .d1{font-family:var(--mono);font-size:11px;color:var(--t2)}
+.item .right .d2{font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:2px}
+.badge{display:inline-block;font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:99px;border:1px solid;letter-spacing:.4px}
+.empty{text-align:center;color:var(--t3);padding:34px 16px;font-size:13px;line-height:1.6}
+.empty .big{font-size:26px;margin-bottom:8px;opacity:.6}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--bg1);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat .n{font-family:var(--mono);font-weight:600;font-size:20px}
+.stat .l{font-size:10.5px;color:var(--t3);margin-top:3px;letter-spacing:.4px;text-transform:uppercase}
+
+/* ---------- CALENDAR ---------- */
+.cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cal-head .mon{font-family:var(--disp);font-weight:700;font-size:18px;flex:1;text-transform:capitalize}
+.cal-nav{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--bg1);color:var(--t1);font-size:15px;cursor:pointer}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{font-family:var(--mono);font-size:9.5px;color:var(--t3);text-align:center;padding:4px 0;letter-spacing:.5px}
+.cal-cell{aspect-ratio:1/1.06;border-radius:10px;border:1px solid transparent;padding:5px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;background:var(--bg1);position:relative;min-width:0}
+.cal-cell.dim{opacity:.32}
+.cal-cell .dn{font-family:var(--mono);font-size:12px;color:var(--t2)}
+.cal-cell.today{border-color:var(--cy);box-shadow:0 0 10px rgba(0,212,255,.25)}
+.cal-cell.today .dn{color:var(--cy);font-weight:600}
+.cal-cell.sel{background:var(--bg3);border-color:var(--line2)}
+.cal-dots{display:flex;gap:2.5px;margin-top:4px;flex-wrap:wrap;justify-content:center;max-width:100%}
+.cal-dots i{width:5px;height:5px;border-radius:50%;display:block}
+.cal-cell .more{font-family:var(--mono);font-size:8px;color:var(--t3);margin-top:2px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin:10px 2px 0}
+.legend span{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--t2)}
+.legend i{width:7px;height:7px;border-radius:50%}
+
+/* ---------- CHAT ---------- */
+.chatwrap{display:flex;flex-direction:column;height:calc(100dvh - 235px);min-height:300px}
+@media(min-width:900px){.chatwrap{height:calc(100dvh - 200px)}}
+.chat-scroll{flex:1;overflow-y:auto;padding:6px 2px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:82%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;position:relative}
+.msg.me{align-self:flex-end;background:linear-gradient(135deg,#063A4F,#075066);border:1px solid rgba(0,212,255,.25);border-bottom-right-radius:4px}
+.msg.them{align-self:flex-start;background:var(--bg2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.sys{align-self:center;background:rgba(0,229,192,.08);border:1px solid rgba(0,229,192,.3);color:var(--teal);font-size:12px;max-width:92%;border-radius:10px;font-family:var(--mono)}
+.msg .who{font-family:var(--mono);font-size:9.5px;color:var(--cy);margin-bottom:3px;letter-spacing:.5px}
+.msg .tm{font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:4px;text-align:right}
+.chat-input{display:flex;gap:8px;padding-top:10px;align-items:flex-end}
+.chat-input textarea{flex:1;background:var(--bg1);border:1px solid var(--line2);border-radius:14px;color:var(--t1);font-family:var(--body);font-size:14px;padding:11px 13px;resize:none;outline:none;max-height:110px;min-height:44px;line-height:1.4}
+.send{width:44px;height:44px;border-radius:13px;border:none;background:linear-gradient(135deg,#00B8E0,#00D4FF);color:#03121F;font-size:17px;cursor:pointer;box-shadow:0 0 14px rgba(0,212,255,.35);flex-shrink:0}
+.speaker-row{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px}
+.speaker{font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg1);cursor:pointer;white-space:nowrap}
+.speaker.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 10px rgba(0,212,255,.2)}
+.wa-note{font-size:11px;color:var(--t3);background:var(--bg1);border:1px dashed var(--line2);border-radius:10px;padding:8px 11px;margin-bottom:8px;line-height:1.5}
+
+/* ---------- MODAL ---------- */
+.overlay{position:fixed;inset:0;background:rgba(2,8,16,.7);backdrop-filter:blur(5px);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fadein .18s}
+@media(min-width:700px){.overlay{align-items:center}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--bg1);border:1px solid var(--line2);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:88dvh;overflow-y:auto;padding:20px 18px calc(20px + env(safe-area-inset-bottom));animation:slideup .22s}
+@media(min-width:700px){.sheet{border-radius:20px;animation:popin .18s}}
+@keyframes slideup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes popin{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+.sheet h3{font-family:var(--disp);font-size:17px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.sheet h3 .x{font-size:20px;color:var(--t3);cursor:pointer;padding:2px 8px}
+.fld{margin-bottom:12px}
+.fld label{display:block;font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.6px;margin-bottom:5px;text-transform:uppercase}
+.fld input,.fld select,.fld textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;color:var(--t1);font-family:var(--body);font-size:14px;padding:10px 12px;outline:none}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--cy)}
+.fld textarea{resize:vertical;min-height:64px}
+.frow{display:flex;gap:10px}.frow .fld{flex:1}
+.sheet .actions{display:flex;gap:10px;margin-top:16px}
+.sheet .actions .btn{flex:1}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg .sg{font-size:12px;padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--t2);cursor:pointer;font-weight:500}
+.seg .sg.on{border-color:var(--cy);color:var(--cy)}
+
+/* lock screen */
+.lock{position:fixed;inset:0;background:var(--bg0);z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.lock::before{content:'';position:fixed;inset:0;background:radial-gradient(900px 500px at 50% -10%,rgba(0,212,255,.10),transparent 60%);pointer-events:none}
+.lock .llogo{font-family:var(--disp);font-weight:700;font-size:26px;letter-spacing:1px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.lock .llogo .dot{width:12px;height:12px;border-radius:50%;background:var(--cy);box-shadow:0 0 16px var(--cy);animation:pulse 2.6s infinite}
+.lock .lsub{font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:2px;margin-bottom:30px}
+.lock .lbox{width:100%;max-width:360px;background:var(--bg1);border:1px solid var(--line2);border-radius:20px;padding:22px;position:relative;z-index:1}
+.lock .users{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.lock .uchip{font-size:13px;font-weight:600;padding:9px 16px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg2);cursor:pointer}
+.lock .uchip.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 12px rgba(0,212,255,.25)}
+.lock input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:12px;color:var(--t1);font-family:var(--mono);font-size:20px;text-align:center;letter-spacing:8px;padding:13px;outline:none;margin-bottom:12px}
+.lock input:focus{border-color:var(--cy)}
+.lock input.txt{font-family:var(--body);font-size:14px;letter-spacing:normal;text-align:left}
+.lock .lerr{color:var(--coral);font-size:12px;text-align:center;margin-bottom:10px;min-height:16px}
+.lock .llink{text-align:center;margin-top:14px;font-size:12.5px;color:var(--cy);cursor:pointer;font-weight:600}
+/* toast */
+#toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--cy);color:var(--t1);padding:10px 18px;border-radius:12px;font-size:13px;z-index:200;box-shadow:var(--glow);opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+@media(min-width:900px){#toast{bottom:30px}}
+
+.tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.tabs .tb{font-size:12px;font-weight:600;padding:7px 13px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg1);cursor:pointer;white-space:nowrap}
+.tabs .tb.on{border-color:var(--cy);color:var(--cy)}
+.searchbar{width:100%;background:var(--bg1);border:1px solid var(--line);border-radius:11px;color:var(--t1);font-size:13.5px;padding:10px 13px;outline:none;margin-bottom:10px}
+.searchbar:focus{border-color:var(--cy)}
+.fab{position:fixed;right:18px;bottom:84px;width:54px;height:54px;border-radius:17px;border:none;background:linear-gradient(135deg,#00B8E0,#00D4FF);color:#03121F;font-size:25px;cursor:pointer;box-shadow:0 6px 20px rgba(0,212,255,.4);z-index:40}
+@media(min-width:900px){.fab{bottom:26px;right:26px}}
+.linkline{font-size:12px;color:var(--cy);cursor:pointer;font-weight:600}
+/* checklist */
+.cklist{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:10px}
+.cklist:last-child{margin-bottom:0}
+.cklist .ck-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer}
+.cklist .ck-name{font-family:var(--disp);font-weight:600;font-size:13.5px;flex:1}
+.cklist .ck-prog{font-family:var(--mono);font-size:10px;color:var(--t3)}
+.ck-bar{height:3px;border-radius:2px;background:var(--bg0);margin-bottom:8px;overflow:hidden}
+.ck-bar i{display:block;height:100%;background:linear-gradient(90deg,#00D4FF,#00E5C0);border-radius:2px;transition:width .3s;box-shadow:0 0 6px rgba(0,212,255,.5)}
+.ck-it{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer}
+.ck-box{width:19px;height:19px;border-radius:6px;border:1.5px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#03121F;transition:all .15s}
+.ck-it.done .ck-box{background:var(--teal);border-color:var(--teal);box-shadow:0 0 8px rgba(0,229,192,.4)}
+.ck-it .ck-tx{font-size:13px;flex:1}
+.ck-it.done .ck-tx{color:var(--t3);text-decoration:line-through}
+.ck-add{display:flex;gap:7px;margin-top:7px}
+.ck-add input{flex:1;background:var(--bg0);border:1px solid var(--line);border-radius:9px;color:var(--t1);font-size:12.5px;padding:7px 10px;outline:none}
+.ck-add input:focus{border-color:var(--cy)}
+.ck-add button{width:32px;border-radius:9px;border:1px solid var(--line2);background:var(--bg1);color:var(--cy);font-size:15px;cursor:pointer}
+/* bollettino & firma */
+.row-act{font-family:var(--mono);font-size:10px;padding:5px 10px;border-radius:99px;border:1px solid var(--cy);color:var(--cy);cursor:pointer;white-space:nowrap;background:rgba(0,212,255,.06)}
+.row-act.done{border-color:var(--teal);color:var(--teal);background:rgba(0,229,192,.06)}
+.blt-task{display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--line)}
+.blt-task:last-child{border-bottom:none}
+.part-row{display:flex;gap:7px;margin-bottom:7px}
+.part-row input:first-child{flex:2.5}
+.part-row input:last-child{flex:1}
+.sig-wrap{background:#fff;border-radius:12px;border:1px solid var(--line2);overflow:hidden;position:relative}
+.sig-canvas{display:block;width:100%;height:160px;touch-action:none;cursor:crosshair}
+.sig-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#aab;font-size:13px;pointer-events:none;font-style:italic}
+.sig-tools{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.subtle{font-size:11.5px;color:var(--t3);line-height:1.5}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="sidewrap">
+    <div class="topbar">
+      <div class="logo"><span class="dot"></span>CAY WORK <span class="sub">GESTIONALE</span></div>
+      <div class="sp"></div>
+      <div class="today-pill" id="todaypill"></div>
+      <div class="today-pill" style="cursor:pointer" onclick="openSearch()">🔍</div>
+    </div>
+    <div class="nav-side" id="navside"></div>
+  </div>
+  <div class="main" id="main"></div>
+  <div class="nav-bottom" id="navbottom"></div>
+</div>
+<div id="toast"></div>
+<script>
+/* ================= STATE + SUPABASE ================= */
+const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
+const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+
+const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
+let S=blank();
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);}));
+
+/* ---------- mappatura app <-> db ---------- */
+const num=v=>(v===''||v==null)?null:+v;
+const MAPS={
+ clients:{tbl:'clients',
+  toDb:c=>({id:c.id,name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||''}),
+  fromDb:r=>({id:r.id,name:r.name,phone:r.phone||'',zone:r.zone||'',group:r.group||'',address:r.address||'',plant:r.plant||'',pellet:r.pellet||'',maintenance:r.maintenance||'',notes:r.notes||'',created:Date.parse(r.created_at)||Date.now()})},
+ employees:{tbl:'employees',
+  toDb:e=>({id:e.id,name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||[],is_owner:!!e.isOwner,active:e.active!==false,invite_code:e.inviteCode||null,user_id:e.userId||null}),
+  fromDb:r=>({id:r.id,name:r.name,role:r.role||'',phone:r.phone||'',perms:r.perms||[],isOwner:!!r.is_owner,active:r.active!==false,inviteCode:r.invite_code,userId:r.user_id})},
+ maintenances:{tbl:'maintenances',
+  toDb:m=>({id:m.id,title:m.title,client_id:m.clientId||null,client_raw:m.clientRaw||null,employee_id:m.employeeId||null,date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:num(m.price),report:m.report||null,via:m.via||'manuale'}),
+  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,status:r.status,notes:r.notes||'',recur:r.recur||0,price:r.price,report:r.report,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+ appointments:{tbl:'appointments',
+  toDb:a=>({id:a.id,title:a.title,client_id:a.clientId||null,client_raw:a.clientRaw||null,employee_id:a.employeeId||null,date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'manuale'}),
+  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,done:!!r.done,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+ pellet:{tbl:'pellet',
+  toDb:p=>({id:p.id,client_id:p.clientId||null,client_raw:p.clientRaw||null,qty:num(p.qty),unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:num(p.price),signature:p.signature||null,signed_name:p.signedName||'',notes:p.notes||'',via:p.via||'manuale'}),
+  fromDb:r=>({id:r.id,clientId:r.client_id,clientRaw:r.client_raw,qty:r.qty,unit:r.unit,kind:r.kind,date:r.date,time:r.time,status:r.status,price:r.price,signature:r.signature,signedName:r.signed_name||'',notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+ sites:{tbl:'sites',
+  toDb:s=>({id:s.id,name:s.name,client_id:s.clientId||null,client_raw:s.clientRaw||null,status:s.status||'aperto',employees:s.employees||[],est_hours:num(s.estHours),amount:num(s.amount),start_date:s.startDate||null,due_date:s.dueDate||null,notes:s.notes||'',via:s.via||'manuale'}),
+  fromDb:r=>({id:r.id,name:r.name,clientId:r.client_id,clientRaw:r.client_raw,status:r.status,employees:r.employees||[],estHours:r.est_hours,amount:r.amount,startDate:r.start_date,dueDate:r.due_date,notes:r.notes||'',via:r.via,log:[],attachments:[],created:Date.parse(r.created_at)||Date.now()})},
+ notes:{tbl:'notes',
+  toDb:n=>({id:n.id,text:n.text,client_id:n.clientId||null,group_id:n.groupId||null,date:n.date||null,pinned:!!n.pinned,archived:!!n.archived,via:n.via||'manuale'}),
+  fromDb:r=>({id:r.id,text:r.text,clientId:r.client_id,groupId:r.group_id,date:r.date,pinned:!!r.pinned,archived:!!r.archived,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+ noteGroups:{tbl:'note_groups',
+  toDb:g=>({id:g.id,name:g.name}),
+  fromDb:r=>({id:r.id,name:r.name})},
+ lists:{tbl:'lists',
+  toDb:l=>({id:l.id,name:l.name,via:l.via||'manuale'}),
+  fromDb:r=>({id:r.id,name:r.name,via:r.via,items:[],created:Date.parse(r.created_at)||Date.now()})},
+ callLog:{tbl:'call_log',
+  toDb:c=>({id:c.id,client_id:c.clientId,year:c.year,called:!!c.called,outcome:c.outcome||'',note:c.note||'',maint_id:c.maintId||null}),
+  fromDb:r=>({id:r.id,clientId:r.client_id,year:r.year,called:!!r.called,outcome:r.outcome||'',note:r.note||'',maintId:r.maint_id})},
+};
+/* figli annidati */
+const logToDb=(s,l)=>({id:l.id,site_id:s.id,date:l.date||null,text:l.text,hours:num(l.hours),emp_id:l.empId||null});
+const itemToDb=(l,i,pos)=>({id:i.id,list_id:l.id,text:i.text,done:!!i.done,position:pos});
+
+/* ---------- caricamento completo ---------- */
+let snapshot={};
+function snapRows(key,rows){const o={};rows.forEach(r=>o[r.id]=JSON.stringify(r));snapshot[key]=o;}
+async function loadAll(){
+  const q=t=>sb.from(t).select('*');
+  const[cl,em,ma,ap,pe,si,sl,at,no,ng,li,it,ch,cg,st]=await Promise.all([
+    q('clients'),q('employees'),q('maintenances'),q('appointments'),q('pellet'),
+    q('sites'),q('site_logs').order('created_at'),q('attachments'),
+    q('notes'),q('note_groups'),q('lists'),q('list_items').order('position'),
+    sb.from('chat').select('*').order('created_at',{ascending:true}).limit(300),
+    q('call_log'),sb.from('settings').select('*').eq('id',1).maybeSingle()
+  ]);
+  const err=[cl,em,ma,ap,pe,si,sl,at,no,ng,li,it,ch,cg].find(x=>x.error);
+  if(err)throw err.error;
+  S.clients=(cl.data||[]).map(MAPS.clients.fromDb);
+  S.employees=(em.data||[]).map(MAPS.employees.fromDb);
+  S.maintenances=(ma.data||[]).map(MAPS.maintenances.fromDb).sort((a,b)=>b.created-a.created);
+  S.appointments=(ap.data||[]).map(MAPS.appointments.fromDb).sort((a,b)=>b.created-a.created);
+  S.pellet=(pe.data||[]).map(MAPS.pellet.fromDb).sort((a,b)=>b.created-a.created);
+  S.sites=(si.data||[]).map(MAPS.sites.fromDb).sort((a,b)=>b.created-a.created);
+  (sl.data||[]).forEach(r=>{const s=S.sites.find(x=>x.id===r.site_id);if(s)s.log.push({id:r.id,date:r.date,text:r.text,hours:r.hours,empId:r.emp_id});});
+  (at.data||[]).forEach(r=>{const s=S.sites.find(x=>x.id===r.site_id);if(s)s.attachments.push({id:r.id,name:r.name,type:r.type,storagePath:r.storage_path,date:r.date});});
+  S.notes=(no.data||[]).map(MAPS.notes.fromDb).sort((a,b)=>b.created-a.created);
+  S.noteGroups=(ng.data||[]).map(MAPS.noteGroups.fromDb);
+  S.lists=(li.data||[]).map(MAPS.lists.fromDb).sort((a,b)=>b.created-a.created);
+  (it.data||[]).forEach(r=>{const l=S.lists.find(x=>x.id===r.list_id);if(l)l.items.push({id:r.id,text:r.text,done:!!r.done});});
+  S.chat=(ch.data||[]).map(r=>({id:r.id,who:r.emp_id,text:r.text,sys:!!r.sys,ts:Date.parse(r.created_at)}));
+  S.callLog=(cg.data||[]).map(MAPS.callLog.fromDb);
+  if(st.data)S.settings={bagsPerPallet:st.data.bags_per_pallet||70,companyName:st.data.company_name||'',pricePerTon:st.data.price_per_ton,pricePerBag:st.data.price_per_bag};
+  rebuildSnapshot();
+}
+function dbRows(){
+  return{
+    employees:S.employees.map(MAPS.employees.toDb),
+    clients:S.clients.map(MAPS.clients.toDb),
+    noteGroups:S.noteGroups.map(MAPS.noteGroups.toDb),
+    lists:S.lists.map(MAPS.lists.toDb),
+    maintenances:S.maintenances.map(MAPS.maintenances.toDb),
+    appointments:S.appointments.map(MAPS.appointments.toDb),
+    pellet:S.pellet.map(MAPS.pellet.toDb),
+    sites:S.sites.map(MAPS.sites.toDb),
+    notes:S.notes.map(MAPS.notes.toDb),
+    listItems:S.lists.flatMap(l=>l.items.map((i,idx)=>itemToDb(l,i,idx))),
+    siteLogs:S.sites.flatMap(s=>s.log.map(l=>logToDb(s,l))),
+    callLog:S.callLog.map(MAPS.callLog.toDb),
+  };
+}
+const TBL={employees:'employees',clients:'clients',noteGroups:'note_groups',lists:'lists',maintenances:'maintenances',appointments:'appointments',pellet:'pellet',sites:'sites',notes:'notes',listItems:'list_items',siteLogs:'site_logs',callLog:'call_log'};
+const UP_ORDER=['employees','clients','noteGroups','lists','maintenances','appointments','pellet','sites','notes','listItems','siteLogs','callLog'];
+const DEL_ORDER=['callLog','siteLogs','listItems','notes','sites','pellet','appointments','maintenances','lists','noteGroups','clients','employees'];
+function rebuildSnapshot(){const r=dbRows();for(const k of UP_ORDER)snapRows(k,r[k]);snapshot._settings=JSON.stringify(S.settings);}
+
+/* ---------- sync: diff e push ---------- */
+let syncTimer=null,syncing=false,syncDirty=false;
+function save(){syncDirty=true;clearTimeout(syncTimer);syncTimer=setTimeout(syncNow,300);}
+async function syncNow(){
+  if(!S.session)return;
+  if(syncing){syncDirty=true;return;}
+  syncing=true;syncDirty=false;
+  try{
+    const rows=dbRows();
+    for(const k of UP_ORDER){
+      if(k==='employees'&&!isOwner())continue;
+      const prev=snapshot[k]||{};
+      const ups=rows[k].filter(r=>prev[r.id]!==JSON.stringify(r));
+      if(ups.length){const{error}=await sb.from(TBL[k]).upsert(ups);if(error)throw error;}
+    }
+    for(const k of DEL_ORDER){
+      if(k==='employees'&&!isOwner())continue;
+      const prev=snapshot[k]||{};
+      const cur=new Set(rows[k].map(r=>r.id));
+      const dels=Object.keys(prev).filter(id=>!cur.has(id));
+      if(dels.length){const{error}=await sb.from(TBL[k]).delete().in('id',dels);if(error)throw error;}
+    }
+    if(isOwner()&&snapshot._settings!==JSON.stringify(S.settings)){
+      const{error}=await sb.from('settings').update({company_name:S.settings.companyName||'',bags_per_pallet:S.settings.bagsPerPallet||70,price_per_ton:num(S.settings.pricePerTon),price_per_bag:num(S.settings.pricePerBag)}).eq('id',1);
+      if(error)throw error;
+    }
+    rebuildSnapshot();
+  }catch(e){console.error(e);toast('⚠ Sincronizzazione: '+(e.message||e));}
+  finally{syncing=false;if(syncDirty)save();}
+}
+
+/* ---------- realtime ---------- */
+let rtTimer=null,rtStarted=false;
+function startRealtime(){
+  if(rtStarted)return;rtStarted=true;
+  sb.channel('caywork').on('postgres_changes',{event:'*',schema:'public'},()=>{
+    clearTimeout(rtTimer);
+    rtTimer=setTimeout(async()=>{
+      if(syncing||syncTimer&&syncDirty)return;
+      try{await loadAll();if(S.session)render();}catch(e){}
+    },600);
+  }).subscribe();
+}
+/* ================= UTILS ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const GG=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayIso=()=>iso(new Date());
+function fmtD(s){if(!s)return'';const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1,d);const t=new Date();t.setHours(0,0,0,0);const diff=Math.round((dt-t)/86400000);
+  let base=d+' '+MESI[m-1].slice(0,3)+(y!==t.getFullYear()?' '+y:'');
+  if(diff===0)return'Oggi · '+base; if(diff===1)return'Domani · '+base; if(diff===2)return'Dopodomani · '+base;
+  if(diff>2&&diff<7)return GG[dt.getDay()]+' · '+base; return base;}
+function fmtTime(t){return t||''}
+function relDays(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1,d);const t=new Date();t.setHours(0,0,0,0);return Math.round((dt-t)/86400000);}
+function toast(msg){const t=$('#toast');t.innerHTML=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+const byId=(arr,id)=>arr.find(x=>x.id===id);
+function addMonthsIso(s,m){const[y,mo,d]=s.split('-').map(Number);const dt=new Date(y,mo-1+m,1);const last=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();dt.setDate(Math.min(d,last));return iso(dt);}
+function shiftDate(inputId,days){const el=$('#'+inputId);const base=el.value||todayIso();const[y,m,d]=base.split('-').map(Number);const dt=new Date(y,m-1,d+days);el.value=iso(dt);}
+const dateChips=id=>`<div class="seg" style="margin:-4px 0 12px"><div class="sg" onclick="$('#${id}').value=todayIso()">oggi</div><div class="sg" onclick="shiftDate('${id}',1)">+1 giorno</div><div class="sg" onclick="shiftDate('${id}',7)">+1 settimana</div></div>`;
+const cName=id=>{const c=byId(S.clients,id);return c?c.name:''};
+const eName=id=>{const e=byId(S.employees,id);return e?e.name:''};
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+/* ================= PARSER (no AI — pattern matching IT) ================= */
+function parseDateIT(text){
+  const t=norm(text);const now=new Date();now.setHours(0,0,0,0);
+  let date=null,matched='';
+  let m;
+  if((m=t.match(/\bdopodomani\b/))){const d=new Date(now);d.setDate(d.getDate()+2);date=iso(d);matched=m[0];}
+  else if((m=t.match(/\bdomani\b/))){const d=new Date(now);d.setDate(d.getDate()+1);date=iso(d);matched=m[0];}
+  else if((m=t.match(/\boggi\b/))){date=iso(now);matched=m[0];}
+  else if((m=t.match(/\b(lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica)\b/))){
+    const names=['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
+    const target=names.indexOf(m[1]);const d=new Date(now);let add=(target-d.getDay()+7)%7;if(add===0)add=7;d.setDate(d.getDate()+add);date=iso(d);matched=m[1];}
+  else if((m=t.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/))){
+    let[,d1,m1,y1]=m;let y=y1?(+y1<100?2000+(+y1):+y1):now.getFullYear();
+    const cand=new Date(y,+m1-1,+d1);if(!y1&&cand<now)cand.setFullYear(y+1);
+    if(cand.getDate()==+d1)date=iso(cand);matched=m[0];}
+  else if((m=t.match(/\b(?:il\s+)?(\d{1,2})\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\b/))){
+    const mi=MESI.indexOf(m[2]);const cand=new Date(now.getFullYear(),mi,+m[1]);if(cand<now)cand.setFullYear(now.getFullYear()+1);date=iso(cand);matched=m[0];}
+  else if((m=t.match(/\btra\s+(\d{1,2})\s+giorni\b/))){const d=new Date(now);d.setDate(d.getDate()+ +m[1]);date=iso(d);matched=m[0];}
+  // time
+  let time=null,tm;
+  if((tm=t.match(/\balle?\s+(\d{1,2})(?:[:\.](\d{2}))?\b/))||(tm=t.match(/\bore\s+(\d{1,2})(?:[:\.](\d{2}))?\b/))){
+    let h=+tm[1],mi=tm[2]?+tm[2]:0;
+    if(h>=1&&h<=7)h+=12; // "alle 4" in orario lavorativo → 16:00
+    if(h<=23)time=pad(h)+':'+pad(mi);
+  }
+  return{date,time,matched};
+}
+function findPerson(text){
+  const t=norm(text);
+  // try clients first, then employees — longest name match wins
+  let best=null;
+  for(const c of S.clients){const n=norm(c.name);if(n&&t.includes(n)&&(!best||n.length>best.len))best={kind:'client',id:c.id,name:c.name,len:n.length};}
+  for(const e of S.employees){const n=norm(e.name);if(n&&t.includes(n)&&(!best||n.length>best.len))best={kind:'employee',id:e.id,name:e.name,len:n.length};}
+  if(best)return best;
+  // fallback: "a Nome" / "da Nome" / "per Nome" / "cliente Nome"
+  const m=text.match(/\b(?:a|da|per|cliente|sig\.?|signora?)\s+([A-ZÀ-Ý][a-zà-ÿ]+(?:\s+[A-ZÀ-Ý][a-zà-ÿ]+)?)/);
+  if(m)return{kind:'raw',id:null,name:m[1],len:m[1].length};
+  return null;
+}
+function parseInput(text){
+  const t=norm(text);
+  const r={type:null,title:text.trim(),date:null,time:null,person:null,qty:null,unit:null,raw:text.trim()};
+  // type detection
+  if(/\blista\b/.test(t))r.type='list';
+  else if(/^\s*(ricordami|ricorda|nota|promemoria)\b/.test(t)&&!/\b(manutenzion\w*|pellet|appuntament\w*|cantier\w*)\b/.test(t))r.type='note';
+  else if(/\bmanutenzion|pulizia\s+(caldaia|stufa)|revisione|tagliando|filtri\b/.test(t))r.type='maintenance';
+  else if(/\bpellet|sacch|bancal|consegna|sfuso\b/.test(t))r.type='pellet';
+  else if(/\bcantiere|installazione|montaggio|posa\b/.test(t))r.type='site';
+  else if(/\bappuntamento|sopralluogo|incontro|riunione|chiamare|telefonare|richiamare|preventivo\b/.test(t))r.type='appointment';
+  else if(/\bnota|ricorda(?:re|mi)?|promemoria|segna(?:re)?\b/.test(t))r.type='note';
+  const dd=parseDateIT(text);r.date=dd.date;r.time=dd.time;
+  if(!r.type&&r.date)r.type='appointment';
+  if(!r.type)r.type='note';
+  r.person=findPerson(text);
+  // aggiornamento cantiere esistente: "aggiungi 4 ore al cantiere Via Roma" / "cantiere Via Roma: posato basamento"
+  if(/\bcantier\w*\b/.test(t)){
+    let best=null;
+    for(const s of S.sites){const n=norm(s.name);if(n&&t.includes(n)&&(!best||n.length>best.len))best={id:s.id,name:s.name,len:n.length};}
+    if(best){
+      r.type='site';r.siteId=best.id;r.siteName=best.name;
+      const hm=t.match(/(\d+(?:[\.,]\d+)?)\s*or[ae]\b/);
+      if(hm)r.hours=parseFloat(hm[1].replace(',','.'));
+      let st=text.replace(/^\s*(aggiungi|segna|metti|registra)\s+/i,'').replace(/(\d+(?:[\.,]\d+)?)\s*or[ae]\b/i,'').replace(/\b(al|nel|sul)?\s*cantiere\s+/i,'');
+      const escRe=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      st=st.replace(new RegExp(escRe(best.name),'i'),'').replace(new RegExp(escRe(best.name.replace(/^cantiere\s+/i,'')),'i'),'');
+      st=st.replace(/^[\s:\-–,]+|[\s:\-–,]+$/g,'').trim();
+      r.siteText=st||null;
+    }
+  }
+  // quantities
+  let q;
+  if((q=t.match(/(\d+(?:[\.,]\d+)?)\s*(sacch\w*|bancal\w*|tonnellat\w*|ton\b|t\b|kg\b|quintal\w*)/))){
+    r.qty=parseFloat(q[1].replace(',','.'));
+    const u=q[2];
+    if(u.startsWith('bancal')){r.qty=r.qty*(S.settings.bagsPerPallet||70);r.unit='sacchi';}
+    else if(u.startsWith('sacch'))r.unit='sacchi';
+    else if(u.startsWith('ton')||u==='t')r.unit='t';
+    else if(u==='kg'){if(/\bsfuso\b/.test(t)){r.qty=r.qty/1000;r.unit='t';}else r.unit='kg';}
+    else if(u.startsWith('quintal')){r.qty=r.qty/10;r.unit='t';}
+  }
+  if(/\bsfuso\b/.test(t)&&r.unit==null&&r.type==='pellet')r.unit='t';
+  // liste: "lista ferramenta: viti, tasselli" / "aggiungi guanti alla lista ferramenta"
+  if(r.type==='list'){
+    const splitItems=s=>s.split(/\s*,\s*|\s+e\s+/i).map(x=>x.trim()).filter(Boolean);
+    let lm;
+    if((lm=text.match(/aggiungi\s+(.+?)\s+(?:alla|nella|in)\s+lista\s+([\wÀ-ÿ' ]+)/i))){
+      r.listName=lm[2].trim();r.listItems=splitItems(lm[1]);r.listAppend=true;
+    }else if((lm=text.match(/lista\s+([^:\-]+?)\s*[:\-]\s*(.+)/i))){
+      r.listName=lm[1].trim();r.listItems=splitItems(lm[2]);
+    }else if((lm=text.match(/lista\s+(?:per\s+|di\s+|della\s+)?([\wÀ-ÿ' ]+)/i))){
+      r.listName=lm[1].trim();r.listItems=[];
+    }else{r.listName='Nuova lista';r.listItems=[];}
+  }
+  // clean title: remove command verbs and matched fragments
+  let title=text.trim()
+    .replace(/^\s*(aggiungi|segna|metti|crea|ricordami|ricorda|nota|inserisci|programma)\s+/i,'')
+    .replace(/\b(per\s+)?(oggi|domani|dopodomani)\b/gi,'')
+    .replace(/\balle?\s+\d{1,2}([:\.]\d{2})?\b/gi,'')
+    .replace(/\bore\s+\d{1,2}([:\.]\d{2})?\b/gi,'')
+    .replace(/\s{2,}/g,' ').replace(/[\s,]+$/,'').trim();
+  if(title)r.title=title.charAt(0).toUpperCase()+title.slice(1);
+  return r;
+}
+const TYPE_META={
+  maintenance:{label:'Manutenzione',color:'var(--amber)',hex:'#FFB547',ic:'🔧',view:'man'},
+  pellet:{label:'Pellet',color:'var(--fire)',hex:'#FF8A3D',ic:'🔥',view:'pellet'},
+  appointment:{label:'Appuntamento',color:'var(--cy)',hex:'#00D4FF',ic:'📅',view:'notes'},
+  note:{label:'Nota',color:'var(--teal)',hex:'#00E5C0',ic:'📝',view:'notes'},
+  site:{label:'Cantiere',color:'var(--blue)',hex:'#6FA8FF',ic:'🏗',view:'sites'},
+  list:{label:'Lista',color:'#4FD8E8',hex:'#4FD8E8',ic:'☑️',view:'hub'},
+};
+/* commit parsed object into state */
+function commitParsed(p,via){
+  const clientId=p.person&&p.person.kind==='client'?p.person.id:null;
+  const employeeId=p.person&&p.person.kind==='employee'?p.person.id:null;
+  const personRaw=p.person&&p.person.kind==='raw'?p.person.name:null;
+  let msg='';
+  if(p.type==='maintenance'){
+    S.maintenances.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date,time:p.time,status:p.date?'programmata':'da_fare',notes:'',via,created:Date.now()});
+    msg='🔧 Manutenzione registrata'+(p.person?' — '+p.person.name:'')+(p.date?' · '+fmtD(p.date):'')+(p.time?' '+p.time:'');
+  }else if(p.type==='pellet'){
+    const kind=(p.unit==='t'||/\bsfuso\b/i.test(p.raw||''))?'sfuso':'sacchi';
+    S.pellet.unshift({id:uid(),clientId,clientRaw:personRaw,qty:p.qty,unit:kind==='sfuso'?'t':(p.unit||'sacchi'),kind,date:p.date,time:p.time,status:'da_consegnare',notes:p.title,via,created:Date.now()});
+    msg='🔥 Consegna '+(kind==='sfuso'?'sfuso':'sacchi')+' registrata'+(p.qty?' — '+p.qty+' '+(kind==='sfuso'?'t':p.unit||'sacchi'):'')+(p.person?' · '+p.person.name:'')+(p.date?' · '+fmtD(p.date):'');
+  }else if(p.type==='appointment'){
+    S.appointments.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date||todayIso(),time:p.time,done:false,via,created:Date.now()});
+    msg='📅 Appuntamento segnato — '+fmtD(p.date||todayIso())+(p.time?' '+p.time:'');
+  }else if(p.type==='list'){
+    const nm=norm(p.listName||'');
+    let L=S.lists.find(l=>norm(l.name)===nm||norm(l.name).includes(nm)||nm.includes(norm(l.name)));
+    if(L&&(p.listAppend||p.listItems.length)){
+      p.listItems.forEach(t=>L.items.push({id:uid(),text:t,done:false}));
+      msg='☑️ '+p.listItems.length+' voci aggiunte a «'+L.name+'»';
+    }else{
+      S.lists.unshift({id:uid(),name:p.listName||'Nuova lista',items:(p.listItems||[]).map(t=>({id:uid(),text:t,done:false})),via,created:Date.now()});
+      msg='☑️ Lista «'+(p.listName||'Nuova lista')+'» creata'+(p.listItems.length?' con '+p.listItems.length+' voci':'');
+    }
+  }else if(p.type==='site'){
+    if(p.siteId){
+      const s=byId(S.sites,p.siteId);
+      s.log.push({date:p.date||todayIso(),text:p.siteText||'Aggiornamento',hours:p.hours||null});
+      msg='🏗 «'+s.name+'» aggiornato'+(p.hours?' — +'+p.hours+'h':'')+(p.siteText?' · '+p.siteText:'');
+    }else{
+      S.sites.unshift({id:uid(),name:p.title,clientId,clientRaw:personRaw,status:'aperto',employees:[],log:[],attachments:[],estHours:null,startDate:p.date||todayIso(),dueDate:null,notes:'',via,created:Date.now()});
+      msg='🏗 Cantiere creato — '+p.title;
+    }
+  }else{
+    S.notes.unshift({id:uid(),text:p.title,clientId,date:p.date,pinned:false,via,created:Date.now()});
+    msg='📝 Nota salvata';
+  }
+  save();return msg;
+}
+/* ================= NAV / RENDER ROUTER ================= */
+const VIEWS=[
+  {id:'hub',ic:'⚡',label:'Hub'},
+  {id:'cal',ic:'📅',label:'Calendario'},
+  {id:'notes',ic:'📝',label:'Note'},
+  {id:'chat',ic:'💬',label:'Chat'},
+  {id:'man',ic:'🔧',label:'Manut.'},
+  {id:'pellet',ic:'🔥',label:'Pellet'},
+  {id:'sites',ic:'🏗',label:'Cantieri'},
+  {id:'clients',ic:'👥',label:'Clienti'},
+  {id:'emps',ic:'👷',label:'Personale'},
+];
+let view='hub';
+/* ---- accesso (Supabase Auth) ---- */
+const me=()=>S.session?byId(S.employees,S.session.empId):null;
+const isOwner=()=>{const m=me();return !!(m&&m.isOwner);};
+const can=p=>isOwner()||(me()&&me().perms&&me().perms.includes(p));
+const genInvite=n=>(norm(n).replace(/[^a-z]/g,'').slice(0,5).toUpperCase()||'USER')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+async function logout(){try{await sb.auth.signOut();}catch(e){}S=blank();authMode='login';closeSheet();renderLock();}
+function nav(v){view=v;render();window.scrollTo(0,0);}
+function renderNav(){
+  const vis=VIEWS.filter(v=>v.id==='hub'||can(v.id));
+  $('#navside').innerHTML=vis.map(v=>`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}</div>`).join('')
+    +(isOwner()?`<div class="ni" style="margin-top:10px;border-top:1px solid var(--line);border-radius:0;padding-top:14px" onclick="openBackup()"><span class="ic">💾</span>Backup dati</div>`:'')
+    +`<div class="ni" onclick="logout()"><span class="ic">🚪</span>Esci (${esc(me().name)})</div>`;
+  const mobAll=vis.filter(v=>v.id!=='emps'&&v.id!=='clients'&&v.id!=='notes'&&v.id!=='chat').slice(0,5);
+  const mob=[...mobAll,{id:'menu',ic:'☰',label:'Altro'}];
+  $('#navbottom').innerHTML=mob.map(v=>`<div class="nb ${view===v.id||(v.id==='menu'&&['notes','chat','clients','emps'].includes(view))?'act':''}" onclick="${v.id==='menu'?'openMenu()':`nav('${v.id}')`}"><span class="ic">${v.ic}</span>${v.label}</div>`).join('');
+}
+function openMenu(){
+  const items=[['notes','📝 Note & Appuntamenti'],['chat','💬 Chat squadra'],['clients','👥 Clienti'],['emps','👷 Personale']].filter(([id])=>can(id));
+  openSheet(`<h3>Sezioni <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="seg" style="flex-direction:column;gap:8px">
+    ${items.map(([id,l])=>`<div class="sg" style="padding:13px" onclick="closeSheet();nav('${id}')">${l}</div>`).join('')}
+    ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openBackup()">💾 Backup dati</div>`:''}
+    <div class="sg" style="padding:13px;border-color:rgba(255,92,122,.35);color:var(--coral)" onclick="logout()">🚪 Esci (${esc(me().name)})</div>
+  </div>`);
+}
+function openBackup(){
+  const counts=`${S.clients.length} clienti · ${S.maintenances.length} manutenzioni · ${S.pellet.length} consegne · ${S.sites.length} cantieri · ${S.appointments.length} appuntamenti · ${S.notes.length} note · ${S.lists.length} liste`;
+  openSheet(`<h3>💾 Backup & impostazioni <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Intestazione azienda (per i bollettini stampati)</label><input id="set-co" value="${esc(S.settings.companyName||'')}" placeholder="es. Rossi Riscaldamenti Sagl — Via X, Lugano" onchange="S.settings.companyName=this.value.trim();save();toast('Intestazione salvata')"></div>
+  <div class="frow">
+    <div class="fld"><label>Prezzo sfuso CHF/t</label><input type="number" inputmode="decimal" value="${S.settings.pricePerTon||''}" onchange="S.settings.pricePerTon=parseFloat(this.value)||null;save();toast('Prezzo salvato')"></div>
+    <div class="fld"><label>Prezzo CHF/sacco</label><input type="number" inputmode="decimal" step="any" value="${S.settings.pricePerBag||''}" onchange="S.settings.pricePerBag=parseFloat(this.value)||null;save();toast('Prezzo salvato')"></div>
+  </div>
+  <div class="fld"><label>Export CSV (per Excel / commercialista)</label>
+    <div class="seg">
+      <div class="sg" onclick="csvPellet()">🔥 Pellet</div>
+      <div class="sg" onclick="csvMan()">🔧 Manutenzioni</div>
+      <div class="sg" onclick="csvOre()">⏱ Ore dipendenti</div>
+      <div class="sg" onclick="csvSites()">🏗 Cantieri</div>
+    </div>
+  </div>
+  <div class="subtle" style="margin-bottom:14px">I dati vivono nel cloud (Supabase), sincronizzati fra tutti i dispositivi. L'export crea comunque una copia locale di sicurezza; l'import aggiunge al cloud i dati di un backup della vecchia app locale.<br><br><b style="color:var(--t2)">Ora in archivio:</b> ${counts}</div>
+  <div class="actions" style="flex-direction:column">
+    <button class="btn pri" onclick="exportBackup()">⬇ Esporta backup (.json)</button>
+    <button class="btn" onclick="$('#imp-file').click()">⬆ Importa backup</button>
+    <input type="file" id="imp-file" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
+  </div>`);
+}
+function exportBackup(){
+  const data=JSON.stringify(S,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='caywork-backup-'+todayIso()+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast('⬇ Backup esportato');
+}
+function importBackup(ev){
+  const f=ev.target.files[0];if(!f)return;
+  if(!isOwner()){toast('Solo il titolare può importare');return;}
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d||!Array.isArray(d.clients))throw new Error('struttura');
+      if(!confirm('Importare il backup nel cloud? I dati verranno AGGIUNTI a quelli attuali.'))return;
+      toast('⏳ Importo…');
+      const map={};const mid=o=>{if(!o)return null;if(o==='me')return S.session.empId;if(!map[o])map[o]=uid();return map[o];};
+      (d.employees||[]).forEach(e=>{if(e.id==='me')return;S.employees.push({id:mid(e.id),name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||['cal','man','chat'],isOwner:false,active:e.active!==false,inviteCode:genInvite(e.name),userId:null});});
+      (d.clients||[]).forEach(c=>S.clients.push({id:mid(c.id),name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||'',created:c.created||Date.now()}));
+      (d.noteGroups||[]).forEach(g=>S.noteGroups.push({id:mid(g.id),name:g.name}));
+      (d.maintenances||[]).forEach(m=>S.maintenances.push({id:mid(m.id),title:m.title,clientId:mid(m.clientId),clientRaw:m.clientRaw||null,employeeId:mid(m.employeeId),date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:m.price||null,report:m.report||null,via:m.via||'import',created:m.created||Date.now()}));
+      (d.appointments||[]).forEach(a=>S.appointments.push({id:mid(a.id),title:a.title,clientId:mid(a.clientId),clientRaw:a.clientRaw||null,employeeId:mid(a.employeeId),date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'import',created:a.created||Date.now()}));
+      (d.pellet||[]).forEach(p=>S.pellet.push({id:mid(p.id),clientId:mid(p.clientId),clientRaw:p.clientRaw||null,qty:p.qty||null,unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:p.price||null,signature:p.signature||null,signedName:p.signedName||'',notes:p.notes||'',via:p.via||'import',created:p.created||Date.now()}));
+      const pendingAtt=[];
+      (d.sites||[]).forEach(s=>{
+        const ns={id:mid(s.id),name:s.name,clientId:mid(s.clientId),clientRaw:s.clientRaw||null,status:['aperto','da_fatturare','chiuso'].includes(s.status)?s.status:'aperto',employees:(s.employees||[]).map(mid).filter(Boolean),estHours:s.estHours||null,amount:s.amount||null,startDate:s.startDate||null,dueDate:s.dueDate||null,notes:s.notes||'',via:s.via||'import',created:s.created||Date.now(),
+          log:(s.log||[]).map(l=>({id:uid(),date:l.date||null,text:l.text,hours:l.hours||null,empId:mid(l.empId)})),attachments:[]};
+        (s.attachments||[]).forEach(a=>{if(a.dataUrl)pendingAtt.push({siteId:ns.id,a});});
+        S.sites.push(ns);
+      });
+      (d.notes||[]).forEach(n=>S.notes.push({id:mid(n.id),text:n.text,clientId:mid(n.clientId),groupId:mid(n.groupId),date:n.date||null,pinned:!!n.pinned,archived:!!n.archived,via:n.via||'import',created:n.created||Date.now()}));
+      (d.lists||[]).forEach(l=>S.lists.push({id:mid(l.id),name:l.name,via:l.via||'import',created:l.created||Date.now(),items:(l.items||[]).map(i=>({id:uid(),text:i.text,done:!!i.done}))}));
+      (d.callLog||[]).forEach(c=>S.callLog.push({id:uid(),clientId:mid(c.clientId),year:c.year,called:!!c.called,outcome:c.outcome||'',note:c.note||'',maintId:mid(c.maintId)}));
+      if(d.settings){Object.assign(S.settings,{bagsPerPallet:d.settings.bagsPerPallet||S.settings.bagsPerPallet,companyName:d.settings.companyName||S.settings.companyName,pricePerTon:d.settings.pricePerTon||S.settings.pricePerTon,pricePerBag:d.settings.pricePerBag||S.settings.pricePerBag});}
+      await syncNow();
+      for(const{siteId,a}of pendingAtt){
+        try{
+          const blob=await(await fetch(a.dataUrl)).blob();
+          const path=siteId+'/'+uid()+'-'+a.name;
+          await sb.storage.from('allegati').upload(path,blob,{contentType:blob.type||'application/octet-stream'});
+          const row={id:uid(),site_id:siteId,name:a.name,type:a.type||'file',storage_path:path,date:a.date||todayIso()};
+          await sb.from('attachments').insert(row);
+          const s=byId(S.sites,siteId);s.attachments.push({id:row.id,name:a.name,type:row.type,storagePath:path,date:row.date});
+        }catch(e){console.error('allegato',e);}
+      }
+      closeSheet();render();toast('✓ Backup importato nel cloud'+(pendingAtt.length?' con '+pendingAtt.length+' allegati':''));
+    }catch(e){console.error(e);toast('⚠️ Import: '+(e.message||'file non valido'));}
+  };
+  r.readAsText(f);
+}
+
+
+function render(){
+  if(!S.session||!me()){renderLock();return;}
+  const lk=document.querySelector('.lock');if(lk)lk.remove();
+  if(!can(view)&&view!=='hub')view='hub';
+  S.speaker=S.session.empId;
+  renderNav();
+  $('#todaypill').textContent=GG[new Date().getDay()].slice(0,3)+' '+new Date().getDate()+' '+MESI[new Date().getMonth()].slice(0,3);
+  const R={hub:renderHub,cal:renderCal,notes:renderNotes,chat:renderChat,man:renderMan,pellet:renderPellet,sites:renderSites,clients:renderClients,emps:renderEmps};
+  $('#main').innerHTML='';(R[view]||renderHub)();
+  if(view==='chat'){const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;}
+}
+
+
+/* ================= ACCESSO (cloud) ================= */
+let authMode='login';let authBusy=false;
+function lockShell(inner,sub){
+  $('#main').innerHTML='';$('#navside').innerHTML='';$('#navbottom').innerHTML='';
+  let old=document.querySelector('.lock');if(old)old.remove();
+  const box=document.createElement('div');box.className='lock';
+  box.innerHTML=`<div class="llogo"><span class="dot"></span>CAY WORK</div><div class="lsub">${sub||'GESTIONALE'}</div><div class="lbox">${inner}</div>`;
+  document.body.appendChild(box);
+}
+function renderLock(){
+  if(authMode==='loading'){lockShell('<div style="text-align:center;color:var(--t2);font-size:14px;padding:18px 0">🌊 Carico i dati…</div>','SINCRONIZZAZIONE');return;}
+  if(authMode==='link'){
+    lockShell(`
+      <div style="font-size:13.5px;color:var(--t2);margin-bottom:14px;text-align:center">Account creato! Ora collegalo:</div>
+      <input id="lk-code" class="txt" placeholder="Codice di invito (es. MARCO-7K2F)" style="text-transform:uppercase;font-family:var(--mono);letter-spacing:1px;text-align:center">
+      <div class="lerr" id="lk-err"></div>
+      <button class="btn pri" style="width:100%" onclick="doClaimInvite()">Collega con il codice</button>
+      <div style="border-top:1px dashed var(--line2);margin:16px 0 12px"></div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:8px;text-align:center">Oppure, se sei il titolare e questa è la prima volta:</div>
+      <input id="lk-name" class="txt" placeholder="Il tuo nome (es. Loris)">
+      <button class="btn" style="width:100%" onclick="doClaimOwner()">👑 Sono il titolare</button>
+      <div class="llink" onclick="logout()">← Esci</div>`,'COLLEGA ACCOUNT');
+    return;
+  }
+  const reg=authMode==='signup';
+  lockShell(`
+    <input id="lk-email" class="txt" type="email" placeholder="Email" autocomplete="email">
+    <input id="lk-pass" class="txt" type="password" placeholder="Password (min 6)" autocomplete="${reg?'new-password':'current-password'}" onkeydown="if(event.key==='Enter')${reg?'doSignup()':'doLogin()'}">
+    <div class="lerr" id="lk-err"></div>
+    <button class="btn pri" style="width:100%" onclick="${reg?'doSignup()':'doLogin()'}">${reg?'Crea account':'Entra'}</button>
+    <div class="llink" onclick="authMode='${reg?'login':'signup'}';renderLock()">${reg?'← Ho già un account':'Prima volta? Registrati →'}</div>`,
+    reg?'REGISTRAZIONE':'GESTIONALE');
+  setTimeout(()=>{const f=$('#lk-email');if(f)f.focus();},80);
+}
+function lockErr(m){const e=$('#lk-err');if(e)e.textContent=m;authBusy=false;}
+async function doLogin(){
+  if(authBusy)return;authBusy=true;
+  const email=$('#lk-email').value.trim(),pass=$('#lk-pass').value;
+  if(!email||!pass)return lockErr('Email e password');
+  const{error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error)return lockErr(error.message.includes('Invalid')?'Email o password sbagliate':error.message);
+  authBusy=false;postAuth();
+}
+async function doSignup(){
+  if(authBusy)return;authBusy=true;
+  const email=$('#lk-email').value.trim(),pass=$('#lk-pass').value;
+  if(!email||pass.length<6)return lockErr('Email valida e password di almeno 6 caratteri');
+  const{error}=await sb.auth.signUp({email,password:pass});
+  if(error)return lockErr(error.message.includes('already')?'Email già registrata — torna al login':error.message);
+  authBusy=false;postAuth();
+}
+async function doClaimOwner(){
+  if(authBusy)return;authBusy=true;
+  const name=$('#lk-name').value.trim();
+  if(!name)return lockErr('Scrivi il tuo nome');
+  const{data,error}=await sb.rpc('claim_owner',{owner_name:name});
+  if(error)return lockErr(error.message);
+  if(!data)return lockErr('Il titolare esiste già — usa un codice di invito');
+  authBusy=false;postAuth();
+}
+async function doClaimInvite(){
+  if(authBusy)return;authBusy=true;
+  const code=$('#lk-code').value.trim();
+  if(!code)return lockErr('Inserisci il codice');
+  const{data,error}=await sb.rpc('claim_invite',{code});
+  if(error)return lockErr(error.message);
+  if(!data)return lockErr('Codice non valido o già usato');
+  authBusy=false;postAuth();
+}
+async function postAuth(){
+  try{
+    const{data:{user}}=await sb.auth.getUser();
+    if(!user){authMode='login';renderLock();return;}
+    authMode='loading';renderLock();
+    const{data:emp,error}=await sb.from('employees').select('*').eq('user_id',user.id).maybeSingle();
+    if(error)throw error;
+    if(!emp){authMode='link';renderLock();return;}
+    if(!emp.active){await sb.auth.signOut();authMode='login';renderLock();setTimeout(()=>lockErr('Accesso disattivato dal titolare'),100);return;}
+    await loadAll();
+    const my=byId(S.employees,emp.id)||MAPS.employees.fromDb(emp);
+    if(!byId(S.employees,emp.id))S.employees.push(my);
+    S.session={empId:emp.id};S.speaker=emp.id;
+    startRealtime();
+    view='hub';render();toast('Ciao '+my.name+' 👋');
+  }catch(e){console.error(e);authMode='login';renderLock();setTimeout(()=>lockErr('Errore: '+(e.message||e)),100);}
+}
+/* ================= MODAL ================= */
+function openSheet(html){
+  closeSheet();
+  const o=document.createElement('div');o.className='overlay';o.id='overlay';
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">${html}</div>`;
+  o.onclick=closeSheet;document.body.appendChild(o);
+}
+function closeSheet(){const o=$('#overlay');if(o)o.remove();}
+
+/* ================= AGGREGATED EVENTS (per calendario/agenda) ================= */
+/* visibilità per ruolo: il titolare vede tutto, gli altri solo ciò che è loro */
+const visMan=()=>isOwner()?S.maintenances:S.maintenances.filter(m=>m.employeeId===S.session.empId);
+const visApp=()=>isOwner()?S.appointments:S.appointments.filter(a=>a.employeeId===S.session.empId||!a.employeeId);
+const visSites=()=>isOwner()?S.sites:S.sites.filter(s=>s.employees.includes(S.session.empId));
+function allEvents(){
+  const ev=[];
+  visApp().forEach(a=>{if(a.date)ev.push({type:'appointment',date:a.date,time:a.time,title:a.title,sub:cName(a.clientId)||a.clientRaw||'',done:a.done,id:a.id});});
+  visMan().forEach(m=>{if(m.date)ev.push({type:'maintenance',date:m.date,time:m.time,title:m.title,sub:cName(m.clientId)||m.clientRaw||'',done:m.status==='fatta',id:m.id});});
+  (can('pellet')?S.pellet:[]).forEach(p=>{if(p.date)ev.push({type:'pellet',date:p.date,time:p.time,title:(p.qty?p.qty+' '+p.unit:'Consegna pellet'),sub:cName(p.clientId)||p.clientRaw||'',done:p.status==='consegnato',id:p.id});});
+  S.notes.forEach(n=>{if(n.date&&!n.archived)ev.push({type:'note',date:n.date,time:null,title:n.text,sub:'',done:false,id:n.id});});
+  visSites().forEach(s=>{if(s.dueDate&&s.status==='aperto')ev.push({type:'site',date:s.dueDate,time:null,title:'🏁 Fine prevista: '+s.name,sub:cName(s.clientId)||s.clientRaw||'',done:false,id:s.id});});
+  return ev.sort((a,b)=>(a.date+(a.time||'99'))<(b.date+(b.time||'99'))?-1:1);
+}
+
+/* ================= HUB ================= */
+let hubParsed=null;
+function renderHub(){
+  const ev=allEvents();const t=todayIso();
+  const todayEv=ev.filter(e=>e.date===t&&!e.done);
+  const next=ev.filter(e=>e.date>t&&!e.done).slice(0,5);
+  const late=ev.filter(e=>e.date<t&&!e.done).slice(0,4);
+  const openMan=S.maintenances.filter(m=>m.status!=='fatta').length;
+  const openPel=S.pellet.filter(p=>p.status!=='consegnato').length;
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent"></span>Hub</div>
+  <div class="hub" id="hub"><div class="ring"></div>
+    <div class="hub-box">
+      <textarea id="hubinput" rows="2" placeholder="Scrivi qui e ci penso io a smistare…&#10;es. «aggiungi manutenzione a Rossi domani alle 4»"></textarea>
+      <div class="hub-foot" id="hubchips"><span class="chip">🔧 manutenzioni</span><span class="chip">🔥 pellet</span><span class="chip">📅 appuntamenti</span><span class="chip">📝 note</span><span class="chip">🏗 cantieri</span><span class="chip">☑️ liste</span></div>
+      <div id="hubpreview"></div>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n" style="color:var(--cy)">${todayEv.length}</div><div class="l">Oggi</div></div>
+    <div class="stat"><div class="n" style="color:var(--amber)">${openMan}</div><div class="l">Manutenzioni aperte</div></div>
+    <div class="stat"><div class="n" style="color:var(--fire)">${openPel}</div><div class="l">Consegne pellet</div></div>
+    <div class="stat"><div class="n" style="color:var(--coral)">${late.length}</div><div class="l">In ritardo</div></div>
+  </div>
+  ${late.length?`<div class="card" style="border-color:rgba(255,92,122,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
+  <div class="card"><div class="sh"><span class="t">☑️ Liste</span><span class="a" onclick="newList()">+ Nuova lista</span></div>
+    ${S.lists.length?S.lists.map(L=>{
+      const done=L.items.filter(i=>i.done).length,tot=L.items.length;
+      return`<div class="cklist">
+      <div class="ck-head" onclick="listMenu('${L.id}')"><span class="ck-name">${esc(L.name)}</span><span class="ck-prog">${done}/${tot}</span><span style="color:var(--t3);font-size:13px">⋯</span></div>
+      ${tot?`<div class="ck-bar"><i style="width:${tot?Math.round(done/tot*100):0}%"></i></div>`:''}
+      ${L.items.map(i=>`<div class="ck-it ${i.done?'done':''}" onclick="ckToggle('${L.id}','${i.id}')"><span class="ck-box">${i.done?'✓':''}</span><span class="ck-tx">${esc(i.text)}</span></div>`).join('')}
+      <div class="ck-add"><input id="cka-${L.id}" placeholder="Aggiungi voce…" onkeydown="if(event.key==='Enter')ckAdd('${L.id}')" onclick="event.stopPropagation()"><button onclick="ckAdd('${L.id}')">+</button></div>
+      </div>`;
+    }).join(''):'<div class="empty">Nessuna lista. Creane una qui o dall\'Hub:<br>«lista ferramenta: viti, tasselli, silicone»</div>'}
+  </div>
+  <div class="card hl"><div class="sh"><span class="t">Oggi</span><span class="a" onclick="nav('cal')">Calendario →</span></div>
+    ${todayEv.length?todayEv.map(evRow).join(''):'<div class="empty"><div class="big">🌊</div>Niente in programma oggi.</div>'}
+  </div>
+  <div class="card"><div class="sh"><span class="t">Prossimi</span></div>
+    ${next.length?next.map(evRow).join(''):'<div class="empty">Nessun evento futuro.</div>'}
+  </div>`;
+  const ta=$('#hubinput');
+  ta.addEventListener('input',()=>{
+    const v=ta.value.trim();const hub=$('#hub');
+    if(!v){hub.classList.remove('live');hubParsed=null;$('#hubpreview').innerHTML='';resetChips();return;}
+    hub.classList.add('live');hubParsed=parseInput(v);showPreview();
+  });
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();hubCommit();}});
+}
+function resetChips(){document.querySelectorAll('#hubchips .chip').forEach(c=>c.classList.remove('on'));}
+function showPreview(){
+  const p=hubParsed;if(!p)return;
+  resetChips();
+  const order={maintenance:0,pellet:1,appointment:2,note:3,site:4,list:5};
+  const chips=document.querySelectorAll('#hubchips .chip');
+  if(chips[order[p.type]])chips[order[p.type]].classList.add('on');
+  const M=TYPE_META[p.type];
+  if(p.type==='list'){
+    $('#hubpreview').innerHTML=`<div class="preview">
+    <div class="row"><span class="k">SEZIONE</span><span class="badge" style="border-color:${M.hex};color:${M.hex}">${M.ic} ${M.label}</span></div>
+    <div class="row"><span class="k">LISTA</span><span class="v">${esc(p.listName||'')}</span></div>
+    <div class="row"><span class="k">VOCI</span><span class="v ${p.listItems&&p.listItems.length?'':'miss'}">${p.listItems&&p.listItems.length?p.listItems.map(esc).join(' · '):'lista vuota'}</span></div>
+    <div class="row" style="margin-top:4px;gap:10px">
+      <button class="btn pri sm" onclick="hubCommit()">✓ Conferma</button>
+      <button class="btn ghost sm" onclick="cycleType()">↻ Cambia sezione</button>
+    </div></div>`;
+    return;
+  }
+  $('#hubpreview').innerHTML=`<div class="preview">
+    <div class="row"><span class="k">SEZIONE</span><span class="badge" style="border-color:${M.hex};color:${M.hex}">${M.ic} ${M.label}</span></div>
+    <div class="row"><span class="k">TESTO</span><span class="v">${esc(p.title)}</span></div>
+    <div class="row"><span class="k">PERSONA</span><span class="v ${p.person?'':'miss'}">${p.person?esc(p.person.name)+(p.person.kind==='employee'?' (personale)':p.person.kind==='client'?' (cliente)':''):'—'}</span>${p.person&&p.person.kind==='raw'?`<button class="btn sm" style="border-color:var(--teal);color:var(--teal)" onclick="createClientFromPreview()">✚ Crea cliente</button>`:''}</div>
+    <div class="row"><span class="k">QUANDO</span><span class="v ${p.date?'':'miss'}">${p.date?fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}</span></div>
+    ${p.qty?`<div class="row"><span class="k">QUANTITÀ</span><span class="v">${p.qty} ${p.unit||''}</span></div>`:''}
+    <div class="row" style="margin-top:4px;gap:10px">
+      <button class="btn pri sm" onclick="hubCommit()">✓ Conferma</button>
+      <button class="btn ghost sm" onclick="cycleType()">↻ Cambia sezione</button>
+    </div></div>`;
+}
+function createClientFromPreview(){
+  if(!hubParsed||!hubParsed.person||hubParsed.person.kind!=='raw')return;
+  const name=hubParsed.person.name;
+  const c={id:uid(),name,phone:'',zone:'',address:'',notes:'',created:Date.now()};
+  S.clients.unshift(c);save();
+  hubParsed.person={kind:'client',id:c.id,name,len:name.length};
+  showPreview();toast('👥 Cliente «'+name+'» creato — completa la scheda quando vuoi');
+}
+function cycleType(){
+  if(!hubParsed)return;
+  const seq=['maintenance','pellet','appointment','note','site','list'];
+  hubParsed.type=seq[(seq.indexOf(hubParsed.type)+1)%seq.length];
+  showPreview();
+}
+function hubCommit(){
+  if(!hubParsed){const v=$('#hubinput').value.trim();if(!v)return;hubParsed=parseInput(v);}
+  const msg=commitParsed(hubParsed,'hub');
+  hubParsed=null;toast(msg);render();
+}
+function ckToggle(lid,iid){const L=byId(S.lists,lid);const i=byId(L.items,iid);i.done=!i.done;save();render();}
+function ckAdd(lid){const inp=$('#cka-'+lid);const t=inp.value.trim();if(!t)return;byId(S.lists,lid).items.push({id:uid(),text:t,done:false});save();render();setTimeout(()=>{const n=$('#cka-'+lid);if(n)n.focus();},0);}
+function newList(){
+  openSheet(`<h3>Nuova lista <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Nome</label><input id="nl-n" placeholder="es. Ferramenta, Furgone, Da ordinare"></div>
+  <div class="fld"><label>Voci (una per riga, opzionale)</label><textarea id="nl-i" placeholder="viti 6x40&#10;tasselli&#10;silicone"></textarea></div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveNewList()">Crea</button></div>`);
+}
+function saveNewList(){
+  const n=$('#nl-n').value.trim();if(!n){toast('Manca il nome');return;}
+  const items=$('#nl-i').value.split('\n').map(x=>x.trim()).filter(Boolean).map(t=>({id:uid(),text:t,done:false}));
+  S.lists.unshift({id:uid(),name:n,items,via:'manuale',created:Date.now()});
+  save();closeSheet();render();toast('☑️ Lista creata');
+}
+function listMenu(lid){
+  const L=byId(S.lists,lid);if(!L)return;
+  const done=L.items.filter(i=>i.done).length;
+  openSheet(`<h3>${esc(L.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:12px">${done}/${L.items.length} fatte</div>
+  <div class="fld"><label>Rinomina</label><input id="lm-n" value="${esc(L.name)}"></div>
+  <div class="actions">
+    <button class="btn danger" onclick="if(confirm('Eliminare la lista?')){S.lists=S.lists.filter(x=>x.id!=='${lid}');save();closeSheet();render();toast('Eliminata');}">Elimina</button>
+    <button class="btn" onclick="const L=byId(S.lists,'${lid}');L.items=L.items.filter(i=>!i.done);save();closeSheet();render();toast('Voci fatte rimosse')">Pulisci fatte</button>
+    <button class="btn pri" onclick="const L=byId(S.lists,'${lid}');L.name=$('#lm-n').value.trim()||L.name;save();closeSheet();render()">Salva</button></div>`);
+}
+function openEv(type,id){
+  if(type==='appointment')openApp(id);
+  else if(type==='maintenance')openMan(id);
+  else if(type==='pellet')openPel(id);
+  else if(type==='note')openNote(id);
+  else if(type==='site')openSite(id);
+  else nav(TYPE_META[type].view);
+}
+function evRow(e){
+  const M=TYPE_META[e.type];
+  return`<div class="item" onclick="openEv('${e.type}','${e.id}')">
+    <span class="led" style="background:${M.hex};box-shadow:0 0 8px ${M.hex}"></span>
+    <div class="bd"><div class="ti">${esc(e.title)}</div>${e.sub?`<div class="su">${esc(e.sub)}</div>`:''}</div>
+    <div class="right"><div class="d1">${e.time||''}</div><div class="d2">${fmtD(e.date)}</div></div>
+  </div>`;
+}
+
+/* ================= CALENDARIO ================= */
+let calCur=new Date();let calSel=todayIso();let calMode='mese';
+function renderCal(){
+  if(calMode==='agenda'){renderAgenda();return;}
+  const calTabs=`<div class="tabs"><div class="tb on">Mese</div><div class="tb" onclick="calMode='agenda';render()">Agenda</div></div>`;
+  const y=calCur.getFullYear(),m=calCur.getMonth();
+  const first=new Date(y,m,1);let startDow=(first.getDay()+6)%7; // lun=0
+  const daysIn=new Date(y,m+1,0).getDate();
+  const ev=allEvents();const map={};ev.forEach(e=>{(map[e.date]=map[e.date]||[]).push(e)});
+  let cells='';
+  const prevDays=new Date(y,m,0).getDate();
+  for(let i=0;i<42;i++){
+    let d,mm=m,yy=y,dim=false;
+    if(i<startDow){d=prevDays-startDow+1+i;mm=m-1;dim=true;}
+    else if(i<startDow+daysIn){d=i-startDow+1;}
+    else{d=i-startDow-daysIn+1;mm=m+1;dim=true;}
+    const dt=new Date(yy,mm,d);const di=iso(dt);
+    const evs=map[di]||[];
+    const dots=evs.slice(0,4).map(e=>`<i style="background:${TYPE_META[e.type].hex}"></i>`).join('');
+    cells+=`<div class="cal-cell ${dim?'dim':''} ${di===todayIso()?'today':''} ${di===calSel?'sel':''}" onclick="calPick('${di}')">
+      <span class="dn">${d}</span><span class="cal-dots">${dots}</span>${evs.length>4?`<span class="more">+${evs.length-4}</span>`:''}</div>`;
+    if(i>=startDow+daysIn-1&&(i+1)%7===0)break;
+  }
+  const selEv=(map[calSel]||[]);
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Calendario</div>
+  ${calTabs}
+  <div class="card hl">
+    <div class="cal-head">
+      <div class="mon">${MESI[m]} ${y}</div>
+      <button class="cal-nav" onclick="calShift(-1)">‹</button>
+      <button class="cal-nav" onclick="calToday()" style="width:auto;padding:0 12px;font-size:11px;font-family:var(--mono)">oggi</button>
+      <button class="cal-nav" onclick="calShift(1)">›</button>
+    </div>
+    <div class="cal-grid">${['LU','MA','ME','GI','VE','SA','DO'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}${cells}</div>
+    <div class="legend">${Object.values(TYPE_META).filter(t=>t.label!=='Lista').map(t=>`<span><i style="background:${t.hex}"></i>${t.label}</span>`).join('')}</div>
+  </div>
+  <div class="card"><div class="sh"><span class="t">${fmtD(calSel)}</span><span class="a" onclick="openQuickAdd('${calSel}')">+ Aggiungi</span></div>
+    ${selEv.length?selEv.map(evRow).join(''):`<div class="empty">Giornata libera.<br><button class="btn pri sm" style="margin-top:10px" onclick="openQuickAdd('${calSel}')">+ Aggiungi evento</button></div>`}
+  </div>
+  <button class="fab" onclick="openQuickAdd('${calSel}')">+</button>`;
+}
+function calShift(n){calCur=new Date(calCur.getFullYear(),calCur.getMonth()+n,1);render();}
+function renderAgenda(){
+  const ev=allEvents().filter(e=>!e.done);
+  const t=todayIso();
+  const late=ev.filter(e=>e.date<t);
+  const now=new Date();now.setHours(0,0,0,0);
+  let daysHtml='';
+  for(let i=0;i<14;i++){
+    const d=new Date(now);d.setDate(d.getDate()+i);const di=iso(d);
+    const evs=ev.filter(e=>e.date===di);
+    if(!evs.length&&i>0)continue;
+    daysHtml+=`<div class="card ${i===0?'hl':''}"><div class="sh"><span class="t" style="${i===0?'color:var(--cy)':''}">${fmtD(di)}</span><span class="a" onclick="openQuickAdd('${di}')">+ Aggiungi</span></div>
+    ${evs.length?evs.map(evRow).join(''):'<div class="empty" style="padding:18px">Libero.</div>'}</div>`;
+  }
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Calendario</div>
+  <div class="tabs"><div class="tb" onclick="calMode='mese';render()">Mese</div><div class="tb on">Agenda</div></div>
+  ${late.length?`<div class="card" style="border-color:rgba(255,92,122,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
+  ${daysHtml||'<div class="card"><div class="empty"><div class="big">🌊</div>Prossime 2 settimane libere.</div></div>'}`;
+}
+function calToday(){calCur=new Date();calSel=todayIso();render();}
+function calPick(d){calSel=d;render();}
+function openQuickAdd(date){
+  openSheet(`<h3>Aggiungi al ${fmtD(date)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Cosa</label><input id="qa-t" placeholder="es. Sopralluogo da Bernasconi"></div>
+  <div class="frow">
+    <div class="fld"><label>Tipo</label><select id="qa-type"><option value="appointment">Appuntamento</option><option value="maintenance">Manutenzione</option><option value="pellet">Consegna pellet</option><option value="note">Nota</option></select></div>
+    <div class="fld"><label>Ora</label><input id="qa-time" type="time"></div>
+  </div>
+  <div class="fld"><label>Cliente (opzionale)</label><select id="qa-cl"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="quickAddSave('${date}')">Salva</button></div>`);
+}
+function quickAddSave(date){
+  const t=$('#qa-t').value.trim();if(!t){toast('Scrivi cosa devi fare');return;}
+  const type=$('#qa-type').value,time=$('#qa-time').value||null,clientId=$('#qa-cl').value||null;
+  const p={type,title:t,date,time,person:clientId?{kind:'client',id:clientId,name:cName(clientId)}:null,qty:null,unit:null};
+  const msg=commitParsed(p,'cal');closeSheet();toast(msg);render();
+}
+/* ================= NOTE & APPUNTAMENTI ================= */
+let notesTab='app';let noteGroupSel='all';
+function renderNotes(){
+  const t=todayIso();
+  const apps=visApp().slice().sort((a,b)=>((a.done?'z':'a')+a.date+(a.time||''))<((b.done?'z':'a')+b.date+(b.time||''))?-1:1);
+  let notes=S.notes.slice();
+  if(noteGroupSel==='arch')notes=notes.filter(n=>n.archived);
+  else{notes=notes.filter(n=>!n.archived);if(noteGroupSel!=='all')notes=notes.filter(n=>n.groupId===noteGroupSel);}
+  notes.sort((a,b)=>(b.pinned-a.pinned)||(b.created-a.created));
+  const gName=id=>{const g=byId(S.noteGroups,id);return g?g.name:''};
+  const archN=S.notes.filter(n=>n.archived).length;
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Note & Appuntamenti</div>
+  <div class="tabs">
+    <div class="tb ${notesTab==='app'?'on':''}" onclick="notesTab='app';render()">📅 Appuntamenti (${visApp().filter(a=>!a.done).length})</div>
+    <div class="tb ${notesTab==='note'?'on':''}" onclick="notesTab='note';render()">📝 Note (${S.notes.filter(n=>!n.archived).length})</div>
+  </div>
+  ${notesTab==='note'?`<div class="tabs" style="margin-top:-4px">
+    <div class="tb ${noteGroupSel==='all'?'on':''}" onclick="noteGroupSel='all';render()">Tutte</div>
+    ${S.noteGroups.map(g=>`<div class="tb ${noteGroupSel===g.id?'on':''}" onclick="noteGroupSel==='${g.id}'?groupMenu('${g.id}'):(noteGroupSel='${g.id}',render())">📁 ${esc(g.name)}${noteGroupSel===g.id?' ⋯':''}</div>`).join('')}
+    <div class="tb" onclick="newGroup()">＋ Gruppo</div>
+    <div class="tb ${noteGroupSel==='arch'?'on':''}" style="${archN?'':'opacity:.5'}" onclick="noteGroupSel='arch';render()">🗄 Archivio (${archN})</div>
+  </div>`:''}
+  <div class="card">
+  ${notesTab==='app'
+    ?(apps.length?apps.map(a=>`<div class="item" onclick="openApp('${a.id}')">
+        <span class="led" style="background:${a.done?'var(--t3)':a.date<t?'#FF5C7A':'#00D4FF'}"></span>
+        <div class="bd"><div class="ti" style="${a.done?'text-decoration:line-through;color:var(--t3)':''}">${esc(a.title)}</div>
+        <div class="su">${esc(cName(a.clientId)||a.clientRaw||'')}${a.employeeId?' · 👷 '+esc(eName(a.employeeId)):''}</div></div>
+        <div class="right"><div class="d1">${a.time||''}</div><div class="d2">${fmtD(a.date)}</div></div></div>`).join('')
+      :'<div class="empty"><div class="big">📅</div>Nessun appuntamento.<br>Scrivilo nell\'Hub o premi +.</div>')
+    :(notes.length?notes.map(n=>`<div class="item" onclick="openNote('${n.id}')">
+        <span class="led" style="background:var(--teal)"></span>
+        <div class="bd"><div class="ti">${n.pinned?'📌 ':''}${esc(n.text)}</div>
+        <div class="su">${[n.groupId?'📁 '+esc(gName(n.groupId)):'',n.clientId?'👥 '+esc(cName(n.clientId)):''].filter(Boolean).join(' · ')}</div>
+        <div class="mt">${n.date?'📅 '+fmtD(n.date):new Date(n.created).toLocaleDateString('it-CH')}</div></div>
+        ${noteGroupSel!=='arch'?`<span class="row-act" style="border-color:var(--t3);color:var(--t3)" onclick="event.stopPropagation();n=byId(S.notes,'${n.id}');n.archived=true;save();render();toast('🗄 Archiviata')">🗄</span>`:''}</div>`).join('')
+      :`<div class="empty"><div class="big">${noteGroupSel==='arch'?'🗄':'📝'}</div>${noteGroupSel==='arch'?'Archivio vuoto.':'Nessuna nota qui.'}</div>`)}
+  </div>
+  <button class="fab" onclick="${notesTab==='app'?`openQuickAdd('${todayIso()}')`:'newNote()'}">+</button>`;
+}
+function newGroup(){
+  openSheet(`<h3>Nuovo gruppo note <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Nome</label><input id="ng-n" placeholder="es. Fornitori, Idee, Cantiere Via Roma"></div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="const n=$('#ng-n').value.trim();if(!n)return;S.noteGroups.push({id:uid(),name:n});save();closeSheet();render();toast('📁 Gruppo creato')">Crea</button></div>`);
+}
+function groupMenu(gid){
+  const g=byId(S.noteGroups,gid);if(!g)return;
+  openSheet(`<h3>📁 ${esc(g.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Rinomina</label><input id="gm-n" value="${esc(g.name)}"></div>
+  <div class="actions">
+    <button class="btn danger" onclick="if(confirm('Eliminare il gruppo? Le note restano, senza gruppo.')){S.noteGroups=S.noteGroups.filter(x=>x.id!=='${gid}');S.notes.forEach(n=>{if(n.groupId==='${gid}')n.groupId=null;});noteGroupSel='all';save();closeSheet();render();}">Elimina gruppo</button>
+    <button class="btn pri" onclick="const g=byId(S.noteGroups,'${gid}');g.name=$('#gm-n').value.trim()||g.name;save();closeSheet();render()">Salva</button></div>`);
+}
+const groupOpts=sel=>`<option value="">— nessun gruppo —</option>`+S.noteGroups.map(g=>`<option value="${g.id}" ${sel===g.id?'selected':''}>${esc(g.name)}</option>`).join('');
+function newNote(){
+  openSheet(`<h3>Nuova nota <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Testo</label><textarea id="nn-t" placeholder="Scrivi…"></textarea></div>
+  <div class="fld"><label>Gruppo</label><select id="nn-g">${groupOpts(noteGroupSel!=='all'&&noteGroupSel!=='arch'?noteGroupSel:null)}</select></div>
+  <div class="frow"><div class="fld"><label>Data (va a calendario)</label><input id="nn-d" type="date"></div>
+  <div class="fld"><label>Cliente</label><select id="nn-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div></div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveNewNote()">Salva</button></div>`);
+}
+function saveNewNote(){const t=$('#nn-t').value.trim();if(!t)return;S.notes.unshift({id:uid(),text:t,clientId:$('#nn-c').value||null,groupId:$('#nn-g').value||null,date:$('#nn-d').value||null,pinned:false,archived:false,via:'manuale',created:Date.now()});save();closeSheet();render();toast('📝 Nota salvata');}
+function openNote(id){
+  const n=byId(S.notes,id);if(!n)return;
+  openSheet(`<h3>Nota <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Testo</label><textarea id="en-t">${esc(n.text)}</textarea></div>
+  <div class="fld"><label>Gruppo</label><select id="en-g">${groupOpts(n.groupId)}</select></div>
+  <div class="frow"><div class="fld"><label>Data (va a calendario)</label><input id="en-d" type="date" value="${n.date||''}"></div>
+  <div class="fld"><label>Cliente</label><select id="en-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${n.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div></div>
+  <div class="actions">
+    <button class="btn danger" onclick="delItem('notes','${id}')">Elimina</button>
+    <button class="btn" onclick="const n=byId(S.notes,'${id}');n.archived=!n.archived;save();closeSheet();render();toast(n.archived?'🗄 Archiviata':'Ripristinata')">${n.archived?'↩ Ripristina':'🗄 Archivia'}</button>
+    <button class="btn" onclick="togglePin('${id}')">${n.pinned?'Stacca':'📌 Fissa'}</button>
+    <button class="btn pri" onclick="saveNote('${id}')">Salva</button></div>`);
+}
+function saveNote(id){const n=byId(S.notes,id);n.text=$('#en-t').value.trim()||n.text;n.date=$('#en-d').value||null;n.clientId=$('#en-c').value||null;n.groupId=$('#en-g').value||null;save();closeSheet();render();toast('Salvato');}
+function togglePin(id){const n=byId(S.notes,id);n.pinned=!n.pinned;save();closeSheet();render();}
+function delItem(coll,id){if(!confirm('Eliminare definitivamente?'))return;S[coll]=S[coll].filter(x=>x.id!==id);save();closeSheet();render();toast('Eliminato');}
+
+/* ================= CHAT ================= */
+function renderChat(){
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Chat squadra</div>
+  <div class="wa-note">📲 <b>WhatsApp:</b> il ponte diretto richiede un server (WhatsApp Business API) — non è possibile da app locale. Il parser qui sotto è già pronto: quando attiveremo il server, gli stessi comandi funzioneranno anche via WhatsApp.</div>
+  <div class="speaker-row"><div class="speaker on">✎ Scrivi come ${esc(me().name)}</div></div>
+  <div class="chatwrap">
+    <div class="chat-scroll" id="chatscroll">
+      ${S.chat.length?S.chat.map(m=>{
+        if(m.sys)return`<div class="msg sys">${esc(m.text)}</div>`;
+        const mine=m.who===S.speaker;
+        return`<div class="msg ${mine?'me':'them'}">${mine?'':`<div class="who">${esc(eName(m.who)||'?')}</div>`}${esc(m.text)}<div class="tm">${new Date(m.ts).toLocaleTimeString('it-CH',{hour:'2-digit',minute:'2-digit'})}</div></div>`;
+      }).join(''):'<div class="empty"><div class="big">💬</div>Chat interna della squadra.<br>Scrivi «aggiungi manutenzione a Rossi domani alle 4»<br>e la registro da sola nella sezione giusta.</div>'}
+    </div>
+    <div class="chat-input">
+      <textarea id="chatinput" rows="1" placeholder="Messaggio o comando…"></textarea>
+      <button class="send" onclick="sendChat()">➤</button>
+    </div>
+  </div>`;
+  const ta=$('#chatinput');
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+  const sc=$('#chatscroll');sc.scrollTop=sc.scrollHeight;
+}
+const CMD_RE=/^\s*(aggiungi|segna|metti|crea|ricordami|ricorda|programma|inserisci)\b|^\//i;
+async function sendChat(){
+  const ta=$('#chatinput');const text=ta.value.trim();if(!text)return;
+  const rows=[{id:uid(),emp_id:S.speaker,text,sys:false}];
+  S.chat.push({id:rows[0].id,who:S.speaker,text,ts:Date.now()});
+  if(CMD_RE.test(text)||/\b(manutenzione|pellet|sacch|appuntamento|sopralluogo|consegna)\b/i.test(text)&&parseDateIT(text).date){
+    const p=parseInput(text.replace(/^\//,''));
+    const msg=commitParsed(p,'chat'); // commitParsed chiama save() → sync
+    rows.push({id:uid(),emp_id:null,text:msg,sys:true});
+    S.chat.push({id:rows[1].id,who:null,text:msg,sys:true,ts:Date.now()});
+  }
+  render();
+  const{error}=await sb.from('chat').insert(rows);
+  if(error)toast('⚠ Chat: '+error.message);
+}
+
+/* ================= MANUTENZIONI ================= */
+let manTab='aperte';
+function getCall(clientId){
+  const yr=new Date().getFullYear();
+  let c=S.callLog.find(x=>x.clientId===clientId&&x.year===yr);
+  if(!c){c={id:uid(),clientId,year:yr,called:false,outcome:'',note:'',maintId:null};S.callLog.push(c);}
+  return c;
+}
+function renderMan(){
+  const t=todayIso();
+  const yr=new Date().getFullYear();
+  if(manTab==='chiamate'){if(!isOwner()&&!can('clients')){manTab='aperte';}else{renderCalls();return;}}
+  let list=visMan().slice();
+  if(manTab==='aperte')list=list.filter(m=>m.status!=='fatta');
+  if(manTab==='fatte')list=list.filter(m=>m.status==='fatta');
+  list.sort((a,b)=>((a.date||'9999')<(b.date||'9999')?-1:1));
+  const STAT={da_fare:['DA FARE','#FFB547'],programmata:['PROGRAMMATA','#00D4FF'],fatta:['FATTA','#00E5C0']};
+  const called=S.callLog.filter(c=>c.year===yr&&c.called).length;
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--amber)"></span>Manutenzioni</div>
+  <div class="tabs">
+    <div class="tb ${manTab==='aperte'?'on':''}" onclick="manTab='aperte';render()">Aperte (${visMan().filter(m=>m.status!=='fatta').length})</div>
+    <div class="tb ${manTab==='fatte'?'on':''}" onclick="manTab='fatte';render()">Fatte</div>
+    <div class="tb ${manTab==='tutte'?'on':''}" onclick="manTab='tutte';render()">Tutte</div>
+    ${isOwner()||can('clients')?`<div class="tb ${manTab==='chiamate'?'on':''}" onclick="manTab='chiamate';render()">📞 Chiamate ${yr}</div>`:''}
+  </div>
+  <div class="card">
+  ${list.length?list.map(m=>{
+    const[sl,sc]=STAT[m.status]||STAT.da_fare;
+    const late=m.date&&m.date<t&&m.status!=='fatta';
+    const who=cName(m.clientId)||m.clientRaw||'';
+    return`<div class="item" onclick="openMan('${m.id}')">
+    <span class="led" style="background:${late?'#FF5C7A':sc}"></span>
+    <div class="bd"><div class="ti">${who?`<b>${esc(who)}</b> — `:''}${esc(m.title)}</div>
+    <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${m.employeeId?' · 👷 '+esc(eName(m.employeeId)):''}</div>
+    <div class="mt"><span class="badge" style="border-color:${late?'#FF5C7A':sc};color:${late?'#FF5C7A':sc}">${late?'IN RITARDO':sl}</span></div></div>
+    <div class="right" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div><div class="d1">${m.time||''}</div><div class="d2">${m.date?fmtD(m.date):'—'}</div></div>
+      ${m.status!=='fatta'?`<span class="row-act" onclick="event.stopPropagation();startBollettino('${m.id}')">▶ AVVIA</span>`
+        :(m.report?`<span class="row-act done" onclick="event.stopPropagation();viewBollettino('${m.id}')">📄 BOLLETTINO</span>`:'')}
+    </div></div>`;
+  }).join(''):'<div class="empty"><div class="big">🔧</div>Nessuna manutenzione qui.</div>'}
+  </div>
+  <button class="fab" onclick="openMan(null)">+</button>`;
+}
+/* ---- campagna chiamate stagionali ---- */
+function renderCalls(){
+  const yr=new Date().getFullYear();
+  const pool=S.clients.filter(c=>c.maintenance!=='no').sort((a,b)=>a.name.localeCompare(b.name));
+  const states=pool.map(c=>{
+    const cl=S.callLog.find(x=>x.clientId===c.id&&x.year===yr)||{called:false,outcome:''};
+    return{c,cl};
+  });
+  const daChiamare=states.filter(s=>!s.cl.called);
+  const chiamati=states.filter(s=>s.cl.called);
+  const siN=states.filter(s=>s.cl.outcome==='si').length;
+  const noN=states.filter(s=>s.cl.outcome==='no').length;
+  const row=({c,cl})=>{
+    const col=!cl.called?'var(--t3)':cl.outcome==='si'?'var(--teal)':cl.outcome==='no'?'var(--coral)':'var(--amber)';
+    const lbl=!cl.called?'da chiamare':cl.outcome==='si'?'✓ la fa':cl.outcome==='no'?'✗ non la fa':'📞 chiamato';
+    const m=cl.maintId?byId(S.maintenances,cl.maintId):null;
+    return`<div class="item" onclick="openCall('${c.id}')">
+    <span class="led" style="background:${col}"></span>
+    <div class="bd"><div class="ti">${esc(c.name)}</div>
+    <div class="su">${[c.group,c.zone,c.plant].filter(Boolean).map(esc).join(' · ')||'—'}</div>
+    <div class="mt">${m&&m.date?'📅 fissata: '+fmtD(m.date):cl.note?esc(cl.note):''}</div></div>
+    <div class="right"><span class="badge" style="border-color:${col};color:${col}">${lbl}</span>
+    ${c.phone?`<div style="margin-top:7px"><a href="tel:${esc(c.phone)}" onclick="event.stopPropagation()" class="row-act">📞 CHIAMA</a></div>`:''}</div></div>`;
+  };
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--amber)"></span>Manutenzioni</div>
+  <div class="tabs">
+    <div class="tb" onclick="manTab='aperte';render()">Aperte</div>
+    <div class="tb" onclick="manTab='fatte';render()">Fatte</div>
+    <div class="tb" onclick="manTab='tutte';render()">Tutte</div>
+    <div class="tb on">📞 Chiamate ${yr}</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n">${chiamati.length}/${pool.length}</div><div class="l">Chiamati</div></div>
+    <div class="stat"><div class="n" style="color:var(--teal)">${siN}</div><div class="l">La fanno</div></div>
+    <div class="stat"><div class="n" style="color:var(--coral)">${noN}</div><div class="l">Non la fanno</div></div>
+  </div>
+  <div class="card"><div class="sh"><span class="t">Da chiamare (${daChiamare.length})</span></div>
+    ${daChiamare.length?daChiamare.map(row).join(''):'<div class="empty">Tutti chiamati! 🎉</div>'}</div>
+  ${chiamati.length?`<div class="card"><div class="sh"><span class="t" style="color:var(--t2)">Chiamati</span></div>${chiamati.map(row).join('')}</div>`:''}
+  ${pool.length===0?'<div class="card"><div class="empty">Nessun cliente. I clienti con "Fa manutenzione: no" sono esclusi da questa lista.</div></div>':''}`;
+}
+function openCall(clientId){
+  const c=byId(S.clients,clientId);const cl=getCall(clientId);
+  const m=cl.maintId?byId(S.maintenances,cl.maintId):null;
+  openSheet(`<h3>📞 ${esc(c.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:12px">${[c.phone?'📞 '+c.phone:'',c.group,c.zone,c.plant].filter(Boolean).map(esc).join(' · ')}</div>
+  <div class="fld"><label>Chiamato?</label><div class="seg" id="cc-called">
+    <div class="sg ${cl.called?'on':''}" data-v="1" onclick="segPick(this)">📞 Sì</div>
+    <div class="sg ${!cl.called?'on':''}" data-v="0" onclick="segPick(this)">Non ancora</div></div></div>
+  <div class="fld"><label>La fa?</label><div class="seg" id="cc-out">
+    <div class="sg ${cl.outcome==='si'?'on':''}" data-v="si" onclick="segPick(this)">✓ Sì</div>
+    <div class="sg ${cl.outcome==='no'?'on':''}" data-v="no" onclick="segPick(this)">✗ No</div>
+    <div class="sg ${!cl.outcome?'on':''}" data-v="" onclick="segPick(this)">Da decidere</div></div></div>
+  <div class="frow"><div class="fld"><label>Quando (fissa la manutenzione)</label><input id="cc-d" type="date" value="${m&&m.date?m.date:''}"></div>
+  <div class="fld"><label>Ora</label><input id="cc-h" type="time" value="${m&&m.time?m.time:''}"></div></div>
+  ${dateChips('cc-d')}
+  <div class="fld"><label>Perché / note</label><textarea id="cc-n" placeholder="es. richiamare a settembre, ha cambiato stufa…">${esc(cl.note||'')}</textarea></div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveCall('${clientId}')">Salva</button></div>`);
+}
+function segPick(el){el.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));el.classList.add('on');}
+function saveCall(clientId){
+  const c=byId(S.clients,clientId);const cl=getCall(clientId);
+  cl.called=$('#cc-called .sg.on')?.dataset.v==='1';
+  cl.outcome=$('#cc-out .sg.on')?.dataset.v||'';
+  cl.note=$('#cc-n').value.trim();
+  const d=$('#cc-d').value||null,h=$('#cc-h').value||null;
+  if(cl.outcome==='si'&&d){
+    let m=cl.maintId?byId(S.maintenances,cl.maintId):null;
+    if(m){m.date=d;m.time=h;m.status='programmata';}
+    else{
+      m={id:uid(),title:'Manutenzione '+(c.plant?c.plant.toLowerCase():'stagionale'),clientId,clientRaw:null,employeeId:null,date:d,time:h,status:'programmata',notes:cl.note,recur:12,via:'chiamate',created:Date.now()};
+      S.maintenances.unshift(m);cl.maintId=m.id;
+    }
+    toast('🔧 Manutenzione fissata — '+fmtD(d));
+  }else toast('📞 Salvato');
+  save();closeSheet();render();
+}
+function openMan(id){
+  const m=id?byId(S.maintenances,id):{title:'',clientId:null,employeeId:null,date:'',time:'',status:'da_fare',notes:'',recur:0};
+  openSheet(`<h3>${id?'Manutenzione':'Nuova manutenzione'} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Descrizione</label><input id="mn-t" value="${esc(m.title)}" placeholder="es. Pulizia caldaia pellet"></div>
+  <div class="frow">
+  <div class="fld"><label>Cliente</label><select id="mn-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${m.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Assegnata a</label><select id="mn-e"><option value="">—</option>${S.employees.map(e=>`<option value="${e.id}" ${m.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div></div>
+  <div class="frow"><div class="fld"><label>Data</label><input id="mn-d" type="date" value="${m.date||''}"></div>
+  <div class="fld"><label>Ora</label><input id="mn-h" type="time" value="${m.time||''}"></div></div>
+  ${dateChips('mn-d')}
+  <div class="frow"><div class="fld"><label>Tariffa CHF (opzionale)</label><input id="mn-pr" type="number" inputmode="decimal" step="any" value="${m.price||''}"></div>
+  <div class="fld"><label>Ricorrenza</label><select id="mn-r">${[[0,'Nessuna'],[6,'Ogni 6 mesi'],[12,'Ogni anno'],[24,'Ogni 2 anni']].map(([v,l])=>`<option value="${v}" ${(m.recur||0)===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Stato</label><div class="seg" id="mn-s">${['da_fare','programmata','fatta'].map(s=>`<div class="sg ${m.status===s?'on':''}" data-s="${s}" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${s.replace('_',' ')}</div>`).join('')}</div></div>
+  <div class="fld"><label>Note</label><textarea id="mn-n">${esc(m.notes||'')}</textarea></div>
+  ${id&&m.status!=='fatta'?`<button class="btn pri" style="width:100%;margin-bottom:10px" onclick="startBollettino('${id}')">▶ Avvia intervento (bollettino)</button>`:''}
+  ${id&&m.report?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--teal);color:var(--teal)" onclick="viewBollettino('${id}')">📄 Vedi bollettino firmato</button>`:''}
+  <div class="actions">
+    ${id?`<button class="btn danger" onclick="delItem('maintenances','${id}')">Elimina</button>`:''}
+    <button class="btn pri" onclick="saveMan('${id||''}')">Salva</button></div>`);
+}
+function saveMan(id){
+  const data={title:$('#mn-t').value.trim(),clientId:$('#mn-c').value||null,employeeId:$('#mn-e').value||null,date:$('#mn-d').value||null,time:$('#mn-h').value||null,status:$('#mn-s .sg.on')?.dataset.s||'da_fare',notes:$('#mn-n').value.trim(),recur:+($('#mn-r')?.value||0),price:parseFloat($('#mn-pr')?.value)||null};
+  if(!data.title){toast('Manca la descrizione');return;}
+  const old=id?byId(S.maintenances,id):null;
+  const wasFatta=old?old.status==='fatta':false;
+  if(id){Object.assign(old,data);}else{S.maintenances.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  let extra='';
+  if(data.status==='fatta'&&!wasFatta&&data.recur>0){
+    const nextDate=addMonthsIso(data.date||todayIso(),data.recur);
+    S.maintenances.unshift({id:uid(),title:data.title,clientId:data.clientId,clientRaw:old?old.clientRaw:null,employeeId:data.employeeId,date:nextDate,time:data.time,status:'programmata',notes:'',recur:data.recur,price:data.price,via:'ricorrenza',created:Date.now()});
+    extra=' · 🔁 prossima creata per '+fmtD(nextDate);
+  }
+  save();closeSheet();render();toast('🔧 Salvato'+extra);
+}
+/* ================= PELLET ================= */
+let pelKind='sfuso';let pelView='dash';
+const addDaysIso=(s,n)=>{const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1,d+n);return iso(dt);};
+const spanDays=(a,b)=>{const[y1,m1,d1]=a.split('-').map(Number);const[y2,m2,d2]=b.split('-').map(Number);return Math.round((new Date(y2,m2-1,d2)-new Date(y1,m1-1,d1))/86400000);};
+function sfusoForecast(){
+  const byClient={};
+  S.pellet.filter(p=>(p.kind||'sacchi')==='sfuso'&&p.status==='consegnato'&&p.clientId&&p.date&&p.qty).forEach(p=>{(byClient[p.clientId]=byClient[p.clientId]||[]).push(p);});
+  const out=[];
+  for(const cid in byClient){
+    const ds=byClient[cid].sort((a,b)=>a.date<b.date?-1:1);
+    const last=ds[ds.length-1];
+    let ratePerDay=null,nextDate=null,days=null;
+    if(ds.length>=2){
+      const span=spanDays(ds[0].date,last.date);
+      const consumed=ds.slice(0,-1).reduce((s,p)=>s+(p.qty||0),0);
+      if(span>0&&consumed>0){
+        ratePerDay=consumed/span;
+        nextDate=addDaysIso(last.date,Math.round((last.qty||0)/ratePerDay));
+        days=relDays(nextDate);
+      }
+    }
+    out.push({clientId:cid,ds,last,ratePerDay,nextDate,days});
+  }
+  return out.sort((a,b)=>(a.days==null?9999:a.days)-(b.days==null?9999:b.days));
+}
+function monthlyTotals(kind,unit){
+  // ultimi 12 mesi → [{label,val}]
+  const now=new Date();const out=[];
+  for(let i=11;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const key=d.getFullYear()+'-'+pad(d.getMonth()+1);
+    const val=S.pellet.filter(p=>(p.kind||'sacchi')===kind&&p.status==='consegnato'&&p.date&&p.date.startsWith(key)&&(!unit||p.unit===unit)).reduce((s,p)=>s+(p.qty||0),0);
+    out.push({label:MESI[d.getMonth()].slice(0,3),key,val});
+  }
+  return out;
+}
+function barChart(data,color,unitLbl){
+  const max=Math.max(...data.map(d=>d.val),0.001);
+  const bw=20,gap=8,W=14+data.length*(bw+gap),H=130,base=96;
+  return`<div style="overflow-x:auto;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 4px">
+  <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    <line x1="6" y1="${base}" x2="${W-6}" y2="${base}" stroke="rgba(0,212,255,.15)"/>
+    ${data.map((d,i)=>{
+      const h=d.val?Math.max(3,Math.round(d.val/max*72)):0;
+      const x=10+i*(bw+gap);
+      return`<rect x="${x}" y="${base-h}" width="${bw}" height="${Math.max(h,1)}" rx="4" fill="${d.val?color:'rgba(82,113,138,.25)'}"/>
+      ${d.val?`<text x="${x+bw/2}" y="${base-h-5}" text-anchor="middle" fill="#EAF6FF" font-size="9" font-family="JetBrains Mono">${fmtQty(d.val)}</text>`:''}
+      <text x="${x+bw/2}" y="${base+14}" text-anchor="middle" fill="#52718A" font-size="8.5" font-family="JetBrains Mono">${d.label}</text>`;
+    }).join('')}
+  </svg></div>`;
+}
+function renderPellet(){
+  if(pelView==='dash'){renderPelDash();return;}
+  pelKind=pelView;
+  const open=S.pellet.filter(p=>(p.kind||'sacchi')===pelKind&&p.status!=='consegnato').sort((a,b)=>((a.date||'9999')<(b.date||'9999')?-1:1));
+  const done=S.pellet.filter(p=>(p.kind||'sacchi')===pelKind&&p.status==='consegnato').sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
+  const fc=pelKind==='sfuso'?sfusoForecast():[];
+  const alerts=fc.filter(f=>f.days!=null&&f.days<=30);
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--fire)"></span>Pellet — ${pelKind==='sfuso'?'🛢 Sfuso':'📦 Sacchi'}</div>
+  <div class="tabs">
+    <div class="tb" onclick="pelView='dash';render()">📊 Dashboard</div>
+    <div class="tb ${pelView==='sfuso'?'on':''}" onclick="pelView='sfuso';render()">🛢 Sfuso</div>
+    <div class="tb ${pelView==='sacchi'?'on':''}" onclick="pelView='sacchi';render()">📦 Sacchi</div>
+  </div>
+  ${pelKind==='sfuso'&&fc.length?`<div class="card" style="${alerts.length?'border-color:rgba(255,181,71,.45)':''}">
+    <div class="sh"><span class="t" style="color:var(--amber)">⏳ Previsioni rifornimento</span></div>
+    ${fc.map(f=>{
+      const urgent=f.days!=null&&f.days<=0;const soon=f.days!=null&&f.days<=30;
+      const col=urgent?'var(--coral)':soon?'var(--amber)':'var(--t3)';
+      return`<div class="item" onclick="openPelClient('${f.clientId}')">
+      <span class="led" style="background:${col}"></span>
+      <div class="bd"><div class="ti">${esc(cName(f.clientId))}</div>
+      <div class="su">${f.ratePerDay?'Consumo ~'+fmtQty(f.ratePerDay*30)+' t/mese · ultima: '+fmtQty(f.last.qty)+' t il '+fmtD(f.last.date):'Serve almeno una 2ª consegna per stimare'}</div></div>
+      <div class="right"><div class="d1" style="color:${col}">${f.nextDate?(urgent?'ADESSO':f.days+' gg'):'—'}</div><div class="d2">${f.nextDate?fmtD(f.nextDate):''}</div></div></div>`;
+    }).join('')}
+  </div>`:''}
+  <div class="card"><div class="sh"><span class="t">Da consegnare (${open.length})</span></div>
+    ${open.length?open.map(pelRow).join(''):`<div class="empty">Niente in coda. Dall'Hub: «${pelKind==='sfuso'?'3 tonnellate sfuso a Rossi martedì':'30 sacchi a Bianchi venerdì'}»</div>`}
+  </div>
+  <div class="card"><div class="sh"><span class="t" style="color:var(--t2)">Consegnate</span></div>
+    ${done.length?done.slice(0,30).map(pelRow).join(''):'<div class="empty">Nessuno storico ancora.</div>'}
+  </div>
+  <button class="fab" onclick="openPel(null)">+</button>`;
+}
+const pelRow=p=>`<div class="item" onclick="openPel('${p.id}')">
+    <span class="led" style="background:${p.status==='consegnato'?'var(--teal)':'var(--fire)'}"></span>
+    <div class="bd"><div class="ti">${p.kind==='sfuso'?'🛢':'📦'} ${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${p.notes&&p.notes!==String(p.qty)?' — '+esc(p.notes):''}</div>
+    <div class="su">${esc(cName(p.clientId)||p.clientRaw||'cliente da definire')}</div></div>
+    <div class="right"><div class="d1">${p.time||''}</div><div class="d2">${p.date?fmtD(p.date):'—'}</div></div></div>`;
+function renderPelDash(){
+  const mT=monthlyTotals('sfuso');
+  const mB=monthlyTotals('sacchi','sacchi');
+  const totT=mT.reduce((s,d)=>s+d.val,0);
+  const totB=mB.reduce((s,d)=>s+d.val,0);
+  const topT=mT.slice().sort((a,b)=>b.val-a.val)[0];
+  const topB=mB.slice().sort((a,b)=>b.val-a.val)[0];
+  const openN=S.pellet.filter(p=>p.status!=='consegnato').length;
+  const yago=addMonthsIso(todayIso(),-12);
+  const rev=S.pellet.filter(p=>p.status==='consegnato'&&p.date&&p.date>=yago).reduce((t,p)=>t+(p.price||0),0);
+  const fc=sfusoForecast();const alerts=fc.filter(f=>f.days!=null&&f.days<=30);
+  const all=S.pellet.slice().sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--fire)"></span>Pellet</div>
+  <div class="tabs">
+    <div class="tb on">📊 Dashboard</div>
+    <div class="tb" onclick="pelView='sfuso';render()">🛢 Sfuso</div>
+    <div class="tb" onclick="pelView='sacchi';render()">📦 Sacchi</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n" style="color:var(--fire)">${fmtQty(totT)} t</div><div class="l">Sfuso · 12 mesi</div></div>
+    <div class="stat"><div class="n" style="color:var(--fire)">${totB}</div><div class="l">Sacchi · 12 mesi</div></div>
+    <div class="stat"><div class="n">${openN}</div><div class="l">Da consegnare</div></div>
+    ${rev?`<div class="stat"><div class="n" style="color:var(--teal)">${fmtQty(rev)}</div><div class="l">CHF · 12 mesi</div></div>`:`<div class="stat"><div class="n" style="color:${alerts.length?'var(--amber)':'var(--t2)'}">${alerts.length}</div><div class="l">Rifornimenti in vista</div></div>`}
+  </div>
+  ${alerts.length?`<div class="card" style="border-color:rgba(255,181,71,.45)"><div class="sh"><span class="t" style="color:var(--amber)">⏳ Da pianificare</span><span class="a" onclick="pelView='sfuso';render()">Sfuso →</span></div>
+    ${alerts.map(f=>`<div class="item" onclick="openPelClient('${f.clientId}')"><span class="led" style="background:${f.days<=0?'var(--coral)':'var(--amber)'}"></span>
+    <div class="bd"><div class="ti">${esc(cName(f.clientId))}</div><div class="su">~${fmtQty(f.ratePerDay*30)} t/mese</div></div>
+    <div class="right"><div class="d1" style="color:${f.days<=0?'var(--coral)':'var(--amber)'}">${f.days<=0?'ADESSO':f.days+' gg'}</div><div class="d2">${fmtD(f.nextDate)}</div></div></div>`).join('')}</div>`:''}
+  <div class="card"><div class="sh"><span class="t">🛢 Sfuso — tonnellate al mese</span></div>
+    ${barChart(mT,'url(#na)'.replace('url(#na)','#FF8A3D'),'t')}
+    ${topT&&topT.val?`<div class="subtle" style="margin-top:8px">Mese più intenso: <b style="color:var(--t1)">${topT.label}</b> con ${fmtQty(topT.val)} t</div>`:'<div class="subtle" style="margin-top:8px">Nessuna consegna sfuso registrata negli ultimi 12 mesi.</div>'}
+  </div>
+  <div class="card"><div class="sh"><span class="t">📦 Sacchi al mese</span></div>
+    ${barChart(mB,'#FFB547','sacchi')}
+    ${topB&&topB.val?`<div class="subtle" style="margin-top:8px">Mese più intenso: <b style="color:var(--t1)">${topB.label}</b> con ${topB.val} sacchi</div>`:'<div class="subtle" style="margin-top:8px">Nessuna consegna in sacchi registrata negli ultimi 12 mesi.</div>'}
+  </div>
+  <div class="card"><div class="sh"><span class="t">Tutte le consegne</span></div>
+    ${all.length?all.slice(0,25).map(pelRow).join(''):'<div class="empty"><div class="big">🔥</div>Nessuna consegna. Dall\'Hub: «30 sacchi a Bianchi venerdì» o «3 t sfuso a Hotel Roma».</div>'}
+  </div>
+  <button class="fab" onclick="openPel(null)">+</button>`;
+}
+const fmtQty=n=>{const v=Math.round((n||0)*100)/100;return String(v).replace('.',',');};
+function openPelClient(cid){
+  const f=sfusoForecast().find(x=>x.clientId===cid);if(!f)return;
+  const ds=f.ds;
+  const maxQ=Math.max(...ds.map(p=>p.qty||0),0.001);
+  const n=ds.length;const bw=Math.min(54,Math.floor(560/n)-10);
+  const W=Math.max(280,n*(bw+10)+20),H=170,base=128;
+  let bars='';
+  ds.forEach((p,i)=>{
+    const h=Math.max(4,Math.round((p.qty/maxQ)*100));
+    const x=14+i*(bw+10);
+    bars+=`<rect x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="5" fill="url(#pelg)"/>
+    <text x="${x+bw/2}" y="${base-h-7}" text-anchor="middle" fill="#EAF6FF" font-size="11" font-family="JetBrains Mono">${fmtQty(p.qty)}</text>
+    <text x="${x+bw/2}" y="${base+16}" text-anchor="middle" fill="#52718A" font-size="9" font-family="JetBrains Mono">${p.date.slice(8,10)}.${p.date.slice(5,7)}</text>
+    <text x="${x+bw/2}" y="${base+27}" text-anchor="middle" fill="#52718A" font-size="8" font-family="JetBrains Mono">${p.date.slice(2,4)}</text>`;
+  });
+  openSheet(`<h3>🛢 ${esc(cName(cid))} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="n" style="font-size:16px">${fmtQty(ds.reduce((s,p)=>s+p.qty,0))} t</div><div class="l">Totale consegnato</div></div>
+    <div class="stat"><div class="n" style="font-size:16px">${f.ratePerDay?fmtQty(f.ratePerDay*30)+' t':'—'}</div><div class="l">Consumo / mese</div></div>
+    <div class="stat"><div class="n" style="font-size:16px;color:${f.days!=null&&f.days<=0?'var(--coral)':f.days!=null&&f.days<=30?'var(--amber)':'var(--teal)'}">${f.nextDate?(f.days<=0?'ora':f.days+' gg'):'—'}</div><div class="l">Prossimo pieno</div></div>
+  </div>
+  <div class="fld"><label>Consegne sfuso (tonnellate)</label>
+    <div style="overflow-x:auto;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 4px">
+    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="pelg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#B35415"/><stop offset="1" stop-color="#FF8A3D"/></linearGradient></defs>
+      <line x1="8" y1="${base}" x2="${W-8}" y2="${base}" stroke="rgba(0,212,255,.18)"/>
+      ${bars}
+    </svg></div>
+  </div>
+  ${f.nextDate?`<div class="subtle" style="margin-bottom:12px">📅 Rifornimento stimato attorno al <b style="color:var(--t1)">${fmtD(f.nextDate)}</b> in base allo storico. La stima migliora a ogni consegna registrata.</div>`:'<div class="subtle" style="margin-bottom:12px">Con la prossima consegna registrata potrò stimare consumo e data del rifornimento.</div>'}
+  <div class="actions">
+    <button class="btn ghost" onclick="closeSheet()">Chiudi</button>
+    <button class="btn pri" onclick="newPelForClient('${cid}')">+ Pianifica consegna</button>
+  </div>`);
+}
+function newPelForClient(cid){
+  const f=sfusoForecast().find(x=>x.clientId===cid);
+  closeSheet();
+  openPel(null,{kind:'sfuso',clientId:cid,qty:f&&f.last?f.last.qty:'',date:f&&f.nextDate&&relDays(f.nextDate)>0?f.nextDate:''});
+}
+function openPel(id,preset){
+  const p=id?byId(S.pellet,id):Object.assign({clientId:null,qty:'',unit:pelKind==='sfuso'?'t':'sacchi',kind:pelKind,date:'',time:'',status:'da_consegnare',notes:''},preset||{});
+  if(preset&&preset.kind==='sfuso')p.unit='t';
+  openSheet(`<h3>${id?'Consegna pellet':'Nuova consegna'} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Tipo</label><div class="seg" id="pl-k">
+    <div class="sg ${p.kind==='sfuso'?'on':''}" data-k="sfuso" onclick="pelKindPick(this)">🛢 Sfuso (t)</div>
+    <div class="sg ${p.kind!=='sfuso'?'on':''}" data-k="sacchi" onclick="pelKindPick(this)">📦 Sacchi</div>
+  </div></div>
+  <div class="frow">
+  <div class="fld"><label>Quantità</label><input id="pl-q" type="number" inputmode="decimal" step="any" value="${p.qty||''}"></div>
+  <div class="fld"><label>Unità</label><select id="pl-u">${(p.kind==='sfuso'?['t']:['sacchi','kg']).map(u=>`<option ${p.unit===u?'selected':''}>${u}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Cliente</label><select id="pl-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${p.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="frow"><div class="fld"><label>Data</label><input id="pl-d" type="date" value="${p.date||''}"></div>
+  <div class="fld"><label>Ora</label><input id="pl-h" type="time" value="${p.time||''}"></div></div>
+  ${dateChips('pl-d')}
+  <div class="fld"><label>Importo CHF ${p.kind==='sfuso'&&S.settings.pricePerTon?'(auto: q.tà × '+S.settings.pricePerTon+')':p.kind!=='sfuso'&&S.settings.pricePerBag?'(auto: q.tà × '+S.settings.pricePerBag+')':''}</label><input id="pl-pr" type="number" inputmode="decimal" step="any" value="${p.price||''}" placeholder="${autoPrice(p)||''}"></div>
+  <div class="fld"><label>Note</label><textarea id="pl-n">${esc(p.notes||'')}</textarea></div>
+  ${id&&p.status!=='consegnato'?`<button class="btn pri" style="width:100%;margin-bottom:10px" onclick="startBolla('${id}')">✍ Consegna con firma (bolla)</button>`:''}
+  ${id&&p.signature?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--teal);color:var(--teal)" onclick="printBolla('${id}')">📄 Stampa bolla firmata</button>`:''}
+  <div class="actions">
+    ${id?`<button class="btn danger" onclick="delItem('pellet','${id}')">Elimina</button>
+    <button class="btn" onclick="togglePel('${id}')">${p.status==='consegnato'?'Riapri':'✓ Consegnato'}</button>`:''}
+    <button class="btn pri" onclick="savePel('${id||''}')">Salva</button></div>`);
+}
+function pelKindPick(el){
+  el.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));el.classList.add('on');
+  const k=el.dataset.k;
+  $('#pl-u').innerHTML=(k==='sfuso'?['t']:['sacchi','kg']).map(u=>`<option>${u}</option>`).join('');
+}
+const autoPrice=p=>{
+  if(!p.qty)return null;
+  if(p.kind==='sfuso'&&S.settings.pricePerTon)return Math.round(p.qty*S.settings.pricePerTon*100)/100;
+  if(p.kind!=='sfuso'&&p.unit==='sacchi'&&S.settings.pricePerBag)return Math.round(p.qty*S.settings.pricePerBag*100)/100;
+  return null;
+};
+function savePel(id){
+  const kind=$('#pl-k .sg.on')?.dataset.k||'sacchi';
+  const data={qty:parseFloat($('#pl-q').value)||null,unit:$('#pl-u').value,kind,clientId:$('#pl-c').value||null,date:$('#pl-d').value||null,time:$('#pl-h').value||null,notes:$('#pl-n').value.trim()};
+  data.price=parseFloat($('#pl-pr').value)||autoPrice({...data})||null;
+  if(id){Object.assign(byId(S.pellet,id),data);}else{S.pellet.unshift({id:uid(),status:'da_consegnare',clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  save();closeSheet();render();toast('🔥 Salvato');
+}
+function togglePel(id){const p=byId(S.pellet,id);p.status=p.status==='consegnato'?'da_consegnare':'consegnato';save();closeSheet();render();}
+/* ================= CANTIERI ================= */
+let siteTab='aperto';
+function siteHours(s){return s.log.reduce((t,l)=>t+(l.hours||0),0);}
+function renderSites(){
+  const groups={aperto:[],da_fatturare:[],chiuso:[]};
+  visSites().forEach(s=>groups[s.status||'aperto'].push(s));
+  const list=groups[siteTab]||[];
+  const card=s=>{
+    const hrs=siteHours(s);
+    const pct=s.estHours?Math.min(100,Math.round(hrs/s.estHours*100)):null;
+    const dd=s.dueDate?relDays(s.dueDate):null;
+    const ddCol=dd==null?'':dd<0?'var(--coral)':dd<=7?'var(--amber)':'var(--t3)';
+    return`<div class="item" onclick="openSite('${s.id}')">
+    <span class="led" style="background:${s.status==='chiuso'?'var(--t3)':s.status==='da_fatturare'?'var(--amber)':'var(--blue)'};box-shadow:0 0 8px ${s.status==='aperto'?'var(--blue)':'transparent'}"></span>
+    <div class="bd"><div class="ti">${esc(s.name)}</div>
+    <div class="su">${esc(cName(s.clientId)||s.clientRaw||'')}${s.employees.length?' · 👷 '+s.employees.map(eName).filter(Boolean).join(', '):''}</div>
+    ${s.estHours?`<div class="ck-bar" style="margin:6px 0 3px;max-width:200px"><i style="width:${pct}%;${pct>=100?'background:var(--amber)':''}"></i></div>`:''}
+    <div class="mt">${hrs}h${s.estHours?' / '+s.estHours+'h stimate':''} · ${s.log.length} reg.${s.attachments.length?' · 📎'+s.attachments.length:''}${s.amount&&isOwner()?' · <span style="color:var(--amber)">CHF '+fmtQty(s.amount)+'</span>':''}</div></div>
+    <div class="right">${s.dueDate&&s.status==='aperto'?`<div class="d1" style="color:${ddCol}">${dd<0?Math.abs(dd)+'gg oltre':dd+' gg'}</div><div class="d2">${fmtD(s.dueDate)}</div>`:''}</div></div>`;
+  };
+  const totFatt=groups.da_fatturare.reduce((t,s)=>t+(s.amount||0),0);
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--blue)"></span>Cantieri</div>
+  <div class="tabs">
+    <div class="tb ${siteTab==='aperto'?'on':''}" onclick="siteTab='aperto';render()">🏗 In corso (${groups.aperto.length})</div>
+    <div class="tb ${siteTab==='da_fatturare'?'on':''}" onclick="siteTab='da_fatturare';render()" style="${groups.da_fatturare.length?'border-color:var(--amber);color:var(--amber)':''}">💰 Da fatturare (${groups.da_fatturare.length})</div>
+    <div class="tb ${siteTab==='chiuso'?'on':''}" onclick="siteTab='chiuso';render()">🗄 Archivio (${groups.chiuso.length})</div>
+  </div>
+  ${siteTab==='da_fatturare'&&totFatt?`<div class="card" style="border-color:rgba(255,181,71,.45)"><div class="sh"><span class="t" style="color:var(--amber)">💰 Totale da fatturare</span><span class="t" style="font-family:var(--mono);color:var(--amber)">CHF ${fmtQty(totFatt)}</span></div></div>`:''}
+  <div class="card">
+  ${list.length?list.map(card).join(''):`<div class="empty"><div class="big">${siteTab==='da_fatturare'?'💰':siteTab==='chiuso'?'🗄':'🏗'}</div>${siteTab==='aperto'?'Nessun cantiere in corso.':siteTab==='da_fatturare'?'Niente da fatturare. 👌':'Archivio vuoto.'}</div>`}
+  </div>
+  <button class="fab" onclick="editSite(null)">+</button>`;
+}
+function openSite(id){
+  const s=byId(S.sites,id);if(!s)return;
+  ensureAttUrls(s);
+  const hrs=siteHours(s);
+  const pct=s.estHours?Math.min(100,Math.round(hrs/s.estHours*100)):null;
+  const STAT={aperto:['🏗 In corso','var(--blue)'],da_fatturare:['💰 Da fatturare','var(--amber)'],chiuso:['🗄 Archiviato','var(--t3)']};
+  const[sl,sc]=STAT[s.status];
+  openSheet(`<h3>${esc(s.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:10px">${esc(cName(s.clientId)||s.clientRaw||'Nessun cliente')} · <b style="color:${sc}">${sl}</b><br>
+  ${s.startDate?'Inizio: '+fmtD(s.startDate):''}${s.dueDate?' · Fine prevista: '+fmtD(s.dueDate):''}</div>
+  ${s.estHours?`<div class="fld"><label>Avanzamento ore — ${hrs}h / ${s.estHours}h (${pct}%)</label>
+    <div class="ck-bar" style="height:6px"><i style="width:${pct}%;${pct>=100?'background:var(--amber)':''}"></i></div>
+    ${pct>=100?'<div class="subtle" style="color:var(--amber);margin-top:5px">⚠ Stima ore superata</div>':''}</div>`
+   :`<div class="subtle" style="margin-bottom:10px">Ore registrate: ${hrs}h (nessuna stima impostata)</div>`}
+  ${s.notes?`<div class="fld"><label>Note</label><div style="font-size:13px;line-height:1.5">${esc(s.notes)}</div></div>`:''}
+  <div class="fld"><label>Squadra</label><div style="font-size:13px">${s.employees.length?s.employees.map(eName).filter(Boolean).join(', '):'—'}</div>
+  ${(()=>{const per={};s.log.forEach(l=>{if(l.empId&&l.hours)per[l.empId]=(per[l.empId]||0)+l.hours;});const ks=Object.keys(per);return ks.length?`<div class="subtle" style="margin-top:5px">${ks.map(k=>esc(eName(k))+': <b style="color:var(--cy)">'+fmtQty(per[k])+'h</b>').join(' · ')}</div>`:'';})()}
+  </div>
+  <div class="fld"><label>📎 Foto e file (${s.attachments.length})</label>
+    ${s.attachments.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;margin-bottom:8px">
+      ${s.attachments.map(a=>a.type==='img'
+        ?`<div style="position:relative">${attUrl[a.id]?`<img src="${attUrl[a.id]}" onclick="viewAtt('${id}','${a.id}')" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;border:1px solid var(--line);cursor:pointer">`:`<div onclick="viewAtt('${id}','${a.id}')" style="width:100%;aspect-ratio:1;border-radius:9px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:11px;cursor:pointer">…</div>`}</div>`
+        :`<div onclick="viewAtt('${id}','${a.id}')" style="aspect-ratio:1;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;background:var(--bg2)"><span style="font-size:20px">${a.name.match(/\.pdf$/i)?'📄':'📊'}</span><span style="font-size:8px;color:var(--t3);padding:0 4px;text-align:center;overflow:hidden;max-height:22px">${esc(a.name.slice(0,18))}</span></div>`).join('')}
+    </div>`:''}
+    <div style="display:flex;gap:8px">
+      <button class="btn sm" onclick="$('#att-photo').click()">📷 Foto</button>
+      <button class="btn sm" onclick="$('#att-file').click()">📎 PDF / Excel</button>
+      <input type="file" id="att-photo" accept="image/*" style="display:none" onchange="addPhoto('${id}',event)">
+      <input type="file" id="att-file" accept=".pdf,.xls,.xlsx,.csv,.doc,.docx" style="display:none" onchange="addFile('${id}',event)">
+    </div>
+  </div>
+  <div class="fld"><label>Diario lavori (${s.log.length})</label>
+    ${s.log.length?s.log.slice().reverse().slice(0,15).map(l=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
+      <span style="font-family:var(--mono);color:var(--t3);flex-shrink:0">${fmtD(l.date)}</span>
+      <span style="flex:1">${esc(l.text)}${l.empId?` <span style=\"color:var(--t3)\">· ${esc(eName(l.empId))}</span>`:''}</span>
+      ${l.hours?`<span style="font-family:var(--mono);color:var(--cy)">${l.hours}h</span>`:''}</div>`).join(''):'<div class="subtle">Nessuna registrazione. Anche dalla chat: «aggiungi 4 ore al cantiere ${esc(s.name)}»</div>'}
+  </div>
+  <div class="fld"><label>Aggiungi al diario</label>
+    <div class="frow"><div class="fld" style="flex:2.4"><input id="sl-t" placeholder="es. Posato basamento, arrivato materiale"></div>
+    <div class="fld"><input id="sl-h" type="number" inputmode="decimal" placeholder="ore"></div></div>
+    <div class="frow"><div class="fld"><select id="sl-e"><option value="">Chi? —</option>${(s.employees.length?s.employees.map(eid=>byId(S.employees,eid)).filter(Boolean):S.employees).map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div>
+    <div class="fld"><button class="btn sm" style="width:100%" onclick="addLog('${id}')">+ Registra oggi</button></div></div>
+  </div>
+  <div class="actions" style="flex-wrap:wrap">
+    <button class="btn danger" onclick="delItem('sites','${id}')">Elimina</button>
+    ${s.status==='aperto'?`<button class="btn" style="border-color:var(--amber);color:var(--amber)" onclick="setSiteStatus('${id}','da_fatturare')">✓ Finito → fattura</button>`:''}
+    ${s.status==='da_fatturare'?`<button class="btn" onclick="setSiteStatus('${id}','aperto')">↩ Riapri</button>
+    <button class="btn" style="border-color:var(--teal);color:var(--teal)" onclick="setSiteStatus('${id}','chiuso')">💰 Fatturato → archivio</button>`:''}
+    ${s.status==='chiuso'?`<button class="btn" onclick="setSiteStatus('${id}','aperto')">↩ Riapri</button>`:''}
+    <button class="btn pri" onclick="editSite('${id}')">Modifica</button></div>`);
+}
+function setSiteStatus(id,st){const s=byId(S.sites,id);s.status=st;if(st!=='aperto')siteTab=st;save();closeSheet();render();toast(st==='da_fatturare'?'💰 Spostato in Da fatturare':st==='chiuso'?'🗄 Archiviato':'🏗 Riaperto');}
+function addLog(id){const s=byId(S.sites,id);const t=$('#sl-t').value.trim();if(!t){toast('Scrivi cosa è stato fatto');return;}
+  s.log.push({date:todayIso(),text:t,hours:parseFloat($('#sl-h').value)||null,empId:$('#sl-e')?.value||null});save();openSite(id);toast('Registrato');}
+/* allegati (Supabase Storage) */
+const attUrl={};let attFetching={};
+function ensureAttUrls(s){
+  const miss=s.attachments.filter(a=>!attUrl[a.id]&&!attFetching[a.id]&&a.storagePath);
+  if(!miss.length)return;
+  miss.forEach(a=>attFetching[a.id]=true);
+  Promise.all(miss.map(a=>sb.storage.from('allegati').createSignedUrl(a.storagePath,3600).then(({data})=>{if(data)attUrl[a.id]=data.signedUrl;})))
+    .then(()=>{const o=$('#overlay');if(o)openSite(s.id);})
+    .catch(()=>{});
+}
+async function addPhoto(id,ev){
+  const f=ev.target.files[0];if(!f)return;
+  const img=new Image();const r=new FileReader();
+  r.onload=()=>{img.onload=()=>{
+    const max=1280;let w=img.width,h=img.height;
+    if(w>max||h>max){const k=max/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    cv.toBlob(async blob=>{
+      try{
+        const name='foto-'+todayIso()+'.jpg';
+        const path=id+'/'+uid()+'-'+name;
+        const{error:e1}=await sb.storage.from('allegati').upload(path,blob,{contentType:'image/jpeg'});
+        if(e1)throw e1;
+        const row={id:uid(),site_id:id,name,type:'img',storage_path:path,date:todayIso()};
+        const{error:e2}=await sb.from('attachments').insert(row);
+        if(e2)throw e2;
+        const s=byId(S.sites,id);
+        s.attachments.push({id:row.id,name,type:'img',storagePath:path,date:row.date});
+        openSite(id);toast('📷 Foto caricata ('+Math.round(blob.size/1024)+'KB)');
+      }catch(err){toast('⚠ Upload: '+(err.message||err));}
+    },'image/jpeg',.72);
+  };img.src=r.result;};
+  r.readAsDataURL(f);
+}
+async function addFile(id,ev){
+  const f=ev.target.files[0];if(!f)return;
+  if(f.size>25*1024*1024){toast('⚠ File oltre 25MB');return;}
+  try{
+    const path=id+'/'+uid()+'-'+f.name;
+    const{error:e1}=await sb.storage.from('allegati').upload(path,f,{contentType:f.type||'application/octet-stream'});
+    if(e1)throw e1;
+    const row={id:uid(),site_id:id,name:f.name,type:'file',storage_path:path,date:todayIso()};
+    const{error:e2}=await sb.from('attachments').insert(row);
+    if(e2)throw e2;
+    const s=byId(S.sites,id);
+    s.attachments.push({id:row.id,name:f.name,type:'file',storagePath:path,date:row.date});
+    openSite(id);toast('📎 '+f.name+' caricato');
+  }catch(err){toast('⚠ Upload: '+(err.message||err));}
+}
+function viewAtt(sid,aid){
+  const s=byId(S.sites,sid);const a=byId(s.attachments,aid);if(!a)return;
+  const url=attUrl[a.id]||'';
+  openSheet(`<h3>${a.type==='img'?'📷':'📎'} ${esc(a.name)} <span class="x" onclick="openSite('${sid}')">✕</span></h3>
+  ${a.type==='img'?(url?`<img src="${url}" style="width:100%;border-radius:12px">`:'<div class="empty">Carico…</div>'):`<div class="empty"><div class="big">${a.name.match(/\.pdf$/i)?'📄':'📊'}</div>${esc(a.name)}<br>aggiunto ${fmtD(a.date)}</div>`}
+  <div class="actions">
+    <button class="btn danger" onclick="delAtt('${sid}','${aid}')">Elimina</button>
+    ${url?`<a class="btn pri" style="text-align:center;text-decoration:none" href="${url}" target="_blank" download="${esc(a.name)}">⬇ Apri / Scarica</a>`:''}
+  </div>`);
+}
+async function delAtt(sid,aid){
+  if(!confirm("Eliminare l'allegato?"))return;
+  const s=byId(S.sites,sid);const a=byId(s.attachments,aid);
+  try{
+    if(a.storagePath)await sb.storage.from('allegati').remove([a.storagePath]);
+    await sb.from('attachments').delete().eq('id',aid);
+    s.attachments=s.attachments.filter(x=>x.id!==aid);
+    openSite(sid);toast('Eliminato');
+  }catch(e){toast('⚠ '+(e.message||e));}
+}
+function editSite(id){
+  const s=id?byId(S.sites,id):{name:'',clientId:null,employees:[],notes:'',status:'aperto',estHours:null,startDate:todayIso(),dueDate:null};
+  openSheet(`<h3>${id?'Modifica cantiere':'Nuovo cantiere'} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Nome</label><input id="st-n" value="${esc(s.name)}" placeholder="es. Installazione caldaia Via Roma"></div>
+  <div class="fld"><label>Cliente</label><select id="st-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${s.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="frow">
+    <div class="fld"><label>Stima ore lavoro</label><input id="st-h" type="number" inputmode="decimal" value="${s.estHours||''}" placeholder="es. 40"></div>
+    <div class="fld"><label>Importo CHF</label><input id="st-am" type="number" inputmode="decimal" step="any" value="${s.amount||''}" placeholder="da fatturare"></div>
+  </div>
+  <div class="frow">
+    <div class="fld"><label>Inizio</label><input id="st-sd" type="date" value="${s.startDate||''}"></div>
+    <div class="fld"><label>Fine prevista</label><input id="st-dd" type="date" value="${s.dueDate||''}"></div>
+  </div>
+  <div class="fld"><label>Squadra</label><div class="seg" id="st-e">${S.employees.map(e=>`<div class="sg ${s.employees.includes(e.id)?'on':''}" data-id="${e.id}" onclick="this.classList.toggle('on')">${esc(e.name)}</div>`).join('')}</div></div>
+  <div class="fld"><label>Note</label><textarea id="st-no">${esc(s.notes||'')}</textarea></div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveSite('${id||''}')">Salva</button></div>`);
+}
+function saveSite(id){
+  const name=$('#st-n').value.trim();if(!name){toast('Manca il nome');return;}
+  const employees=[...document.querySelectorAll('#st-e .sg.on')].map(x=>x.dataset.id);
+  const data={name,clientId:$('#st-c').value||null,employees,estHours:parseFloat($('#st-h').value)||null,amount:parseFloat($('#st-am').value)||null,startDate:$('#st-sd').value||null,dueDate:$('#st-dd').value||null,notes:$('#st-no').value.trim()};
+  if(id){Object.assign(byId(S.sites,id),data);}else{S.sites.unshift({id:uid(),status:'aperto',log:[],attachments:[],clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  save();closeSheet();render();toast('🏗 Salvato');
+}
+
+/* ================= CLIENTI ================= */
+let cliQ='';let cliGroup='all';
+const clientGroups=()=>[...new Set(S.clients.map(c=>c.group).filter(Boolean))].sort();
+function renderClients(){
+  const q=norm(cliQ);
+  let list=S.clients.filter(c=>!q||norm(c.name+' '+(c.zone||'')+' '+(c.group||'')+' '+(c.phone||'')).includes(q));
+  if(cliGroup!=='all')list=list.filter(c=>c.group===cliGroup);
+  list.sort((a,b)=>a.name.localeCompare(b.name));
+  const groups=clientGroups();
+  const PL={'Stufa':'🔥','Caldaia':'♨️','Camino':'🪵'};
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Clienti <span class="subtle">(${S.clients.length})</span></div>
+  <input class="searchbar" placeholder="🔍 Cerca nome, gruppo, zona, telefono…" value="${esc(cliQ)}" oninput="cliQ=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">
+  ${groups.length?`<div class="tabs"><div class="tb ${cliGroup==='all'?'on':''}" onclick="cliGroup='all';render()">Tutti</div>
+  ${groups.map(g=>`<div class="tb ${cliGroup===g?'on':''}" onclick="cliGroup='${esc(g)}';render()">🗺 ${esc(g)}</div>`).join('')}</div>`:''}
+  <div class="card">
+  ${list.length?list.map(c=>{
+    const nm=S.maintenances.filter(m=>m.clientId===c.id).length;
+    const np=S.pellet.filter(p=>p.clientId===c.id).length;
+    const tags=[
+      c.plant?c.plant.split(', ').map(x=>(PL[x]||'⚙️')+' '+x).join(' '):'',
+      c.pellet==='sfuso'?'🛢 sfuso':c.pellet==='sacchi'?'📦 sacchi':'',
+      c.maintenance==='si'?'🔧 manut.':c.maintenance==='no'?'✗ no manut.':''
+    ].filter(Boolean);
+    return`<div class="item" onclick="openClient('${c.id}')">
+    <span class="led" style="background:var(--teal)"></span>
+    <div class="bd"><div class="ti">${esc(c.name)}</div>
+    <div class="su">${esc([c.group,c.zone,c.phone].filter(Boolean).join(' · '))}</div>
+    <div class="mt">${tags.map(t=>`<span class="badge" style="border-color:var(--line2);color:var(--t2);margin-right:5px">${esc(t)}</span>`).join('')}${nm?' 🔧'+nm:''}${np?' 🔥'+np:''}</div></div></div>`;
+  }).join(''):'<div class="empty"><div class="big">👥</div>Nessun cliente qui.</div>'}
+  </div>
+  <button class="fab" onclick="editClient(null)">+</button>`;
+}
+function openClient(id){
+  const c=byId(S.clients,id);if(!c)return;
+  const man=S.maintenances.filter(m=>m.clientId===id).sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
+  const pel=S.pellet.filter(p=>p.clientId===id).sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
+  const sit=S.sites.filter(s=>s.clientId===id);
+  const app=S.appointments.filter(a=>a.clientId===id);
+  const not=S.notes.filter(n=>n.clientId===id&&!n.archived);
+  const mini=(arr,fmt,n=6)=>arr.slice(0,n).map(fmt).join('');
+  const info=[
+    c.plant?['Impianto',c.plant]:null,
+    c.pellet?['Pellet',c.pellet==='no'?'non lo prende':c.pellet]:null,
+    c.maintenance?['Manutenzione',c.maintenance==='si'?'sì, la fa':'no']:null,
+    c.group?['Gruppo',c.group]:null,
+    c.zone?['Zona',c.zone]:null,
+  ].filter(Boolean);
+  openSheet(`<h3>${esc(c.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:10px">
+    ${c.phone?`📞 <a href="tel:${esc(c.phone)}" style="color:var(--cy)">${esc(c.phone)}</a><br>`:''}
+    ${c.address?'📍 '+esc(c.address)+'<br>':''}
+    ${c.notes?'✎ '+esc(c.notes):''}
+  </div>
+  ${info.length?`<div class="fld"><label>Profilo</label><div style="display:flex;flex-wrap:wrap;gap:6px">${info.map(([k,v])=>`<span class="badge" style="border-color:var(--line2);color:var(--t1);padding:5px 10px;font-size:11px">${k}: <b>${esc(v)}</b></span>`).join('')}</div></div>`:''}
+  <div class="fld"><label>📜 Storico</label>
+  ${man.length?`<div class="subtle" style="margin:4px 0 2px;color:var(--amber)">🔧 Manutenzioni (${man.length})</div>${mini(man,m=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${m.date?fmtD(m.date):m.status} — ${esc(m.title)}${m.report?' 📄':''}</div>`)}`:''}
+  ${pel.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--fire)">🔥 Pellet (${pel.length})</div>${mini(pel,p=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${p.date?fmtD(p.date):p.status} — ${fmtQty(p.qty||0)} ${esc(p.unit||'sacchi')} ${p.kind==='sfuso'?'🛢':'📦'}</div>`)}`:''}
+  ${sit.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--blue)">🏗 Cantieri (${sit.length})</div>${mini(sit,s=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${esc(s.name)} (${s.status})</div>`)}`:''}
+  ${app.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--cy)">📅 Appuntamenti (${app.length})</div>${mini(app,a=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${fmtD(a.date)} — ${esc(a.title)}</div>`)}`:''}
+  ${not.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--teal)">📝 Note (${not.length})</div>${mini(not,n=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${esc(n.text)}</div>`)}`:''}
+  ${!man.length&&!pel.length&&!sit.length&&!app.length&&!not.length?'<div class="subtle">Ancora vuoto — si riempirà da solo man mano che registri.</div>':''}
+  </div>
+  <div class="actions">
+    <button class="btn danger" onclick="delItem('clients','${id}')">Elimina</button>
+    <button class="btn pri" onclick="editClient('${id}')">Modifica</button></div>`);
+}
+function editClient(id){
+  const c=id?byId(S.clients,id):{name:'',phone:'',address:'',zone:'',group:'',plant:'',pellet:'',maintenance:'',notes:''};
+  const groups=clientGroups();
+  const seg=(idd,opts,cur)=>`<div class="seg" id="${idd}">${opts.map(([v,l])=>`<div class="sg ${cur===v?'on':''}" data-v="${v}" onclick="segPick(this)">${l}</div>`).join('')}</div>`;
+  openSheet(`<h3>${id?'Modifica cliente':'Nuovo cliente'} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Nome</label><input id="cl-n" value="${esc(c.name)}"></div>
+  <div class="frow"><div class="fld"><label>Telefono</label><input id="cl-p" inputmode="tel" value="${esc(c.phone||'')}"></div>
+  <div class="fld"><label>Zona</label><input id="cl-z" value="${esc(c.zone||'')}" placeholder="es. Valle"></div></div>
+  <div class="fld"><label>Gruppo (scrivi o scegli)</label><input id="cl-g" list="cl-glist" value="${esc(c.group||'')}" placeholder="es. Grono e dintorni, Gruppo A"><datalist id="cl-glist">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist></div>
+  <div class="fld"><label>Indirizzo</label><input id="cl-a" value="${esc(c.address||'')}"></div>
+  <div class="fld"><label>Tipo impianto (anche più di uno)</label><div class="seg" id="cl-pl">${[['Stufa','🔥 Stufa'],['Caldaia','♨️ Caldaia'],['Camino','🪵 Camino']].map(([v,l])=>`<div class="sg ${(c.plant||'').includes(v)?'on':''}" data-v="${v}" onclick="this.classList.toggle('on')">${l}</div>`).join('')}</div></div>
+  <div class="fld"><label>Prende pellet?</label>${seg('cl-pe',[['sfuso','🛢 Sfuso'],['sacchi','📦 Sacchi'],['no','No'],['','—']],c.pellet||'')}</div>
+  <div class="fld"><label>Fa la manutenzione?</label>${seg('cl-ma',[['si','✓ Sì'],['no','✗ No'],['','—']],c.maintenance||'')}</div>
+  <div class="fld"><label>Note</label><textarea id="cl-no">${esc(c.notes||'')}</textarea></div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveClient('${id||''}')">Salva</button></div>`);
+}
+function saveClient(id){
+  const name=$('#cl-n').value.trim();if(!name){toast('Manca il nome');return;}
+  const sv=idd=>$('#'+idd+' .sg.on')?.dataset.v||'';
+  const plant=[...document.querySelectorAll('#cl-pl .sg.on')].map(x=>x.dataset.v).join(', ');
+  const data={name,phone:$('#cl-p').value.trim(),zone:$('#cl-z').value.trim(),group:$('#cl-g').value.trim(),address:$('#cl-a').value.trim(),plant,pellet:sv('cl-pe'),maintenance:sv('cl-ma'),notes:$('#cl-no').value.trim()};
+  if(id){Object.assign(byId(S.clients,id),data);}else{S.clients.unshift({id:uid(),created:Date.now(),...data});}
+  save();closeSheet();render();toast('👥 Salvato');
+}
+
+/* ================= PERSONALE ================= */
+function renderEmps(){
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Personale</div>
+  <div class="card">
+  ${S.employees.map(e=>{
+    const tasks=S.maintenances.filter(m=>m.employeeId===e.id&&m.status!=='fatta').length
+      +S.appointments.filter(a=>a.employeeId===e.id&&!a.done).length;
+    const sites=S.sites.filter(s=>s.status!=='chiuso'&&s.employees.includes(e.id)).length;
+    const mKey=todayIso().slice(0,7);
+    const hrsM=S.sites.reduce((t,s)=>t+s.log.filter(l=>l.empId===e.id&&l.date&&l.date.startsWith(mKey)).reduce((a,l)=>a+(l.hours||0),0),0);
+    return`<div class="item" onclick="editEmp('${e.id}')">
+    <span class="led" style="background:var(--cy)"></span>
+    <div class="bd"><div class="ti">${esc(e.name)} ${e.isOwner?'<span class="badge" style="border-color:var(--cy);color:var(--cy)">TITOLARE</span>':e.userId?(e.active?'<span class="badge" style="border-color:var(--teal);color:var(--teal)">✓ ATTIVO</span>':'<span class="badge" style="border-color:var(--coral);color:var(--coral)">⛔ DISATTIVATO</span>'):'<span class="badge" style="border-color:var(--amber);color:var(--amber)">🔑 IN ATTESA</span>'}</div><div class="su">${esc(e.role||'')}${e.perms&&e.perms.length?' · '+e.perms.length+' sezioni':''}</div>
+    <div class="mt">${tasks} incarichi aperti${sites?' · '+sites+' cantieri':''}${hrsM?' · ⏱ '+fmtQty(hrsM)+'h questo mese':''}</div></div></div>`;
+  }).join('')}
+  </div>
+  <button class="fab" onclick="editEmp(null)">+</button>`;
+}
+function editEmp(id){
+  const e=id?byId(S.employees,id):{name:'',role:'',phone:'',perms:['cal','man','chat'],isOwner:false};
+  const tasks=id?[
+    ...S.maintenances.filter(m=>m.employeeId===id&&m.status!=='fatta').map(m=>'🔧 '+(cName(m.clientId)||'')+' '+m.title+(m.date?' — '+fmtD(m.date):'')),
+    ...S.appointments.filter(a=>a.employeeId===id&&!a.done).map(a=>'📅 '+a.title+' — '+fmtD(a.date)),
+    ...S.sites.filter(s=>s.status!=='chiuso'&&s.employees.includes(id)).map(s=>'🏗 '+s.name)
+  ]:[];
+  const PERMS=[['cal','📅 Calendario'],['man','🔧 Manutenzioni'],['pellet','🔥 Pellet'],['sites','🏗 Cantieri'],['notes','📝 Note'],['chat','💬 Chat'],['clients','👥 Clienti']];
+  openSheet(`<h3>${id?'Scheda personale':'Nuova persona'} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Nome</label><input id="em-n" value="${esc(e.name)}"></div>
+  <div class="frow"><div class="fld"><label>Ruolo</label><input id="em-r" value="${esc(e.role||'')}" placeholder="es. Tecnico"></div>
+  <div class="fld"><label>Telefono</label><input id="em-p" inputmode="tel" value="${esc(e.phone||'')}"></div></div>
+  <div class="fld"><label>Sezioni assegnate — tocca per attivare</label>
+    <div class="seg" id="em-perms" style="gap:7px">${PERMS.map(([v,l])=>`<div class="sg ${(e.perms||[]).includes(v)?'on':''}" data-v="${v}" onclick="this.classList.toggle('on')">${l}</div>`).join('')}</div>
+    <div class="subtle" style="margin-top:7px">Definisce cosa vede e riceve questa persona: sezioni nell'app condivisa, notifiche personalizzate e comandi bot Telegram (si attiva con la fase cloud).</div>
+  </div>
+  ${id&&id&&!e.isOwner&&isOwner()?`<div class="fld"><label>🔑 Accesso</label>
+    ${e.userId?`<div class="subtle">✓ Registrato — entra con la sua email e password.</div>
+      <div style="display:flex;gap:8px;margin-top:7px">
+      <button class="btn sm" onclick="const u=byId(S.employees,'${id}');u.userId=null;u.inviteCode=genInvite(u.name);save();editEmp('${id}');toast('Accesso scollegato, nuovo codice generato')">↻ Resetta accesso</button>
+      <button class="btn sm danger" onclick="const u=byId(S.employees,'${id}');u.active=!u.active;save();editEmp('${id}');toast(u.active?'Riattivato':'Accesso disattivato')">${e.active?'⛔ Disattiva':'✓ Riattiva'}</button></div>`
+    :e.inviteCode?`<div class="subtle">Non ancora registrato. Dagli questo codice:</div>
+      <div style="font-family:var(--mono);font-size:19px;letter-spacing:2px;color:var(--cy);background:var(--bg2);border:1px dashed var(--cy);border-radius:10px;padding:11px;text-align:center;margin:8px 0">${e.inviteCode}</div>
+      <div style="display:flex;gap:8px">
+      <button class="btn sm" onclick="navigator.clipboard&&navigator.clipboard.writeText('${e.inviteCode}');toast('Codice copiato')">📋 Copia</button>
+      <button class="btn sm ghost" onclick="const u=byId(S.employees,'${id}');u.inviteCode=genInvite(u.name);save();editEmp('${id}')">↻ Rigenera</button></div>
+      <div class="subtle" style="margin-top:7px">Lui apre l'app → si registra con email e password → inserisce questo codice. Il codice è monouso.</div>`
+    :''}
+  </div>`:''}
+  ${tasks.length?`<div class="fld"><label>Incarichi aperti (${tasks.length})</label>${tasks.map(t=>`<div class="subtle" style="padding:3px 0">• ${esc(t)}</div>`).join('')}</div>`:''}
+  <div class="actions">
+    ${id&&!e.isOwner&&isOwner()?`<button class="btn danger" onclick="delItem('employees','${id}')">Elimina</button>`:''}
+    <button class="btn pri" onclick="saveEmp('${id||''}')">Salva</button></div>`);
+}
+function saveEmp(id){
+  const name=$('#em-n').value.trim();if(!name){toast('Manca il nome');return;}
+  const perms=[...document.querySelectorAll('#em-perms .sg.on')].map(x=>x.dataset.v);
+  const data={name,role:$('#em-r').value.trim(),phone:$('#em-p').value.trim(),perms};
+  if(id){Object.assign(byId(S.employees,id),data);}else{S.employees.push({id:uid(),inviteCode:genInvite(name),userId:null,isOwner:false,active:true,...data});toast('🔑 Codice invito generato — aprilo dalla scheda');}
+  save();closeSheet();render();toast('👷 Salvato');
+}
+
+
+/* ================= RICERCA GLOBALE ================= */
+function openSearch(){
+  openSheet(`<h3>🔍 Cerca ovunque <span class="x" onclick="closeSheet()">✕</span></h3>
+  <input class="searchbar" id="gs-q" placeholder="Nome, cantiere, nota, consegna…" oninput="gsRun()" autofocus>
+  <div id="gs-res"><div class="subtle">Cerca un cliente e trovi tutto quello che lo riguarda.</div></div>`);
+  setTimeout(()=>$('#gs-q')&&$('#gs-q').focus(),100);
+}
+function gsRun(){
+  const q=norm($('#gs-q').value.trim());
+  const box=$('#gs-res');
+  if(q.length<2){box.innerHTML='<div class="subtle">Scrivi almeno 2 lettere…</div>';return;}
+  const hit=s=>norm(s||'').includes(q);
+  const sec=(title,rows)=>rows.length?`<div class="fld"><label>${title} (${rows.length})</label>${rows.slice(0,5).join('')}</div>`:'';
+  const r1=S.clients.filter(c=>hit(c.name)||hit(c.zone)||hit(c.group)||hit(c.phone)).map(c=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openClient('${c.id}')">👥 ${esc(c.name)} <span style="color:var(--t3)">${esc(c.group||c.zone||'')}</span></div>`);
+  const r2=S.maintenances.filter(m=>hit(m.title)||hit(cName(m.clientId))||hit(m.clientRaw)).map(m=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openMan('${m.id}')">🔧 ${esc(cName(m.clientId)||m.clientRaw||'')} — ${esc(m.title)} <span style="color:var(--t3)">${m.date?fmtD(m.date):m.status}</span></div>`);
+  const r3=S.pellet.filter(p=>hit(cName(p.clientId))||hit(p.clientRaw)||hit(p.notes)).map(p=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openPel('${p.id}')">${p.kind==='sfuso'?'🛢':'📦'} ${esc(cName(p.clientId)||p.clientRaw||'')} — ${fmtQty(p.qty||0)} ${esc(p.unit||'')} <span style="color:var(--t3)">${p.date?fmtD(p.date):p.status}</span></div>`);
+  const r4=S.sites.filter(s=>hit(s.name)||hit(cName(s.clientId))).map(s=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openSite('${s.id}')">🏗 ${esc(s.name)} <span style="color:var(--t3)">${s.status.replace('_',' ')}</span></div>`);
+  const r5=S.notes.filter(n=>hit(n.text)).map(n=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openNote('${n.id}')">📝 ${esc(n.text.slice(0,60))}</div>`);
+  const r6=S.appointments.filter(a=>hit(a.title)||hit(cName(a.clientId))).map(a=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openApp('${a.id}')">📅 ${esc(a.title)} <span style="color:var(--t3)">${fmtD(a.date)}</span></div>`);
+  const html=sec('Clienti',r1)+sec('Manutenzioni',r2)+sec('Pellet',r3)+sec('Cantieri',r4)+sec('Note',r5)+sec('Appuntamenti',r6);
+  box.innerHTML=html||'<div class="empty">Nessun risultato per «'+esc($('#gs-q').value)+'»</div>';
+}
+/* ================= BOLLETTINO INTERVENTO ================= */
+const DEFAULT_TASKS=['Pulizia braciere e camera di combustione','Pulizia scambiatore di calore','Svuotamento cassetto ceneri','Pulizia ventilatore / estrattore fumi','Controllo e pulizia raccordo fumi','Controllo guarnizioni porta','Controllo coclea e serbatoio pellet','Controllo candeletta di accensione','Pulizia sensori e verifica parametri','Prova di accensione e funzionamento'];
+let blt=null; // bozza bollettino corrente
+function startBollettino(id){
+  const m=byId(S.maintenances,id);if(!m)return;
+  // prefill macchina dall'ultimo bollettino dello stesso cliente
+  let machine={type:'Stufa pellet',brand:''};
+  if(m.clientId){
+    const prev=S.maintenances.find(x=>x.clientId===m.clientId&&x.report&&x.id!==id);
+    if(prev)machine={...prev.report.machine};
+  }
+  blt={mid:id,machine,tasks:DEFAULT_TASKS.map(t=>({text:t,done:false})),parts:[],outcome:'completo',notes:'',techId:m.employeeId||S.speaker||'me',signature:null,signedName:cName(m.clientId)||m.clientRaw||''};
+  renderBollettino();
+}
+function renderBollettino(){
+  const m=byId(S.maintenances,blt.mid);
+  openSheet(`<h3>📋 Bollettino d'intervento <span class="x" onclick="if(confirm('Uscire senza salvare il bollettino?'))closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:12px"><b style="color:var(--t1)">${esc(cName(m.clientId)||m.clientRaw||'Cliente')}</b> · ${esc(m.title)} · ${fmtD(todayIso())}</div>
+  <div class="frow">
+    <div class="fld"><label>Apparecchio</label><select id="bl-mt">${['Stufa pellet','Caldaia pellet','Stufa legna','Caldaia legna','Camino','Termocamino','Altro'].map(t=>`<option ${blt.machine.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="fld"><label>Marca / Modello</label><input id="bl-mb" value="${esc(blt.machine.brand)}" placeholder="es. NOBIS Polygon 25"></div>
+  </div>
+  <div class="fld"><label>Tecnico</label><select id="bl-te">${S.employees.map(e=>`<option value="${e.id}" ${blt.techId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Lavori eseguiti — tocca per spuntare</label>
+    ${blt.tasks.map((t,i)=>`<div class="blt-task" onclick="blt.tasks[${i}].done=!blt.tasks[${i}].done;bltRefreshTask(${i},this)">
+      <span class="ck-box ${t.done?'':''}" style="${t.done?'background:var(--teal);border-color:var(--teal)':''}">${t.done?'✓':''}</span>
+      <span style="font-size:13px;flex:1;${t.done?'':'color:var(--t2)'}">${esc(t.text)}</span></div>`).join('')}
+    <div class="ck-add"><input id="bl-newtask" placeholder="Altro lavoro eseguito…" onkeydown="if(event.key==='Enter')bltAddTask()"><button onclick="bltAddTask()">+</button></div>
+  </div>
+  <div class="fld"><label>Pezzi sostituiti / aggiunti</label>
+    <div id="bl-parts">${blt.parts.map((p,i)=>`<div class="part-row"><input value="${esc(p.name)}" oninput="blt.parts[${i}].name=this.value" placeholder="Pezzo"><input value="${esc(p.qty)}" oninput="blt.parts[${i}].qty=this.value" placeholder="Q.tà"></div>`).join('')}</div>
+    <button class="btn sm ghost" onclick="blt.parts.push({name:'',qty:'1'});renderBollettino()">+ Aggiungi pezzo</button>
+  </div>
+  <div class="fld"><label>Esito</label><div class="seg" id="bl-out">
+    ${[['completo','✓ Tutto eseguito'],['parziale','⚠ Da completare'],['anomalia','✗ Anomalia riscontrata']].map(([v,l])=>`<div class="sg ${blt.outcome===v?'on':''}" onclick="blt.outcome='${v}';this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${l}</div>`).join('')}
+  </div></div>
+  <div class="fld"><label>Note / raccomandazioni</label><textarea id="bl-no" oninput="blt.notes=this.value">${esc(blt.notes)}</textarea></div>
+  <div class="fld"><label>Firma del cliente</label>
+    <div class="sig-wrap"><canvas class="sig-canvas" id="sigpad"></canvas><div class="sig-hint" id="sighint">firma qui con il dito</div></div>
+    <div class="sig-tools">
+      <input id="bl-sn" value="${esc(blt.signedName)}" oninput="blt.signedName=this.value" placeholder="Nome di chi firma" style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;color:var(--t1);font-size:12.5px;padding:7px 10px;outline:none;flex:1;margin-right:8px">
+      <button class="btn sm ghost" onclick="sigClear()">Cancella firma</button>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn ghost" onclick="if(confirm('Uscire senza salvare?'))closeSheet()">Annulla</button>
+    <button class="btn pri" onclick="saveBollettino()">✓ Concludi e firma</button>
+  </div>`);
+  setTimeout(sigInit,50);
+}
+function bltRefreshTask(i,el){
+  const t=blt.tasks[i];
+  el.querySelector('.ck-box').style.cssText=t.done?'background:var(--teal);border-color:var(--teal)':'';
+  el.querySelector('.ck-box').textContent=t.done?'✓':'';
+  el.querySelectorAll('span')[1].style.color=t.done?'':'var(--t2)';
+}
+function bltAddTask(){
+  const inp=$('#bl-newtask');const v=inp.value.trim();if(!v)return;
+  blt.tasks.push({text:v,done:true});renderBollettino();
+}
+/* firma */
+let sigDrawn=false;
+function sigInit(){
+  const c=$('#sigpad');if(!c)return;
+  const dpr=window.devicePixelRatio||1;
+  const w=c.offsetWidth,h=c.offsetHeight;
+  c.width=w*dpr;c.height=h*dpr;
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#16243a';ctx.lineWidth=2.2;ctx.lineCap='round';ctx.lineJoin='round';
+  sigDrawn=!!blt.signature;
+  if(blt.signature){const img=new Image();img.onload=()=>ctx.drawImage(img,0,0,w,h);img.src=blt.signature;$('#sighint').style.display='none';}
+  let down=false,lx=0,ly=0;
+  const pos=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top];};
+  c.addEventListener('pointerdown',e=>{e.preventDefault();down=true;[lx,ly]=pos(e);$('#sighint').style.display='none';c.setPointerCapture(e.pointerId);});
+  c.addEventListener('pointermove',e=>{if(!down)return;e.preventDefault();const[x,y]=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(x,y);ctx.stroke();lx=x;ly=y;sigDrawn=true;});
+  const up=e=>{if(down){down=false;blt.signature=c.toDataURL('image/png');}};
+  c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+}
+function sigClear(){
+  blt.signature=null;sigDrawn=false;
+  const c=$('#sigpad');const dpr=window.devicePixelRatio||1;
+  const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width/dpr,c.height/dpr);
+  $('#sighint').style.display='flex';
+}
+function saveBollettino(){
+  const m=byId(S.maintenances,blt.mid);if(!m)return;
+  blt.machine.type=$('#bl-mt').value;blt.machine.brand=$('#bl-mb').value.trim();
+  blt.techId=$('#bl-te').value;
+  if(!blt.signature&&!confirm('Manca la firma del cliente. Salvare comunque?'))return;
+  m.report={machine:blt.machine,tasks:blt.tasks,parts:blt.parts.filter(p=>p.name.trim()),outcome:blt.outcome,notes:blt.notes,techId:blt.techId,signature:blt.signature,signedName:blt.signedName,date:todayIso(),time:new Date().toLocaleTimeString('it-CH',{hour:'2-digit',minute:'2-digit'})};
+  const wasFatta=m.status==='fatta';
+  m.status='fatta';
+  let extra='';
+  if(!wasFatta&&m.recur>0){
+    const nextDate=addMonthsIso(m.date||todayIso(),m.recur);
+    S.maintenances.unshift({id:uid(),title:m.title,clientId:m.clientId,clientRaw:m.clientRaw,employeeId:m.employeeId,date:nextDate,time:m.time,status:'programmata',notes:'',recur:m.recur,via:'ricorrenza',created:Date.now()});
+    extra=' · 🔁 prossima creata per '+fmtD(nextDate);
+  }
+  save();closeSheet();render();
+  toast('📋 Bollettino salvato'+extra);
+  setTimeout(()=>viewBollettino(m.id),350);
+}
+function viewBollettino(id){
+  const m=byId(S.maintenances,id);if(!m||!m.report)return;
+  const r=m.report;
+  const OUT={completo:['✓ Tutto eseguito','var(--teal)'],parziale:['⚠ Da completare','var(--amber)'],anomalia:['✗ Anomalia riscontrata','var(--coral)']};
+  const[ol,oc]=OUT[r.outcome]||OUT.completo;
+  openSheet(`<h3>📋 Bollettino <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:12px">
+    <b style="color:var(--t1);font-size:14px">${esc(cName(m.clientId)||m.clientRaw||'Cliente')}</b><br>
+    ${esc(m.title)}<br>
+    ${esc(r.machine.type)}${r.machine.brand?' — '+esc(r.machine.brand):''}<br>
+    ${fmtD(r.date)} ${r.time||''} · Tecnico: ${esc(eName(r.techId)||'—')}<br>
+    Esito: <b style="color:${oc}">${ol}</b>
+  </div>
+  <div class="fld"><label>Lavori eseguiti</label>${r.tasks.filter(t=>t.done).map(t=>`<div class="subtle" style="padding:2px 0">✓ ${esc(t.text)}</div>`).join('')||'<div class="subtle">—</div>'}</div>
+  ${r.parts.length?`<div class="fld"><label>Pezzi</label>${r.parts.map(p=>`<div class="subtle" style="padding:2px 0">• ${esc(p.name)} × ${esc(p.qty)}</div>`).join('')}</div>`:''}
+  ${r.notes?`<div class="fld"><label>Note</label><div class="subtle">${esc(r.notes)}</div></div>`:''}
+  ${r.signature?`<div class="fld"><label>Firma — ${esc(r.signedName||'')}</label><img src="${r.signature}" style="width:100%;max-width:300px;border-radius:10px;background:#fff"></div>`:'<div class="subtle">⚠ Non firmato</div>'}
+  <div class="actions">
+    <button class="btn ghost" onclick="closeSheet()">Chiudi</button>
+    <button class="btn pri" onclick="printBollettino('${id}')">🖨 Stampa / PDF</button>
+  </div>`);
+}
+function printBollettino(id){
+  const m=byId(S.maintenances,id);if(!m||!m.report)return;
+  const r=m.report;const c=byId(S.clients,m.clientId);
+  const company=S.settings.companyName||'';
+  const OUT={completo:'Intervento completato',parziale:'Intervento da completare',anomalia:'Anomalia riscontrata'};
+  const w=window.open('','_blank');
+  if(!w){toast('⚠ Consenti i popup per stampare');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bollettino — ${esc(cName(m.clientId)||m.clientRaw||'')}</title>
+  <style>
+    body{font-family:Helvetica,Arial,sans-serif;color:#16243a;max-width:760px;margin:30px auto;padding:0 24px;font-size:13px;line-height:1.5}
+    h1{font-size:19px;border-bottom:2.5px solid #16243a;padding-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
+    h1 small{font-size:11px;font-weight:normal;color:#667}
+    h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#667;margin:22px 0 6px;border-bottom:1px solid #ccd;padding-bottom:3px}
+    table{width:100%;border-collapse:collapse}td{padding:3px 0;vertical-align:top}td:first-child{width:160px;color:#667}
+    ul{margin:4px 0;padding-left:20px}li{margin:2px 0}
+    .sig{margin-top:34px;display:flex;justify-content:space-between;gap:40px}
+    .sig div{flex:1;text-align:center}
+    .sig img{max-height:90px;max-width:100%}
+    .sigline{border-top:1px solid #16243a;padding-top:5px;font-size:11px;color:#667;margin-top:6px}
+    .esito{display:inline-block;border:1.5px solid #16243a;padding:4px 12px;border-radius:4px;font-weight:bold;margin-top:4px}
+    @media print{body{margin:0 auto}}
+  </style></head><body>
+  <h1>${company?esc(company):'BOLLETTINO D\'INTERVENTO'} <small>${company?'Bollettino d\'intervento — ':''}N. ${m.id.slice(-6).toUpperCase()} · ${r.date.split('-').reverse().join('.')}</small></h1>
+  <h2>Cliente</h2>
+  <table>
+    <tr><td>Nome</td><td><b>${esc(cName(m.clientId)||m.clientRaw||'—')}</b></td></tr>
+    ${c&&c.address?`<tr><td>Indirizzo</td><td>${esc(c.address)}</td></tr>`:''}
+    ${c&&c.phone?`<tr><td>Telefono</td><td>${esc(c.phone)}</td></tr>`:''}
+  </table>
+  <h2>Intervento</h2>
+  <table>
+    <tr><td>Descrizione</td><td>${esc(m.title)}</td></tr>
+    <tr><td>Apparecchio</td><td>${esc(r.machine.type)}${r.machine.brand?' — '+esc(r.machine.brand):''}</td></tr>
+    <tr><td>Data e ora</td><td>${r.date.split('-').reverse().join('.')} ${r.time||''}</td></tr>
+    <tr><td>Tecnico</td><td>${esc(eName(r.techId)||'—')}</td></tr>
+  </table>
+  <h2>Lavori eseguiti</h2>
+  <ul>${r.tasks.filter(t=>t.done).map(t=>`<li>${esc(t.text)}</li>`).join('')||'<li>—</li>'}</ul>
+  ${r.parts.length?`<h2>Pezzi sostituiti / aggiunti</h2><ul>${r.parts.map(p=>`<li>${esc(p.name)} — q.tà ${esc(p.qty)}</li>`).join('')}</ul>`:''}
+  ${r.notes?`<h2>Note e raccomandazioni</h2><p>${esc(r.notes)}</p>`:''}
+  <h2>Esito</h2><span class="esito">${OUT[r.outcome]||''}</span>
+  <div class="sig">
+    <div><div style="height:90px"></div><div class="sigline">Firma del tecnico — ${esc(eName(r.techId)||'')}</div></div>
+    <div>${r.signature?`<img src="${r.signature}">`:'<div style="height:90px"></div>'}<div class="sigline">Firma del cliente — ${esc(r.signedName||'')}</div></div>
+  </div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+
+/* ================= BOLLA CONSEGNA PELLET ================= */
+let bolla=null;
+function startBolla(id){
+  const p=byId(S.pellet,id);if(!p)return;
+  bolla={pid:id,signature:null,signedName:cName(p.clientId)||p.clientRaw||''};
+  openSheet(`<h3>✍ Bolla di consegna <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:12px"><b style="color:var(--t1)">${esc(cName(p.clientId)||p.clientRaw||'Cliente')}</b><br>
+  ${p.kind==='sfuso'?'🛢 Sfuso':'📦 Sacchi'} — ${fmtQty(p.qty||0)} ${esc(p.unit||'')} · ${fmtD(todayIso())}${p.price?' · CHF '+fmtQty(p.price):''}</div>
+  <div class="fld"><label>Firma del cliente alla consegna</label>
+    <div class="sig-wrap"><canvas class="sig-canvas" id="bsigpad"></canvas><div class="sig-hint" id="bsighint">firma qui con il dito</div></div>
+    <div class="sig-tools">
+      <input value="${esc(bolla.signedName)}" oninput="bolla.signedName=this.value" placeholder="Nome di chi firma" style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;color:var(--t1);font-size:12.5px;padding:7px 10px;outline:none;flex:1;margin-right:8px">
+      <button class="btn sm ghost" onclick="bsigClear()">Cancella</button>
+    </div></div>
+  <div class="actions">
+    <button class="btn ghost" onclick="closeSheet()">Annulla</button>
+    <button class="btn pri" onclick="saveBolla()">✓ Consegnato</button></div>`);
+  setTimeout(bsigInit,50);
+}
+function bsigInit(){
+  const c=$('#bsigpad');if(!c)return;
+  const dpr=window.devicePixelRatio||1;const w=c.offsetWidth,h=c.offsetHeight;
+  c.width=w*dpr;c.height=h*dpr;
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#16243a';ctx.lineWidth=2.2;ctx.lineCap='round';ctx.lineJoin='round';
+  let down=false,lx=0,ly=0;
+  const pos=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top];};
+  c.addEventListener('pointerdown',e=>{e.preventDefault();down=true;[lx,ly]=pos(e);$('#bsighint').style.display='none';c.setPointerCapture(e.pointerId);});
+  c.addEventListener('pointermove',e=>{if(!down)return;e.preventDefault();const[x,y]=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(x,y);ctx.stroke();lx=x;ly=y;});
+  const up=()=>{if(down){down=false;bolla.signature=c.toDataURL('image/png');}};
+  c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+}
+function bsigClear(){bolla.signature=null;const c=$('#bsigpad');const dpr=window.devicePixelRatio||1;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width/dpr,c.height/dpr);$('#bsighint').style.display='flex';}
+function saveBolla(){
+  const p=byId(S.pellet,bolla.pid);if(!p)return;
+  if(!bolla.signature&&!confirm('Manca la firma. Segnare consegnato comunque?'))return;
+  p.status='consegnato';p.signature=bolla.signature;p.signedName=bolla.signedName;
+  if(!p.date)p.date=todayIso();
+  if(!p.price)p.price=autoPrice(p)||null;
+  save();closeSheet();render();toast('🔥 Consegnato'+(p.signature?' e firmato':''));
+  if(p.signature)setTimeout(()=>printBollaAsk(p.id),350);
+}
+function printBollaAsk(id){
+  openSheet(`<h3>📄 Bolla salvata <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:14px">Vuoi stampare subito la bolla firmata?</div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Dopo</button>
+  <button class="btn pri" onclick="closeSheet();printBolla('${id}')">🖨 Stampa / PDF</button></div>`);
+}
+function printBolla(id){
+  const p=byId(S.pellet,id);if(!p)return;
+  const c=byId(S.clients,p.clientId);
+  const company=S.settings.companyName||'';
+  const w=window.open('','_blank');
+  if(!w){toast('⚠ Consenti i popup per stampare');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bolla — ${esc(cName(p.clientId)||p.clientRaw||'')}</title>
+  <style>body{font-family:Helvetica,Arial,sans-serif;color:#16243a;max-width:760px;margin:30px auto;padding:0 24px;font-size:13px;line-height:1.5}
+  h1{font-size:19px;border-bottom:2.5px solid #16243a;padding-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
+  h1 small{font-size:11px;font-weight:normal;color:#667}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#667;margin:22px 0 6px;border-bottom:1px solid #ccd;padding-bottom:3px}
+  table{width:100%;border-collapse:collapse}td{padding:3px 0}td:first-child{width:160px;color:#667}
+  .qty{font-size:24px;font-weight:bold;border:2px solid #16243a;display:inline-block;padding:8px 20px;border-radius:6px;margin:8px 0}
+  .sig{margin-top:40px;display:flex;justify-content:space-between;gap:40px}.sig div{flex:1;text-align:center}
+  .sig img{max-height:90px;max-width:100%}
+  .sigline{border-top:1px solid #16243a;padding-top:5px;font-size:11px;color:#667;margin-top:6px}
+  @media print{body{margin:0 auto}}</style></head><body>
+  <h1>${company?esc(company):'BOLLA DI CONSEGNA PELLET'} <small>${company?'Bolla di consegna — ':''}N. ${p.id.slice(-6).toUpperCase()} · ${(p.date||todayIso()).split('-').reverse().join('.')}</small></h1>
+  <h2>Cliente</h2>
+  <table><tr><td>Nome</td><td><b>${esc(cName(p.clientId)||p.clientRaw||'—')}</b></td></tr>
+  ${c&&c.address?`<tr><td>Indirizzo</td><td>${esc(c.address)}</td></tr>`:''}
+  ${c&&c.phone?`<tr><td>Telefono</td><td>${esc(c.phone)}</td></tr>`:''}</table>
+  <h2>Consegna</h2>
+  <table><tr><td>Tipo</td><td>${p.kind==='sfuso'?'Pellet sfuso':'Pellet in sacchi'}</td></tr>
+  <tr><td>Data</td><td>${(p.date||'').split('-').reverse().join('.')} ${p.time||''}</td></tr>
+  ${p.notes?`<tr><td>Note</td><td>${esc(p.notes)}</td></tr>`:''}
+  ${p.price?`<tr><td>Importo</td><td><b>CHF ${fmtQty(p.price)}</b></td></tr>`:''}</table>
+  <div class="qty">${fmtQty(p.qty||0)} ${esc(p.unit||'')}</div>
+  <div class="sig">
+    <div><div style="height:90px"></div><div class="sigline">Per consegna — ${esc(company||'')}</div></div>
+    <div>${p.signature?`<img src="${p.signature}">`:'<div style="height:90px"></div>'}<div class="sigline">Firma del cliente — ${esc(p.signedName||'')}</div></div>
+  </div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+/* ================= EXPORT CSV ================= */
+function csvDownload(name,header,rows){
+  const escC=v=>{v=String(v==null?'':v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const csv='\ufeff'+[header,...rows].map(r=>r.map(escC).join(';')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=name+'-'+todayIso()+'.csv';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast('⬇ '+name+'.csv esportato');
+}
+function csvPellet(){
+  csvDownload('pellet',['Data','Cliente','Tipo','Quantità','Unità','Importo CHF','Stato','Firmata','Note'],
+    S.pellet.map(p=>[p.date||'',cName(p.clientId)||p.clientRaw||'',p.kind||'',p.qty||'',p.unit||'',p.price||'',p.status,p.signature?'sì':'',p.notes||'']));
+}
+function csvMan(){
+  csvDownload('manutenzioni',['Data','Cliente','Descrizione','Tecnico','Stato','Tariffa CHF','Bollettino','Esito'],
+    S.maintenances.map(m=>[m.date||'',cName(m.clientId)||m.clientRaw||'',m.title,eName(m.employeeId)||'',m.status,m.price||'',m.report?'sì':'',m.report?m.report.outcome:'']));
+}
+function csvOre(){
+  const rows=[];
+  S.sites.forEach(s=>s.log.forEach(l=>{if(l.hours)rows.push([l.date||'',eName(l.empId)||'—',s.name,l.text,l.hours]);}));
+  rows.sort((a,b)=>a[0]<b[0]?-1:1);
+  csvDownload('ore-dipendenti',['Data','Dipendente','Cantiere','Lavoro','Ore'],rows);
+}
+function csvSites(){
+  csvDownload('cantieri',['Nome','Cliente','Stato','Ore registrate','Ore stimate','Importo CHF','Inizio','Fine prevista'],
+    S.sites.map(s=>[s.name,cName(s.clientId)||s.clientRaw||'',s.status,siteHours(s),s.estHours||'',s.amount||'',s.startDate||'',s.dueDate||'']));
+}
+
+/* ================= BOOT ================= */
+(async()=>{
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(session){postAuth();}else{renderLock();}
+  }catch(e){renderLock();}
+})();
+</script>
+</body>
+</html>
