@@ -66,7 +66,8 @@ body::before{content:'';position:fixed;inset:0;background:
 
 .nav-bottom{position:fixed;bottom:0;left:0;right:0;background:rgba(6,15,28,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50}
 .nav-bottom .nb{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--t3);font-size:9.5px;font-weight:600;cursor:pointer;padding:2px 6px;min-width:48px}
-.nav-bottom .nb .ic{font-size:18px;line-height:1}
+.nav-bottom .nb .ic{font-size:18px;line-height:1;position:relative}
+.nav-bottom .nb .nbdot{position:absolute;top:-5px;right:-11px;background:var(--cy);color:#04121f;font-family:var(--mono);font-size:8px;font-weight:700;line-height:1;padding:2px 4px;border-radius:99px;min-width:13px;text-align:center}
 .nav-bottom .nb.act{color:var(--cy);text-shadow:0 0 12px rgba(0,212,255,.6)}
 
 /* ---------- CARDS ---------- */
@@ -268,7 +269,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.12-224100';
+const APP_VERSION='2026.06.15-131412';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -421,7 +422,7 @@ function fmtD(s){if(!s)return'';const[y,m,d]=s.split('-').map(Number);const dt=n
   if(diff>2&&diff<7)return GG[dt.getDay()]+' · '+base; return base;}
 function fmtTime(t){return t||''}
 function relDays(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1,d);const t=new Date();t.setHours(0,0,0,0);return Math.round((dt-t)/86400000);}
-function toast(msg){const t=$('#toast');t.innerHTML=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
 const byId=(arr,id)=>arr.find(x=>x.id===id);
 function addMonthsIso(s,m){const[y,mo,d]=s.split('-').map(Number);const dt=new Date(y,mo-1+m,1);const last=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();dt.setDate(Math.min(d,last));return iso(dt);}
 function shiftDate(inputId,days){const el=$('#'+inputId);const base=el.value||todayIso();const[y,m,d]=base.split('-').map(Number);const dt=new Date(y,m-1,d+days);el.value=iso(dt);}
@@ -452,26 +453,33 @@ function parseDateIT(text){
   let time=null,tm;
   if((tm=t.match(/\balle?\s+(\d{1,2})(?:[:\.](\d{2}))?\b/))||(tm=t.match(/\bore\s+(\d{1,2})(?:[:\.](\d{2}))?\b/))){
     let h=+tm[1],mi=tm[2]?+tm[2]:0;
-    if(h>=1&&h<=7)h+=12; // "alle 4" in orario lavorativo → 16:00
+    const isMorning=/\b(mattina|mattino|stamattina|am)\b/.test(t);
+    if(!isMorning&&h>=1&&h<=5)h+=12; // "alle 4" → 16:00, ma le 6/7 restano del mattino
     if(h<=23)time=pad(h)+':'+pad(mi);
   }
   return{date,time,matched};
 }
-function findPerson(text){
+const reWord=n=>new RegExp('\\b'+n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b');
+function findEmployee(text){
+  const t=norm(text);let best=null;
+  for(const e of S.employees){const n=norm(e.name);if(n&&reWord(n).test(t)&&(!best||n.length>best.len))best={kind:'employee',id:e.id,name:e.name,len:n.length};}
+  return best;
+}
+function findClient(text,employee){
   const t=norm(text);
-  // try clients first, then employees — longest name match wins
+  // cliente noto: match più lungo
   let best=null;
-  for(const c of S.clients){const n=norm(c.name);if(n&&t.includes(n)&&(!best||n.length>best.len))best={kind:'client',id:c.id,name:c.name,len:n.length};}
-  for(const e of S.employees){const n=norm(e.name);if(n&&t.includes(n)&&(!best||n.length>best.len))best={kind:'employee',id:e.id,name:e.name,len:n.length};}
+  for(const c of S.clients){const n=norm(c.name);if(n&&reWord(n).test(t)&&(!best||n.length>best.len))best={kind:'client',id:c.id,name:c.name,len:n.length};}
   if(best)return best;
-  // fallback: "a Nome" / "da Nome" / "per Nome" / "cliente Nome"
-  const m=text.match(/\b(?:a|da|per|cliente|sig\.?|signora?)\s+([A-ZÀ-Ý][a-zà-ÿ]+(?:\s+[A-ZÀ-Ý][a-zà-ÿ]+)?)/);
-  if(m)return{kind:'raw',id:null,name:m[1],len:m[1].length};
+  // fallback: "a/al/per/da Nome" (anche minuscolo), escludendo parole comuni e il dipendente assegnato
+  const STOP=/^(oggi|domani|dopodomani|ieri|mattina|sera|pomeriggio|notte|stamattina|stasera|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre|alle|ore|fra|tra|casa|lui|lei|me|noi|loro|tutti|fare|farla|farlo|e|il|la|lo|le|i|gli|un|una|uno)$/i;
+  const m=text.match(/\b(?:al?|dal?|per|cliente|sig\.?|signora?)\s+([A-Za-zÀ-ÿ][a-zà-ÿ]+(?:\s+[A-Za-zÀ-ÿ][a-zà-ÿ]+)?)/);
+  if(m){const words=m[1].trim().split(/\s+/).filter(w=>!STOP.test(norm(w)));if(words.length){const nm=words.slice(0,2).join(' ');if(!employee||norm(nm)!==norm(employee.name))return{kind:'raw',id:null,name:nm.charAt(0).toUpperCase()+nm.slice(1),len:nm.length};}}
   return null;
 }
 function parseInput(text){
   const t=norm(text);
-  const r={type:null,title:text.trim(),date:null,time:null,person:null,qty:null,unit:null,raw:text.trim()};
+  const r={type:null,title:text.trim(),date:null,time:null,person:null,employee:null,qty:null,unit:null,raw:text.trim()};
   // type detection
   if(/\blista\b/.test(t))r.type='list';
   else if(/^\s*(ricordami|ricorda|nota|promemoria)\b/.test(t)&&!/\b(manutenzion\w*|pellet|appuntament\w*|cantier\w*)\b/.test(t))r.type='note';
@@ -483,11 +491,12 @@ function parseInput(text){
   const dd=parseDateIT(text);r.date=dd.date;r.time=dd.time;
   if(!r.type&&r.date)r.type='appointment';
   if(!r.type)r.type='note';
-  r.person=findPerson(text);
+  r.employee=findEmployee(text);
+  r.person=findClient(text,r.employee);
   // aggiornamento cantiere esistente: "aggiungi 4 ore al cantiere Via Roma" / "cantiere Via Roma: posato basamento"
   if(/\bcantier\w*\b/.test(t)){
     let best=null;
-    for(const s of S.sites){const n=norm(s.name);if(n&&t.includes(n)&&(!best||n.length>best.len))best={id:s.id,name:s.name,len:n.length};}
+    for(const s of S.sites){const n=norm(s.name);if(n&&reWord(n).test(t)&&(!best||n.length>best.len))best={id:s.id,name:s.name,len:n.length};}
     if(best){
       r.type='site';r.siteId=best.id;r.siteName=best.name;
       const hm=t.match(/(\d+(?:[\.,]\d+)?)\s*or[ae]\b/);
@@ -523,14 +532,27 @@ function parseInput(text){
       r.listName=lm[1].trim();r.listItems=[];
     }else{r.listName='Nuova lista';r.listItems=[];}
   }
-  // clean title: remove command verbs and matched fragments
+  // clean title: command verbs, assignee scaffolding, employee name, date/time, leading article
   let title=text.trim()
-    .replace(/^\s*(aggiungi|segna|metti|crea|ricordami|ricorda|nota|inserisci|programma)\s+/i,'')
-    .replace(/\b(per\s+)?(oggi|domani|dopodomani)\b/gi,'')
+    .replace(/^\s*(aggiungi|segna|metti|crea|ricordami|ricorda|nota|inserisci|programma)\s+/i,'');
+  if(r.employee){const en=r.employee.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');title=title.replace(new RegExp('\\b'+en+'\\b','gi'),' ');}
+  title=title
+    .replace(/\b(deve|devi|dovrebbe)\s+(fare|svolgere|occuparsi)(\s+di)?\b/gi,' ')
+    .replace(/\bfai\s+fare\s+a\b/gi,' ')
+    .replace(/\bsi\s+occupa\s+di\b/gi,' ')
+    .replace(/\b(deve|devi|dovrebbe)\b/gi,' ')
+    .replace(/\b(per\s+)?(oggi|domani|dopodomani|stamattina|stasera)\b/gi,'')
+    .replace(/\b(?:il\s+)?(luned[iì]|marted[iì]|mercoled[iì]|gioved[iì]|venerd[iì]|sabato|domenica)\b/gi,'')
+    .replace(/\b(?:il\s+)?\d{1,2}\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\b/gi,'')
+    .replace(/\btra\s+\d{1,2}\s+giorni\b/gi,'')
+    .replace(/\b\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?\b/g,'')
     .replace(/\balle?\s+\d{1,2}([:\.]\d{2})?\b/gi,'')
     .replace(/\bore\s+\d{1,2}([:\.]\d{2})?\b/gi,'')
-    .replace(/\s{2,}/g,' ').replace(/[\s,]+$/,'').trim();
-  if(title)r.title=title.charAt(0).toUpperCase()+title.slice(1);
+    .replace(/\s{2,}/g,' ').trim()
+    .replace(/^(la|il|lo|le|i|gli|una|un|uno|l['’])\s+/i,'')
+    .replace(/[\s,]+$/,'').trim();
+  const TDEF={maintenance:'Manutenzione',pellet:'Consegna pellet',appointment:'Appuntamento',site:'Cantiere',list:'Lista',note:'Promemoria'};
+  r.title=title?title.charAt(0).toUpperCase()+title.slice(1):(TDEF[r.type]||'Promemoria');
   return r;
 }
 const TYPE_META={
@@ -544,12 +566,12 @@ const TYPE_META={
 /* commit parsed object into state */
 function commitParsed(p,via){
   const clientId=p.person&&p.person.kind==='client'?p.person.id:null;
-  const employeeId=p.person&&p.person.kind==='employee'?p.person.id:null;
+  const employeeId=p.employee?p.employee.id:null;
   const personRaw=p.person&&p.person.kind==='raw'?p.person.name:null;
   let msg='';
   if(p.type==='maintenance'){
     S.maintenances.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date,time:p.time,status:p.date?'programmata':'da_fare',notes:'',via,created:Date.now()});
-    msg='🔧 Manutenzione registrata'+(p.person?' — '+p.person.name:'')+(p.date?' · '+fmtD(p.date):'')+(p.time?' '+p.time:'');
+    msg='🔧 Manutenzione registrata'+(p.person?' — '+p.person.name:'')+(p.employee?' · 👷 '+p.employee.name:'')+(p.date?' · '+fmtD(p.date):'')+(p.time?' '+p.time:'');
   }else if(p.type==='pellet'){
     const kind=(p.unit==='t'||/\bsfuso\b/i.test(p.raw||''))?'sfuso':'sacchi';
     S.pellet.unshift({id:uid(),clientId,clientRaw:personRaw,qty:p.qty,unit:kind==='sfuso'?'t':(p.unit||'sacchi'),kind,date:p.date,time:p.time,status:'da_consegnare',notes:p.title,via,created:Date.now()});
@@ -570,7 +592,7 @@ function commitParsed(p,via){
   }else if(p.type==='site'){
     if(p.siteId){
       const s=byId(S.sites,p.siteId);
-      s.log.push({date:p.date||todayIso(),text:p.siteText||'Aggiornamento',hours:p.hours||null});
+      s.log.push({id:uid(),date:p.date||todayIso(),text:p.siteText||'Aggiornamento',hours:p.hours||null});
       msg='🏗 «'+s.name+'» aggiornato'+(p.hours?' — +'+p.hours+'h':'')+(p.siteText?' · '+p.siteText:'');
     }else{
       S.sites.unshift({id:uid(),name:p.title,clientId,clientRaw:personRaw,status:'aperto',employees:[],log:[],attachments:[],estHours:null,startDate:p.date||todayIso(),dueDate:null,notes:'',via,created:Date.now()});
@@ -587,7 +609,7 @@ const VIEWS=[
   {id:'hub',ic:'⚡',label:'Hub'},
   {id:'cal',ic:'📅',label:'Calendario'},
   {id:'notes',ic:'📝',label:'Note'},
-  {id:'chat',ic:'💬',label:'Chat'},
+  {id:'notif',ic:'🔔',label:'Notifiche'},
   {id:'man',ic:'🔧',label:'Manut.'},
   {id:'pellet',ic:'🔥',label:'Pellet'},
   {id:'sites',ic:'🏗',label:'Cantieri'},
@@ -603,16 +625,17 @@ const genInvite=n=>(norm(n).replace(/[^a-z]/g,'').slice(0,5).toUpperCase()||'USE
 async function logout(){try{await sb.auth.signOut();}catch(e){}S=blank();authMode='login';closeSheet();renderLock();}
 function nav(v){view=v;render();window.scrollTo(0,0);}
 function renderNav(){
-  const vis=VIEWS.filter(v=>v.id==='hub'||can(v.id));
-  $('#navside').innerHTML=vis.map(v=>`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}</div>`).join('')
+  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
+  $('#navside').innerHTML=vis.map(v=>{const c=v.id==='notif'?notifCount():0;return`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}${c?` <span class="badge" style="margin-left:auto;border-color:var(--cy);color:var(--cy)">${c}</span>`:''}</div>`;}).join('')
     +(isOwner()?`<div class="ni" style="margin-top:10px;border-top:1px solid var(--line);border-radius:0;padding-top:14px" onclick="openBackup()"><span class="ic">💾</span>Backup dati</div>`:'')
     +`<div class="ni" onclick="logout()"><span class="ic">🚪</span>Esci (${esc(me().name)})</div>`;
-  const mobAll=vis.filter(v=>v.id!=='emps'&&v.id!=='clients'&&v.id!=='notes'&&v.id!=='chat').slice(0,5);
+  const mobAll=vis.filter(v=>v.id!=='emps'&&v.id!=='clients'&&v.id!=='notes'&&v.id!=='notif').slice(0,5);
   const mob=[...mobAll,{id:'menu',ic:'☰',label:'Altro'}];
-  $('#navbottom').innerHTML=mob.map(v=>`<div class="nb ${view===v.id||(v.id==='menu'&&['notes','chat','clients','emps'].includes(view))?'act':''}" onclick="${v.id==='menu'?'openMenu()':`nav('${v.id}')`}"><span class="ic">${v.ic}</span>${v.label}</div>`).join('');
+  const nc=notifCount();
+  $('#navbottom').innerHTML=mob.map(v=>`<div class="nb ${view===v.id||(v.id==='menu'&&['notes','notif','clients','emps'].includes(view))?'act':''}" onclick="${v.id==='menu'?'openMenu()':`nav('${v.id}')`}"><span class="ic">${v.ic}${v.id==='menu'&&nc?`<span class="nbdot">${nc>9?'9+':nc}</span>`:''}</span>${v.label}</div>`).join('');
 }
 function openMenu(){
-  const items=[['notes','📝 Note & Appuntamenti'],['chat','💬 Chat squadra'],['clients','👥 Clienti'],['emps','👷 Personale']].filter(([id])=>can(id));
+  const items=[['notes','📝 Note & Appuntamenti'],['notif','🔔 Notifiche'+(notifCount()?' ('+notifCount()+')':'')],['clients','👥 Clienti'],['emps','👷 Personale']].filter(([id])=>id==='notif'||can(id));
   openSheet(`<h3>Sezioni <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="seg" style="flex-direction:column;gap:8px">
     ${items.map(([id,l])=>`<div class="sg" style="padding:13px" onclick="closeSheet();nav('${id}')">${l}</div>`).join('')}
@@ -669,7 +692,7 @@ function importBackup(ev){
       (d.noteGroups||[]).forEach(g=>S.noteGroups.push({id:mid(g.id),name:g.name}));
       (d.maintenances||[]).forEach(m=>S.maintenances.push({id:mid(m.id),title:m.title,clientId:mid(m.clientId),clientRaw:m.clientRaw||null,employeeId:mid(m.employeeId),date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:m.price||null,report:m.report||null,via:m.via||'import',created:m.created||Date.now()}));
       (d.appointments||[]).forEach(a=>S.appointments.push({id:mid(a.id),title:a.title,clientId:mid(a.clientId),clientRaw:a.clientRaw||null,employeeId:mid(a.employeeId),date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'import',created:a.created||Date.now()}));
-      (d.pellet||[]).forEach(p=>S.pellet.push({id:mid(p.id),clientId:mid(p.clientId),clientRaw:p.clientRaw||null,qty:p.qty||null,unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:p.price||null,signature:p.signature||null,signedName:p.signedName||'',notes:p.notes||'',via:p.via||'import',created:p.created||Date.now()}));
+      (d.pellet||[]).forEach(p=>{const kind=(p.kind==='sfuso'||p.unit==='t')?'sfuso':'sacchi';const unit=kind==='sfuso'?'t':(['sacchi','kg'].includes(p.unit)?p.unit:'sacchi');S.pellet.push({id:mid(p.id),clientId:mid(p.clientId),clientRaw:p.clientRaw||null,qty:p.qty||null,unit,kind,date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:p.price||null,signature:p.signature||null,signedName:p.signedName||'',notes:p.notes||'',via:p.via||'import',created:p.created||Date.now()});});
       const pendingAtt=[];
       (d.sites||[]).forEach(s=>{
         const ns={id:mid(s.id),name:s.name,clientId:mid(s.clientId),clientRaw:s.clientRaw||null,status:['aperto','da_fatturare','chiuso'].includes(s.status)?s.status:'aperto',employees:(s.employees||[]).map(mid).filter(Boolean),estHours:s.estHours||null,amount:s.amount||null,startDate:s.startDate||null,dueDate:s.dueDate||null,notes:s.notes||'',via:s.via||'import',created:s.created||Date.now(),
@@ -702,13 +725,13 @@ function importBackup(ev){
 function render(){
   if(!S.session||!me()){renderLock();return;}
   const lk=document.querySelector('.lock');if(lk)lk.remove();
-  if(!can(view)&&view!=='hub')view='hub';
+  if(!can(view)&&view!=='hub'&&view!=='notif')view='hub';
   S.speaker=S.session.empId;
   renderNav();
   $('#todaypill').textContent=GG[new Date().getDay()].slice(0,3)+' '+new Date().getDate()+' '+MESI[new Date().getMonth()].slice(0,3);
-  const R={hub:renderHub,cal:renderCal,notes:renderNotes,chat:renderChat,man:renderMan,pellet:renderPellet,sites:renderSites,clients:renderClients,emps:renderEmps};
+  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,clients:renderClients,emps:renderEmps};
   $('#main').innerHTML='';(R[view]||renderHub)();
-  if(view==='chat'){const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;}
+  if(view==='notif'&&notifTab==='chat'){const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;}
 }
 
 
@@ -894,7 +917,8 @@ function showPreview(){
   $('#hubpreview').innerHTML=`<div class="preview">
     <div class="row"><span class="k">SEZIONE</span><span class="badge" style="border-color:${M.hex};color:${M.hex}">${M.ic} ${M.label}</span></div>
     <div class="row"><span class="k">TESTO</span><span class="v">${esc(p.title)}</span></div>
-    <div class="row"><span class="k">PERSONA</span><span class="v ${p.person?'':'miss'}">${p.person?esc(p.person.name)+(p.person.kind==='employee'?' (personale)':p.person.kind==='client'?' (cliente)':''):'—'}</span>${p.person&&p.person.kind==='raw'?`<button class="btn sm" style="border-color:var(--teal);color:var(--teal)" onclick="createClientFromPreview()">✚ Crea cliente</button>`:''}</div>
+    <div class="row"><span class="k">CLIENTE</span><span class="v ${p.person?'':'miss'}">${p.person?esc(p.person.name)+(p.person.kind==='raw'?' (nuovo)':' (cliente)'):'—'}</span>${p.person&&p.person.kind==='raw'?`<button class="btn sm" style="border-color:var(--teal);color:var(--teal)" onclick="createClientFromPreview()">✚ Crea cliente</button>`:''}</div>
+    <div class="row"><span class="k">DIPENDENTE</span><span class="v ${p.employee?'':'miss'}">${p.employee?esc(p.employee.name)+' (svolge)':'—'}</span></div>
     <div class="row"><span class="k">QUANDO</span><span class="v ${p.date?'':'miss'}">${p.date?fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}</span></div>
     ${p.qty?`<div class="row"><span class="k">QUANTITÀ</span><span class="v">${p.qty} ${p.unit||''}</span></div>`:''}
     <div class="row" style="margin-top:4px;gap:10px">
@@ -1125,9 +1149,69 @@ function togglePin(id){const n=byId(S.notes,id);n.pinned=!n.pinned;save();closeS
 function delItem(coll,id){if(!confirm('Eliminare definitivamente?'))return;S[coll]=S[coll].filter(x=>x.id!==id);save();closeSheet();render();toast('Eliminato');}
 
 /* ================= CHAT ================= */
-function renderChat(){
+/* ================= NOTIFICHE (inbox personale + chat) ================= */
+let notifTab='inbox';
+function myWork(){
+  if(!S.session)return{man:[],app:[],sit:[],total:0};
+  const id=S.session.empId;
+  const man=S.maintenances.filter(m=>m.employeeId===id&&m.status!=='fatta');
+  const app=S.appointments.filter(a=>a.employeeId===id&&!a.done);
+  const sit=S.sites.filter(s=>(s.employees||[]).includes(id)&&s.status==='aperto');
+  return{man,app,sit,total:man.length+app.length+sit.length};
+}
+function notifCount(){return myWork().total;}
+function renderNotif(){
+  const w=myWork();const showChat=can('chat');
   $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Chat squadra</div>
+  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Notifiche</div>
+  <div class="tabs">
+    <div class="tb ${notifTab==='inbox'?'on':''}" onclick="notifTab='inbox';render()">🔔 Da fare${w.total?` (${w.total})`:''}</div>
+    ${showChat?`<div class="tb ${notifTab==='chat'?'on':''}" onclick="notifTab='chat';render()">💬 Chat squadra</div>`:''}
+  </div>
+  <div id="notifbody"></div>`;
+  if(notifTab==='chat'&&showChat){renderChatPanel();}else{renderInbox(w);}
+}
+function renderInbox(w){
+  const t=todayIso();const blocks=[];
+  if(w.man.length){
+    blocks.push(`<div class="subtle" style="margin:4px 2px 6px;font-weight:600;color:var(--t2)">🔧 Manutenzioni (${w.man.length})</div><div class="card">`+w.man.map(m=>{
+      const who=cName(m.clientId)||m.clientRaw||'';const late=m.date&&m.date<t;
+      return`<div class="item" onclick="openMan('${m.id}')">
+      <span class="led" style="background:${late?'#FF5C7A':'var(--cy)'}"></span>
+      <div class="bd"><div class="ti">${who?`<b>${esc(who)}</b> — `:''}${esc(m.title)}</div>
+      <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">IN RITARDO</span>':''}</div></div>
+      <div class="right" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <span class="row-act" onclick="event.stopPropagation();startBollettino('${m.id}')">📋 BOLLETTINO</span>
+        <span class="row-act done" onclick="event.stopPropagation();markManDone('${m.id}')">✓ FATTA</span>
+      </div></div>`;
+    }).join('')+`</div>`);
+  }
+  if(w.app.length){
+    blocks.push(`<div class="subtle" style="margin:12px 2px 6px;font-weight:600;color:var(--t2)">📅 Appuntamenti (${w.app.length})</div><div class="card">`+w.app.map(a=>{
+      const who=cName(a.clientId)||a.clientRaw||'';
+      return`<div class="item">
+      <span class="led" style="background:var(--teal)"></span>
+      <div class="bd"><div class="ti">${esc(a.title)}</div>
+      <div class="su">${who?esc(who)+' · ':''}${a.date?'📅 '+fmtD(a.date)+(a.time?' · '+a.time:''):'senza data'}</div></div>
+      <div class="right"><span class="row-act done" onclick="markAppDone('${a.id}')">✓ FATTO</span></div></div>`;
+    }).join('')+`</div>`);
+  }
+  if(w.sit.length){
+    blocks.push(`<div class="subtle" style="margin:12px 2px 6px;font-weight:600;color:var(--t2)">🏗 Cantieri (${w.sit.length})</div><div class="card">`+w.sit.map(s=>{
+      const who=cName(s.clientId)||s.clientRaw||'';
+      return`<div class="item" onclick="openSite('${s.id}')">
+      <span class="led" style="background:var(--amber)"></span>
+      <div class="bd"><div class="ti">${esc(s.name)}</div>
+      <div class="su">${who?esc(who):'cantiere'}</div></div>
+      <div class="right"><span class="row-act">APRI ›</span></div></div>`;
+    }).join('')+`</div>`);
+  }
+  $('#notifbody').innerHTML=blocks.length?blocks.join(''):`<div class="empty"><div class="big">✅</div>Nessuna cosa da fare assegnata a te.<br><span class="subtle">Qui arrivano manutenzioni, appuntamenti e cantieri assegnati a te.</span></div>`;
+}
+function markManDone(id){const m=byId(S.maintenances,id);if(!m)return;m.status='fatta';save();render();toast('✓ Manutenzione segnata come fatta');}
+function markAppDone(id){const a=byId(S.appointments,id);if(!a)return;a.done=true;save();render();toast('✓ Appuntamento fatto');}
+function renderChatPanel(){
+  $('#notifbody').innerHTML=`
   <div class="wa-note">📲 <b>WhatsApp:</b> il ponte diretto richiede un server (WhatsApp Business API) — non è possibile da app locale. Il parser qui sotto è già pronto: quando attiveremo il server, gli stessi comandi funzioneranno anche via WhatsApp.</div>
   <div class="speaker-row"><div class="speaker on">✎ Scrivi come ${esc(me().name)}</div></div>
   <div class="chatwrap">
@@ -1144,15 +1228,15 @@ function renderChat(){
     </div>
   </div>`;
   const ta=$('#chatinput');
-  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
-  const sc=$('#chatscroll');sc.scrollTop=sc.scrollHeight;
+  if(ta)ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+  const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;
 }
 const CMD_RE=/^\s*(aggiungi|segna|metti|crea|ricordami|ricorda|programma|inserisci)\b|^\//i;
 async function sendChat(){
   const ta=$('#chatinput');const text=ta.value.trim();if(!text)return;
   const rows=[{id:uid(),emp_id:S.speaker,text,sys:false}];
   S.chat.push({id:rows[0].id,who:S.speaker,text,ts:Date.now()});
-  if(CMD_RE.test(text)||/\b(manutenzione|pellet|sacch|appuntamento|sopralluogo|consegna)\b/i.test(text)&&parseDateIT(text).date){
+  if(CMD_RE.test(text)){
     const p=parseInput(text.replace(/^\//,''));
     const msg=commitParsed(p,'chat'); // commitParsed chiama save() → sync
     rows.push({id:uid(),emp_id:null,text:msg,sys:true});
@@ -1440,7 +1524,7 @@ function renderPelDash(){
     <div class="bd"><div class="ti">${esc(cName(f.clientId))}</div><div class="su">~${fmtQty(f.ratePerDay*30)} t/mese</div></div>
     <div class="right"><div class="d1" style="color:${f.days<=0?'var(--coral)':'var(--amber)'}">${f.days<=0?'ADESSO':f.days+' gg'}</div><div class="d2">${fmtD(f.nextDate)}</div></div></div>`).join('')}</div>`:''}
   <div class="card"><div class="sh"><span class="t">🛢 Sfuso — tonnellate al mese</span></div>
-    ${barChart(mT,'url(#na)'.replace('url(#na)','#FF8A3D'),'t')}
+    ${barChart(mT,'#FF8A3D','t')}
     ${topT&&topT.val?`<div class="subtle" style="margin-top:8px">Mese più intenso: <b style="color:var(--t1)">${topT.label}</b> con ${fmtQty(topT.val)} t</div>`:'<div class="subtle" style="margin-top:8px">Nessuna consegna sfuso registrata negli ultimi 12 mesi.</div>'}
   </div>
   <div class="card"><div class="sh"><span class="t">📦 Sacchi al mese</span></div>
@@ -1623,7 +1707,7 @@ function openSite(id){
 }
 function setSiteStatus(id,st){const s=byId(S.sites,id);s.status=st;if(st!=='aperto')siteTab=st;save();closeSheet();render();toast(st==='da_fatturare'?'💰 Spostato in Da fatturare':st==='chiuso'?'🗄 Archiviato':'🏗 Riaperto');}
 function addLog(id){const s=byId(S.sites,id);const t=$('#sl-t').value.trim();if(!t){toast('Scrivi cosa è stato fatto');return;}
-  s.log.push({date:todayIso(),text:t,hours:parseFloat($('#sl-h').value)||null,empId:$('#sl-e')?.value||null});save();openSite(id);toast('Registrato');}
+  s.log.push({id:uid(),date:todayIso(),text:t,hours:parseFloat($('#sl-h').value)||null,empId:$('#sl-e')?.value||null});save();openSite(id);toast('Registrato');}
 /* allegati (Supabase Storage) */
 const attUrl={};let attFetching={};
 function ensureAttUrls(s){
@@ -1733,7 +1817,7 @@ function renderClients(){
   <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Clienti <span class="subtle">(${S.clients.length})</span></div>
   <input class="searchbar" placeholder="🔍 Cerca nome, gruppo, zona, telefono…" value="${esc(cliQ)}" oninput="cliQ=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">
   ${groups.length?`<div class="tabs"><div class="tb ${cliGroup==='all'?'on':''}" onclick="cliGroup='all';render()">Tutti</div>
-  ${groups.map(g=>`<div class="tb ${cliGroup===g?'on':''}" onclick="cliGroup='${esc(g)}';render()">🗺 ${esc(g)}</div>`).join('')}</div>`:''}
+  ${groups.map((g,i)=>`<div class="tb ${cliGroup===g?'on':''}" data-grpidx="${i}" onclick="cliGroup=clientGroups()[this.dataset.grpidx];render()">🗺 ${esc(g)}</div>`).join('')}</div>`:''}
   <div class="card">
   ${list.length?list.map(c=>{
     const nm=S.maintenances.filter(m=>m.clientId===c.id).length;
