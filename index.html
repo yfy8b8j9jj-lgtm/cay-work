@@ -105,6 +105,7 @@ body::before{content:'';position:fixed;inset:0;background:
 .preview .k{font-family:var(--mono);font-size:10px;color:var(--t3);width:74px;letter-spacing:.5px}
 .preview .v{color:var(--t1);font-weight:500}
 .preview .v.miss{color:var(--t3);font-style:italic;font-weight:400}
+.preview select{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--t1);font-family:var(--body);font-size:13px;padding:5px 8px;outline:none;flex:1;min-width:120px;max-width:230px}
 
 /* ---------- LISTS ---------- */
 .item{display:flex;align-items:flex-start;gap:11px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}
@@ -269,7 +270,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.15-131412';
+const APP_VERSION='2026.06.15-165835';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -459,21 +460,28 @@ function parseDateIT(text){
   }
   return{date,time,matched};
 }
-const reWord=n=>new RegExp('\\b'+n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b');
+const escReg=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const reWord=n=>new RegExp('\\b'+escReg(n)+'\\b');
 function findEmployee(text){
   const t=norm(text);let best=null;
   for(const e of S.employees){const n=norm(e.name);if(n&&reWord(n).test(t)&&(!best||n.length>best.len))best={kind:'employee',id:e.id,name:e.name,len:n.length};}
   return best;
 }
 function findClient(text,employee){
-  const t=norm(text);
-  // cliente noto: match più lungo
+  // togli prima la frase del dipendente (es. "fatta da Loris") per non confonderla col cliente
+  let tx=text;
+  tx=tx.replace(/\b(fatt[ao]|svolt[ao]|esegui\w+|gestit[ao]|segui\w+)\s+da\b/gi,' ')
+       .replace(/\b(la\s+fa|a\s+cura\s+di|assegnat[ao]\s+a|tecnico)\b/gi,' ');
+  if(employee)tx=tx.replace(new RegExp('\\b'+escReg(employee.name)+'\\b','gi'),' ');
+  const t=norm(tx);
+  // cliente già in anagrafica: match più lungo
   let best=null;
   for(const c of S.clients){const n=norm(c.name);if(n&&reWord(n).test(t)&&(!best||n.length>best.len))best={kind:'client',id:c.id,name:c.name,len:n.length};}
   if(best)return best;
-  // fallback: "a/al/per/da Nome" (anche minuscolo), escludendo parole comuni e il dipendente assegnato
-  const STOP=/^(oggi|domani|dopodomani|ieri|mattina|sera|pomeriggio|notte|stamattina|stasera|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre|alle|ore|fra|tra|casa|lui|lei|me|noi|loro|tutti|fare|farla|farlo|e|il|la|lo|le|i|gli|un|una|uno)$/i;
-  const m=text.match(/\b(?:al?|dal?|per|cliente|sig\.?|signora?)\s+([A-Za-zÀ-ÿ][a-zà-ÿ]+(?:\s+[A-Za-zÀ-ÿ][a-zà-ÿ]+)?)/);
+  // cliente nuovo: prima i marcatori forti "per/cliente/sig", poi il debole "a/da"; salta parole comuni e parole-tipo
+  const STOP=/^(oggi|domani|dopodomani|ieri|mattina|sera|pomeriggio|notte|stamattina|stasera|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre|alle|ore|fra|tra|casa|lui|lei|me|noi|loro|tutti|fare|farla|farlo|pellet|gas|gasolio|metano|legna|cippato|caldaia|caldaie|stufa|stufe|camino|sacchi|sacco|sfuso|bancale|bancali|kg|tonnellate|tonnellata|ton|quintali|e|il|la|lo|le|i|gli|un|una|uno|del|della|dei)$/i;
+  const m=tx.match(/\b(?:per|cliente|signor[ae]?|sig\.?)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)?)/i)
+        || tx.match(/\b(?:al?|dal?)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)?)/i);
   if(m){const words=m[1].trim().split(/\s+/).filter(w=>!STOP.test(norm(w)));if(words.length){const nm=words.slice(0,2).join(' ');if(!employee||norm(nm)!==norm(employee.name))return{kind:'raw',id:null,name:nm.charAt(0).toUpperCase()+nm.slice(1),len:nm.length};}}
   return null;
 }
@@ -532,15 +540,19 @@ function parseInput(text){
       r.listName=lm[1].trim();r.listItems=[];
     }else{r.listName='Nuova lista';r.listItems=[];}
   }
-  // clean title: command verbs, assignee scaffolding, employee name, date/time, leading article
+  // clean title: comandi, frase dipendente + nome, frase cliente, data/ora, articolo iniziale
   let title=text.trim()
     .replace(/^\s*(aggiungi|segna|metti|crea|ricordami|ricorda|nota|inserisci|programma)\s+/i,'');
-  if(r.employee){const en=r.employee.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');title=title.replace(new RegExp('\\b'+en+'\\b','gi'),' ');}
   title=title
+    .replace(/\b(fatt[ao]|svolt[ao]|esegui\w+|gestit[ao]|segui\w+)\s+da\b/gi,' ')
+    .replace(/\b(la\s+fa|a\s+cura\s+di|assegnat[ao]\s+a|tecnico)\b/gi,' ')
     .replace(/\b(deve|devi|dovrebbe)\s+(fare|svolgere|occuparsi)(\s+di)?\b/gi,' ')
     .replace(/\bfai\s+fare\s+a\b/gi,' ')
     .replace(/\bsi\s+occupa\s+di\b/gi,' ')
-    .replace(/\b(deve|devi|dovrebbe)\b/gi,' ')
+    .replace(/\b(deve|devi|dovrebbe)\b/gi,' ');
+  if(r.employee)title=title.replace(new RegExp('\\b'+escReg(r.employee.name)+'\\b','gi'),' ');
+  if(r.person){const cn=escReg(r.person.name);title=title.replace(new RegExp('\\b(?:a|al|per|dal?|cliente|sig\\.?|signor[ae]?)\\s+'+cn+'\\b','gi'),' ').replace(new RegExp('\\b'+cn+'\\b','gi'),' ');}
+  title=title
     .replace(/\b(per\s+)?(oggi|domani|dopodomani|stamattina|stasera)\b/gi,'')
     .replace(/\b(?:il\s+)?(luned[iì]|marted[iì]|mercoled[iì]|gioved[iì]|venerd[iì]|sabato|domenica)\b/gi,'')
     .replace(/\b(?:il\s+)?\d{1,2}\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\b/gi,'')
@@ -917,8 +929,8 @@ function showPreview(){
   $('#hubpreview').innerHTML=`<div class="preview">
     <div class="row"><span class="k">SEZIONE</span><span class="badge" style="border-color:${M.hex};color:${M.hex}">${M.ic} ${M.label}</span></div>
     <div class="row"><span class="k">TESTO</span><span class="v">${esc(p.title)}</span></div>
-    <div class="row"><span class="k">CLIENTE</span><span class="v ${p.person?'':'miss'}">${p.person?esc(p.person.name)+(p.person.kind==='raw'?' (nuovo)':' (cliente)'):'—'}</span>${p.person&&p.person.kind==='raw'?`<button class="btn sm" style="border-color:var(--teal);color:var(--teal)" onclick="createClientFromPreview()">✚ Crea cliente</button>`:''}</div>
-    <div class="row"><span class="k">DIPENDENTE</span><span class="v ${p.employee?'':'miss'}">${p.employee?esc(p.employee.name)+' (svolge)':'—'}</span></div>
+    <div class="row"><span class="k">CLIENTE</span><select onchange="hubSetClient(this.value)"><option value="">— nessuno</option>${p.person&&p.person.kind==='raw'?`<option value="__new__" selected>➕ ${esc(p.person.name)} (nuovo)</option>`:''}${S.clients.map(c=>`<option value="${c.id}" ${p.person&&p.person.kind==='client'&&p.person.id===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>${p.person&&p.person.kind==='raw'?`<button class="btn sm" style="border-color:var(--teal);color:var(--teal)" onclick="createClientFromPreview()">✚ Crea in anagrafica</button>`:''}</div>
+    ${(p.type==='maintenance'||p.type==='appointment')?`<div class="row"><span class="k">DIPENDENTE</span><select onchange="hubSetEmp(this.value)"><option value="">— nessuno</option>${S.employees.map(e=>`<option value="${e.id}" ${p.employee&&p.employee.id===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div>`:''}
     <div class="row"><span class="k">QUANDO</span><span class="v ${p.date?'':'miss'}">${p.date?fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}</span></div>
     ${p.qty?`<div class="row"><span class="k">QUANTITÀ</span><span class="v">${p.qty} ${p.unit||''}</span></div>`:''}
     <div class="row" style="margin-top:4px;gap:10px">
@@ -933,6 +945,18 @@ function createClientFromPreview(){
   S.clients.unshift(c);save();
   hubParsed.person={kind:'client',id:c.id,name,len:name.length};
   showPreview();toast('👥 Cliente «'+name+'» creato — completa la scheda quando vuoi');
+}
+function hubSetClient(val){
+  if(!hubParsed)return;
+  if(val===''){hubParsed.person=null;}
+  else if(val==='__new__'){/* mantieni il cliente nuovo rilevato */}
+  else{const c=byId(S.clients,val);if(c)hubParsed.person={kind:'client',id:c.id,name:c.name,len:norm(c.name).length};}
+  showPreview();
+}
+function hubSetEmp(val){
+  if(!hubParsed)return;
+  if(val===''){hubParsed.employee=null;}
+  else{const e=byId(S.employees,val);if(e)hubParsed.employee={kind:'employee',id:e.id,name:e.name,len:norm(e.name).length};}
 }
 function cycleType(){
   if(!hubParsed)return;
@@ -1375,7 +1399,7 @@ function openMan(id){
   openSheet(`<h3>${id?'Manutenzione':'Nuova manutenzione'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Descrizione</label><input id="mn-t" value="${esc(m.title)}" placeholder="es. Pulizia caldaia pellet"></div>
   <div class="frow">
-  <div class="fld"><label>Cliente</label><select id="mn-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${m.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Cliente</label><select id="mn-c"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${S.clients.map(c=>`<option value="${c.id}" ${m.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
   <div class="fld"><label>Assegnata a</label><select id="mn-e"><option value="">—</option>${S.employees.map(e=>`<option value="${e.id}" ${m.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div></div>
   <div class="frow"><div class="fld"><label>Data</label><input id="mn-d" type="date" value="${m.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="mn-h" type="time" value="${m.time||''}"></div></div>
