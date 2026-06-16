@@ -285,7 +285,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.16-134605';
+const APP_VERSION='2026.06.16-142641';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -434,6 +434,36 @@ function startRealtime(){
     },600);
   }).subscribe();
 }
+/* ---------- notifiche push (Web Push) ---------- */
+const VAPID_PUBLIC='BBYSrl8NvF689fgDIB1SOI3DFqi-XI7iLLyMTSX0fz92bNtSlzz8n-LAhubzwQPkGQhm0xisY4-FzsoLFWbTw88';
+let swReg=null,pushSubbed=false;
+const pushSupported=()=>('serviceWorker'in navigator)&&('PushManager'in window)&&('Notification'in window);
+async function initPush(){if(!pushSupported())return;try{swReg=await navigator.serviceWorker.register('./sw.js');const s=await swReg.pushManager.getSubscription();pushSubbed=!!s;}catch(e){}}
+function pushState(){if(!pushSupported())return'unsupported';if(Notification.permission==='denied')return'blocked';return pushSubbed?'on':'off';}
+const urlB64ToU8=s=>{const pad='='.repeat((4-s.length%4)%4);const b=atob((s+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)));};
+async function enablePush(){
+  if(!pushSupported()){toast('Questo dispositivo non supporta le notifiche');return;}
+  if(!swReg)await initPush();
+  let perm=Notification.permission;if(perm==='default')perm=await Notification.requestPermission();
+  if(perm!=='granted'){toast('Permesso notifiche negato');render();return;}
+  try{
+    const sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToU8(VAPID_PUBLIC)});
+    const j=sub.toJSON();
+    const{error}=await sb.from('push_subs').upsert({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,emp_id:S.session.empId,ua:navigator.userAgent.slice(0,140)},{onConflict:'endpoint'});
+    if(error)throw error;
+    pushSubbed=true;toast('🔔 Notifiche attivate su questo telefono');render();
+  }catch(e){toast('⚠ '+(e.message||e));}
+}
+async function disablePush(){
+  try{const s=swReg&&await swReg.pushManager.getSubscription();if(s){await sb.from('push_subs').delete().eq('endpoint',s.endpoint);await s.unsubscribe();}}catch(e){}
+  pushSubbed=false;toast('Notifiche disattivate su questo telefono');render();
+}
+async function pushNotify(empIds,title,body){
+  empIds=[...new Set((empIds||[]).filter(Boolean))].filter(id=>!(S.session&&id===S.session.empId));
+  if(!empIds.length)return;
+  try{await sb.functions.invoke('send-push',{body:{empIds,title,body}});}catch(e){}
+}
+const ownerIds=()=>S.employees.filter(e=>e.isOwner&&e.active!==false).map(e=>e.id);
 /* ================= UTILS ================= */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -692,10 +722,16 @@ function openMenu(){
   const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
   const inBar=new Set(getBottomNav().filter(id=>vis.some(v=>v.id===id)).slice(0,5));
   const overflow=vis.filter(v=>!inBar.has(v.id));
+  const ps=pushState();
+  const pushRow=ps==='unsupported'?''
+    :ps==='blocked'?`<div class="sg" style="padding:13px;border-color:var(--line2);color:var(--t3)">🔕 Notifiche bloccate dal telefono — abilitale nelle impostazioni del dispositivo</div>`
+    :ps==='on'?`<div class="sg" style="padding:13px;border-color:var(--teal);color:var(--teal)" onclick="closeSheet();disablePush()">🔔 Notifiche attive su questo telefono — tocca per disattivare</div>`
+    :`<div class="sg" style="padding:13px;border-color:var(--amber);color:var(--amber)" onclick="closeSheet();enablePush()">🔔 Attiva notifiche su questo telefono</div>`;
   openSheet(`<h3>Sezioni <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="seg" style="flex-direction:column;gap:8px">
     ${overflow.map(v=>`<div class="sg" style="padding:13px" onclick="closeSheet();nav('${v.id}')">${v.ic} ${v.label}${v.id==='notif'&&notifCount()?' ('+notifCount()+')':''}</div>`).join('')||'<div class="subtle" style="padding:4px 2px">Tutte le sezioni sono già nella barra in basso.</div>'}
     <div class="sg" style="padding:13px;border-color:var(--cy);color:var(--cy)" onclick="closeSheet();editBottomNav()">⚙️ Personalizza la barra in basso</div>
+    ${pushRow}
     ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openBackup()">💾 Backup dati</div>`:''}
     <div class="sg" style="padding:13px;border-color:rgba(255,92,122,.35);color:var(--coral)" onclick="logout()">🚪 Esci (${esc(me().name)})</div>
   </div>`);
@@ -904,7 +940,7 @@ async function postAuth(){
     const my=byId(S.employees,emp.id)||MAPS.employees.fromDb(emp);
     if(!byId(S.employees,emp.id))S.employees.push(my);
     S.session={empId:emp.id};S.speaker=emp.id;
-    startRealtime();
+    startRealtime();initPush();
     view='hub';render();toast('Ciao '+my.name+' 👋');
   }catch(e){console.error(e);authMode='login';renderLock();setTimeout(()=>lockErr('Errore: '+(e.message||e)),100);}
 }
@@ -1336,8 +1372,8 @@ function renderInbox(w){
   }
   $('#notifbody').innerHTML=(w.total?greet:'')+(blocks.length?blocks.join(''):`<div class="empty"><div class="big">✅</div>Nessuna cosa da fare assegnata a te.<br><span class="subtle">Qui arrivano manutenzioni, appuntamenti, cantieri e consegne assegnati a te.</span></div>`);
 }
-function markManDone(id){const m=byId(S.maintenances,id);if(!m)return;m.status='fatta';save();render();toast('✓ Manutenzione segnata come fatta');}
-function markAppDone(id){const a=byId(S.appointments,id);if(!a)return;a.done=true;save();render();toast('✓ Appuntamento fatto');}
+function markManDone(id){const m=byId(S.maintenances,id);if(!m)return;m.status='fatta';const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'✓ Manutenzione fatta',`${doer}: ${cName(m.clientId)||m.clientRaw||''} — ${m.title}`);save();render();toast('✓ Manutenzione segnata come fatta');}
+function markAppDone(id){const a=byId(S.appointments,id);if(!a)return;a.done=true;const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'✓ Appuntamento fatto',`${doer}: ${a.title}`);save();render();toast('✓ Appuntamento fatto');}
 function openApp(id){
   const a=id?byId(S.appointments,id):{title:'',clientId:null,clientRaw:null,employeeId:null,date:todayIso(),time:'',done:false};
   if(!a)return;
@@ -1357,11 +1393,13 @@ function openApp(id){
 function saveApp(id){
   const data={title:$('#ap-t').value.trim(),clientId:$('#ap-c').value||null,employeeId:$('#ap-e').value||null,date:$('#ap-d').value||null,time:$('#ap-h').value||null,done:$('#ap-s .sg.on')?.dataset.d==='1'};
   if(!data.title){toast('Manca il titolo');return;}
-  if(id){Object.assign(byId(S.appointments,id),data);}else{S.appointments.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  const oldA=id?byId(S.appointments,id):null;const prevEmp=oldA?oldA.employeeId:null;
+  if(id){Object.assign(oldA,data);}else{S.appointments.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  if(data.employeeId&&data.employeeId!==prevEmp&&!data.done)pushNotify([data.employeeId],'📅 Appuntamento assegnato',`${data.title}${data.date?' · '+fmtD(data.date):''}${data.time?' '+data.time:''}`);
   save();closeSheet();render();toast('📅 Salvato');
 }
 function delApp(id){if(!confirm('Eliminare questo appuntamento?'))return;S.appointments=S.appointments.filter(x=>x.id!==id);save();closeSheet();render();toast('🗑 Eliminato');}
-function markPelDone(id){const p=byId(S.pellet,id);if(!p)return;p.status='consegnato';save();render();toast('🪵 Consegna registrata');}
+function markPelDone(id){const p=byId(S.pellet,id);if(!p)return;p.status='consegnato';const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'🪵 Consegna fatta',`${doer}: ${p.qty?fmtQty(p.qty)+' '+(p.unit||'sacchi'):'consegna'} a ${cName(p.clientId)||p.clientRaw||''}`);save();render();toast('🪵 Consegna registrata');}
 function renderChatPanel(){
   $('#notifbody').innerHTML=`
   <div class="wa-note">📲 <b>WhatsApp:</b> il ponte diretto richiede un server (WhatsApp Business API) — non è possibile da app locale. Il parser qui sotto è già pronto: quando attiveremo il server, gli stessi comandi funzioneranno anche via WhatsApp.</div>
@@ -1562,8 +1600,9 @@ function saveMan(id){
   const data={title:$('#mn-t').value.trim(),clientId:$('#mn-c').value||null,employeeId:$('#mn-e').value||null,date:$('#mn-d').value||null,time:$('#mn-h').value||null,status:$('#mn-s .sg.on')?.dataset.s||'da_fare',notes:$('#mn-n').value.trim(),recur:+($('#mn-r')?.value||0),type:$('#mn-tp')?.value||null};
   if(!data.title){toast('Manca la descrizione');return;}
   const old=id?byId(S.maintenances,id):null;
-  const wasFatta=old?old.status==='fatta':false;
+  const wasFatta=old?old.status==='fatta':false;const prevEmp=old?old.employeeId:null;
   if(id){Object.assign(old,data);}else{S.maintenances.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  if(data.employeeId&&data.employeeId!==prevEmp&&data.status!=='fatta')pushNotify([data.employeeId],'🔧 Manutenzione assegnata',`${cName(data.clientId)||(old&&old.clientRaw)||''} — ${data.title}${data.date?' · '+fmtD(data.date):''}${data.time?' '+data.time:''}`);
   let extra='';
   if(data.status==='fatta'&&!wasFatta&&data.recur>0){
     const nextDate=addMonthsIso(data.date||todayIso(),data.recur);
@@ -1791,7 +1830,9 @@ function savePel(id){
   const kind=$('#pl-k .sg.on')?.dataset.k||'sacchi';
   const data={qty:parseFloat($('#pl-q').value)||null,unit:$('#pl-u').value,kind,clientId:$('#pl-c').value||null,employeeId:$('#pl-e').value||null,date:$('#pl-d').value||null,time:$('#pl-h').value||null,notes:$('#pl-n').value.trim()};
   data.price=parseFloat($('#pl-pr').value)||autoPrice({...data})||null;
-  if(id){Object.assign(byId(S.pellet,id),data);}else{S.pellet.unshift({id:uid(),status:'da_consegnare',clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  const oldP=id?byId(S.pellet,id):null;const prevEmp=oldP?oldP.employeeId:null;
+  if(id){Object.assign(oldP,data);}else{S.pellet.unshift({id:uid(),status:'da_consegnare',clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  if(data.employeeId&&data.employeeId!==prevEmp&&(oldP?oldP.status:'da_consegnare')!=='consegnato')pushNotify([data.employeeId],'🪵 Consegna pellet assegnata',`${data.qty?fmtQty(data.qty)+' '+(data.unit||'sacchi'):'Consegna'} a ${cName(data.clientId)||(oldP&&oldP.clientRaw)||''}${data.date?' · '+fmtD(data.date):''}`);
   save();closeSheet();render();toast('🪵 Salvato');
 }
 function togglePel(id){const p=byId(S.pellet,id);p.status=p.status==='consegnato'?'da_consegnare':'consegnato';save();closeSheet();render();}
@@ -2002,8 +2043,11 @@ function saveSite(id){
   const data={name,clientId:$('#st-c').value||null,employees,estHours:parseFloat($('#st-h').value)||null,startDate:$('#st-sd').value||null,dueDate:$('#st-dd').value||null,notes:$('#st-no').value.trim()};
   const amEl=$('#st-am');if(amEl)data.amount=parseFloat(amEl.value)||null;
   const stEl=document.querySelector('#st-st .sg.on');if(stEl)data.status=stEl.dataset.s;
-  if(id){const old=byId(S.sites,id);const wasClosed=old.status==='chiuso';Object.assign(old,data);if(old.status==='chiuso'&&!wasClosed&&!old.closedDate)old.closedDate=todayIso();}
+  const oldS=id?byId(S.sites,id):null;const prevEmps=oldS?(oldS.employees||[]):[];
+  if(id){const old=oldS;const wasClosed=old.status==='chiuso';Object.assign(old,data);if(old.status==='chiuso'&&!wasClosed&&!old.closedDate)old.closedDate=todayIso();}
   else{const st=data.status||'aperto';const ns={id:uid(),status:st,log:[],attachments:[],clientRaw:null,via:'manuale',created:Date.now(),...data};if(st==='chiuso'&&!ns.closedDate)ns.closedDate=todayIso();S.sites.unshift(ns);}
+  const added=employees.filter(e=>!prevEmps.includes(e));
+  if(added.length&&(data.status||'aperto')!=='chiuso'&&(data.status||'aperto')!=='previsto')pushNotify(added,'🏗 Cantiere assegnato',`${name}${data.clientId?' · '+(cName(data.clientId)||''):''}`);
   save();closeSheet();render();toast('🏗 Salvato');
 }
 
@@ -2632,9 +2676,11 @@ function bsigClear(){bolla.signature=null;const c=$('#bsigpad');const dpr=window
 function saveBolla(){
   const p=byId(S.pellet,bolla.pid);if(!p)return;
   if(!bolla.signature&&!confirm('Manca la firma. Segnare consegnato comunque?'))return;
+  const wasDone=p.status==='consegnato';
   p.status='consegnato';p.signature=bolla.signature;p.signedName=bolla.signedName;
   if(!p.date)p.date=todayIso();
   if(!p.price)p.price=autoPrice(p)||null;
+  if(!wasDone){const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'🪵 Consegna fatta',`${doer}: ${p.qty?fmtQty(p.qty)+' '+(p.unit||'sacchi'):'consegna'} a ${cName(p.clientId)||p.clientRaw||''}`);}
   save();closeSheet();render();toast('🪵 Consegnato'+(p.signature?' e firmato':''));
   if(p.signature)setTimeout(()=>printBollaAsk(p.id),350);
 }

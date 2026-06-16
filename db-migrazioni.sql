@@ -119,3 +119,22 @@ exception when others then null; end $$;
 
 -- 6) Spese ricorrenti: intervallo in mesi (0=una tantum, 1=mensile, 3, 6, 12=annuale).
 alter table public.expenses add column if not exists recur integer not null default 0;
+
+-- ============================================================
+-- 16 giu 2026 — 🔔 Notifiche push sul telefono (Web Push)
+-- ------------------------------------------------------------
+-- 7) Dispositivi abilitati alle notifiche (uno per browser/telefono).
+--    Ognuno gestisce SOLO le proprie sottoscrizioni; la Edge Function
+--    legge tutto con la service_role (lato server).
+create table if not exists public.push_subs(
+  endpoint text primary key,
+  emp_id uuid,
+  p256dh text,
+  auth text,
+  ua text,
+  created_at timestamptz not null default now()
+);
+alter table public.push_subs enable row level security;
+drop policy if exists ps_all on public.push_subs;
+create policy ps_all on public.push_subs for all to authenticated
+  using (emp_id = public.my_emp()) with check (emp_id = public.my_emp());
