@@ -270,7 +270,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.15-165835';
+const APP_VERSION='2026.06.16-002649';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -280,8 +280,8 @@ const uid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xx
 const num=v=>(v===''||v==null)?null:+v;
 const MAPS={
  clients:{tbl:'clients',
-  toDb:c=>({id:c.id,name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||''}),
-  fromDb:r=>({id:r.id,name:r.name,phone:r.phone||'',zone:r.zone||'',group:r.group||'',address:r.address||'',plant:r.plant||'',pellet:r.pellet||'',maintenance:r.maintenance||'',notes:r.notes||'',created:Date.parse(r.created_at)||Date.now()})},
+  toDb:c=>({id:c.id,name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||'',blocked:!!c.blocked}),
+  fromDb:r=>({id:r.id,name:r.name,phone:r.phone||'',zone:r.zone||'',group:r.group||'',address:r.address||'',plant:r.plant||'',pellet:r.pellet||'',maintenance:r.maintenance||'',notes:r.notes||'',blocked:!!r.blocked,created:Date.parse(r.created_at)||Date.now()})},
  employees:{tbl:'employees',
   toDb:e=>({id:e.id,name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||[],is_owner:!!e.isOwner,active:e.active!==false,invite_code:e.inviteCode||null,user_id:e.userId||null}),
   fromDb:r=>({id:r.id,name:r.name,role:r.role||'',phone:r.phone||'',perms:r.perms||[],isOwner:!!r.is_owner,active:r.active!==false,inviteCode:r.invite_code,userId:r.user_id})},
@@ -292,8 +292,8 @@ const MAPS={
   toDb:a=>({id:a.id,title:a.title,client_id:a.clientId||null,client_raw:a.clientRaw||null,employee_id:a.employeeId||null,date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'manuale'}),
   fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,done:!!r.done,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  pellet:{tbl:'pellet',
-  toDb:p=>({id:p.id,client_id:p.clientId||null,client_raw:p.clientRaw||null,qty:num(p.qty),unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:num(p.price),signature:p.signature||null,signed_name:p.signedName||'',notes:p.notes||'',via:p.via||'manuale'}),
-  fromDb:r=>({id:r.id,clientId:r.client_id,clientRaw:r.client_raw,qty:r.qty,unit:r.unit,kind:r.kind,date:r.date,time:r.time,status:r.status,price:r.price,signature:r.signature,signedName:r.signed_name||'',notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:p=>({id:p.id,client_id:p.clientId||null,client_raw:p.clientRaw||null,employee_id:p.employeeId||null,qty:num(p.qty),unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:num(p.price),signature:p.signature||null,signed_name:p.signedName||'',notes:p.notes||'',via:p.via||'manuale'}),
+  fromDb:r=>({id:r.id,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,qty:r.qty,unit:r.unit,kind:r.kind,date:r.date,time:r.time,status:r.status,price:r.price,signature:r.signature,signedName:r.signed_name||'',notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  sites:{tbl:'sites',
   toDb:s=>({id:s.id,name:s.name,client_id:s.clientId||null,client_raw:s.clientRaw||null,status:s.status||'aperto',employees:s.employees||[],est_hours:num(s.estHours),amount:num(s.amount),start_date:s.startDate||null,due_date:s.dueDate||null,notes:s.notes||'',via:s.via||'manuale'}),
   fromDb:r=>({id:r.id,name:r.name,clientId:r.client_id,clientRaw:r.client_raw,status:r.status,employees:r.employees||[],estHours:r.est_hours,amount:r.amount,startDate:r.start_date,dueDate:r.due_date,notes:r.notes||'',via:r.via,log:[],attachments:[],created:Date.parse(r.created_at)||Date.now()})},
@@ -430,6 +430,8 @@ function shiftDate(inputId,days){const el=$('#'+inputId);const base=el.value||to
 const dateChips=id=>`<div class="seg" style="margin:-4px 0 12px"><div class="sg" onclick="$('#${id}').value=todayIso()">oggi</div><div class="sg" onclick="shiftDate('${id}',1)">+1 giorno</div><div class="sg" onclick="shiftDate('${id}',7)">+1 settimana</div></div>`;
 const cName=id=>{const c=byId(S.clients,id);return c?c.name:''};
 const eName=id=>{const e=byId(S.employees,id);return e?e.name:''};
+/* opzioni cliente per i menù a tendina: nasconde i bloccati, ma mantiene quello già scelto in un record esistente */
+const cOpt=sel=>S.clients.filter(c=>!c.blocked||c.id===sel).map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.name)}${c.blocked?' 🚫':''}</option>`).join('');
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
 /* ================= PARSER (no AI — pattern matching IT) ================= */
@@ -476,7 +478,7 @@ function findClient(text,employee){
   const t=norm(tx);
   // cliente già in anagrafica: match più lungo
   let best=null;
-  for(const c of S.clients){const n=norm(c.name);if(n&&reWord(n).test(t)&&(!best||n.length>best.len))best={kind:'client',id:c.id,name:c.name,len:n.length};}
+  for(const c of S.clients){if(c.blocked)continue;const n=norm(c.name);if(n&&reWord(n).test(t)&&(!best||n.length>best.len))best={kind:'client',id:c.id,name:c.name,len:n.length};}
   if(best)return best;
   // cliente nuovo: prima i marcatori forti "per/cliente/sig", poi il debole "a/da"; salta parole comuni e parole-tipo
   const STOP=/^(oggi|domani|dopodomani|ieri|mattina|sera|pomeriggio|notte|stamattina|stasera|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre|alle|ore|fra|tra|casa|lui|lei|me|noi|loro|tutti|fare|farla|farlo|pellet|gas|gasolio|metano|legna|cippato|caldaia|caldaie|stufa|stufe|camino|sacchi|sacco|sfuso|bancale|bancali|kg|tonnellate|tonnellata|ton|quintali|e|il|la|lo|le|i|gli|un|una|uno|del|della|dei)$/i;
@@ -586,8 +588,8 @@ function commitParsed(p,via){
     msg='🔧 Manutenzione registrata'+(p.person?' — '+p.person.name:'')+(p.employee?' · 👷 '+p.employee.name:'')+(p.date?' · '+fmtD(p.date):'')+(p.time?' '+p.time:'');
   }else if(p.type==='pellet'){
     const kind=(p.unit==='t'||/\bsfuso\b/i.test(p.raw||''))?'sfuso':'sacchi';
-    S.pellet.unshift({id:uid(),clientId,clientRaw:personRaw,qty:p.qty,unit:kind==='sfuso'?'t':(p.unit||'sacchi'),kind,date:p.date,time:p.time,status:'da_consegnare',notes:p.title,via,created:Date.now()});
-    msg='🔥 Consegna '+(kind==='sfuso'?'sfuso':'sacchi')+' registrata'+(p.qty?' — '+p.qty+' '+(kind==='sfuso'?'t':p.unit||'sacchi'):'')+(p.person?' · '+p.person.name:'')+(p.date?' · '+fmtD(p.date):'');
+    S.pellet.unshift({id:uid(),clientId,clientRaw:personRaw,employeeId,qty:p.qty,unit:kind==='sfuso'?'t':(p.unit||'sacchi'),kind,date:p.date,time:p.time,status:'da_consegnare',notes:p.title,via,created:Date.now()});
+    msg='🔥 Consegna '+(kind==='sfuso'?'sfuso':'sacchi')+' registrata'+(p.qty?' — '+p.qty+' '+(kind==='sfuso'?'t':p.unit||'sacchi'):'')+(p.person?' · '+p.person.name:'')+(p.employee?' · 👷 '+p.employee.name:'')+(p.date?' · '+fmtD(p.date):'');
   }else if(p.type==='appointment'){
     S.appointments.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date||todayIso(),time:p.time,done:false,via,created:Date.now()});
     msg='📅 Appuntamento segnato — '+fmtD(p.date||todayIso())+(p.time?' '+p.time:'');
@@ -633,7 +635,8 @@ let view='hub';
 const me=()=>S.session?byId(S.employees,S.session.empId):null;
 const isOwner=()=>{const m=me();return !!(m&&m.isOwner);};
 const can=p=>isOwner()||(me()&&me().perms&&me().perms.includes(p));
-const genInvite=n=>(norm(n).replace(/[^a-z]/g,'').slice(0,5).toUpperCase()||'USER')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+const randCode=(len=5)=>{const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';const a=new Uint8Array(len);crypto.getRandomValues(a);return Array.from(a,x=>A[x%A.length]).join('');};
+const genInvite=n=>(norm(n).replace(/[^a-z]/g,'').slice(0,5).toUpperCase()||'USER')+'-'+randCode(5);
 async function logout(){try{await sb.auth.signOut();}catch(e){}S=blank();authMode='login';closeSheet();renderLock();}
 function nav(v){view=v;render();window.scrollTo(0,0);}
 function renderNav(){
@@ -847,6 +850,7 @@ function closeSheet(){const o=$('#overlay');if(o)o.remove();}
 const visMan=()=>isOwner()?S.maintenances:S.maintenances.filter(m=>m.employeeId===S.session.empId);
 const visApp=()=>isOwner()?S.appointments:S.appointments.filter(a=>a.employeeId===S.session.empId||!a.employeeId);
 const visSites=()=>isOwner()?S.sites:S.sites.filter(s=>s.employees.includes(S.session.empId));
+const visPellet=()=>isOwner()?S.pellet:S.pellet.filter(p=>p.employeeId===S.session.empId);
 function allEvents(){
   const ev=[];
   visApp().forEach(a=>{if(a.date)ev.push({type:'appointment',date:a.date,time:a.time,title:a.title,sub:cName(a.clientId)||a.clientRaw||'',done:a.done,id:a.id});});
@@ -929,8 +933,8 @@ function showPreview(){
   $('#hubpreview').innerHTML=`<div class="preview">
     <div class="row"><span class="k">SEZIONE</span><span class="badge" style="border-color:${M.hex};color:${M.hex}">${M.ic} ${M.label}</span></div>
     <div class="row"><span class="k">TESTO</span><span class="v">${esc(p.title)}</span></div>
-    <div class="row"><span class="k">CLIENTE</span><select onchange="hubSetClient(this.value)"><option value="">— nessuno</option>${p.person&&p.person.kind==='raw'?`<option value="__new__" selected>➕ ${esc(p.person.name)} (nuovo)</option>`:''}${S.clients.map(c=>`<option value="${c.id}" ${p.person&&p.person.kind==='client'&&p.person.id===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>${p.person&&p.person.kind==='raw'?`<button class="btn sm" style="border-color:var(--teal);color:var(--teal)" onclick="createClientFromPreview()">✚ Crea in anagrafica</button>`:''}</div>
-    ${(p.type==='maintenance'||p.type==='appointment')?`<div class="row"><span class="k">DIPENDENTE</span><select onchange="hubSetEmp(this.value)"><option value="">— nessuno</option>${S.employees.map(e=>`<option value="${e.id}" ${p.employee&&p.employee.id===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div>`:''}
+    <div class="row"><span class="k">CLIENTE</span><select onchange="hubSetClient(this.value)"><option value="">— nessuno</option>${p.person&&p.person.kind==='raw'?`<option value="__new__" selected>➕ ${esc(p.person.name)} (nuovo)</option>`:''}${cOpt(p.person&&p.person.kind==='client'?p.person.id:'')}</select>${p.person&&p.person.kind==='raw'?`<button class="btn sm" style="border-color:var(--teal);color:var(--teal)" onclick="createClientFromPreview()">✚ Crea in anagrafica</button>`:''}</div>
+    ${(p.type==='maintenance'||p.type==='appointment'||p.type==='pellet')?`<div class="row"><span class="k">DIPENDENTE</span><select onchange="hubSetEmp(this.value)"><option value="">— nessuno</option>${S.employees.map(e=>`<option value="${e.id}" ${p.employee&&p.employee.id===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div>`:''}
     <div class="row"><span class="k">QUANDO</span><span class="v ${p.date?'':'miss'}">${p.date?fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}</span></div>
     ${p.qty?`<div class="row"><span class="k">QUANTITÀ</span><span class="v">${p.qty} ${p.unit||''}</span></div>`:''}
     <div class="row" style="margin-top:4px;gap:10px">
@@ -1082,7 +1086,7 @@ function openQuickAdd(date){
     <div class="fld"><label>Tipo</label><select id="qa-type"><option value="appointment">Appuntamento</option><option value="maintenance">Manutenzione</option><option value="pellet">Consegna pellet</option><option value="note">Nota</option></select></div>
     <div class="fld"><label>Ora</label><input id="qa-time" type="time"></div>
   </div>
-  <div class="fld"><label>Cliente (opzionale)</label><select id="qa-cl"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Cliente (opzionale)</label><select id="qa-cl"><option value="">—</option>${cOpt('')}</select></div>
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="quickAddSave('${date}')">Salva</button></div>`);
 }
 function quickAddSave(date){
@@ -1151,7 +1155,7 @@ function newNote(){
   <div class="fld"><label>Testo</label><textarea id="nn-t" placeholder="Scrivi…"></textarea></div>
   <div class="fld"><label>Gruppo</label><select id="nn-g">${groupOpts(noteGroupSel!=='all'&&noteGroupSel!=='arch'?noteGroupSel:null)}</select></div>
   <div class="frow"><div class="fld"><label>Data (va a calendario)</label><input id="nn-d" type="date"></div>
-  <div class="fld"><label>Cliente</label><select id="nn-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Cliente</label><select id="nn-c"><option value="">—</option>${cOpt('')}</select></div></div>
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveNewNote()">Salva</button></div>`);
 }
 function saveNewNote(){const t=$('#nn-t').value.trim();if(!t)return;S.notes.unshift({id:uid(),text:t,clientId:$('#nn-c').value||null,groupId:$('#nn-g').value||null,date:$('#nn-d').value||null,pinned:false,archived:false,via:'manuale',created:Date.now()});save();closeSheet();render();toast('📝 Nota salvata');}
@@ -1161,7 +1165,7 @@ function openNote(id){
   <div class="fld"><label>Testo</label><textarea id="en-t">${esc(n.text)}</textarea></div>
   <div class="fld"><label>Gruppo</label><select id="en-g">${groupOpts(n.groupId)}</select></div>
   <div class="frow"><div class="fld"><label>Data (va a calendario)</label><input id="en-d" type="date" value="${n.date||''}"></div>
-  <div class="fld"><label>Cliente</label><select id="en-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${n.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Cliente</label><select id="en-c"><option value="">—</option>${cOpt(n.clientId)}</select></div></div>
   <div class="actions">
     <button class="btn danger" onclick="delItem('notes','${id}')">Elimina</button>
     <button class="btn" onclick="const n=byId(S.notes,'${id}');n.archived=!n.archived;save();closeSheet();render();toast(n.archived?'🗄 Archiviata':'Ripristinata')">${n.archived?'↩ Ripristina':'🗄 Archivia'}</button>
@@ -1176,12 +1180,13 @@ function delItem(coll,id){if(!confirm('Eliminare definitivamente?'))return;S[col
 /* ================= NOTIFICHE (inbox personale + chat) ================= */
 let notifTab='inbox';
 function myWork(){
-  if(!S.session)return{man:[],app:[],sit:[],total:0};
+  if(!S.session)return{man:[],app:[],sit:[],pel:[],total:0};
   const id=S.session.empId;
   const man=S.maintenances.filter(m=>m.employeeId===id&&m.status!=='fatta');
   const app=S.appointments.filter(a=>a.employeeId===id&&!a.done);
   const sit=S.sites.filter(s=>(s.employees||[]).includes(id)&&s.status==='aperto');
-  return{man,app,sit,total:man.length+app.length+sit.length};
+  const pel=S.pellet.filter(p=>p.employeeId===id&&p.status!=='consegnato');
+  return{man,app,sit,pel,total:man.length+app.length+sit.length+pel.length};
 }
 function notifCount(){return myWork().total;}
 function renderNotif(){
@@ -1230,10 +1235,21 @@ function renderInbox(w){
       <div class="right"><span class="row-act">APRI ›</span></div></div>`;
     }).join('')+`</div>`);
   }
+  if(w.pel&&w.pel.length){
+    blocks.push(`<div class="subtle" style="margin:12px 2px 6px;font-weight:600;color:var(--t2)">🔥 Consegne pellet (${w.pel.length})</div><div class="card">`+w.pel.map(p=>{
+      const who=cName(p.clientId)||p.clientRaw||'';const late=p.date&&p.date<t;
+      return`<div class="item" onclick="openPel('${p.id}')">
+      <span class="led" style="background:${late?'#FF5C7A':'var(--fire)'}"></span>
+      <div class="bd"><div class="ti">${p.kind==='sfuso'?'🛢':'📦'} ${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${who?` — <b>${esc(who)}</b>`:''}</div>
+      <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">IN RITARDO</span>':''}</div></div>
+      <div class="right"><span class="row-act done" onclick="event.stopPropagation();markPelDone('${p.id}')">✓ CONSEGNATA</span></div></div>`;
+    }).join('')+`</div>`);
+  }
   $('#notifbody').innerHTML=blocks.length?blocks.join(''):`<div class="empty"><div class="big">✅</div>Nessuna cosa da fare assegnata a te.<br><span class="subtle">Qui arrivano manutenzioni, appuntamenti e cantieri assegnati a te.</span></div>`;
 }
 function markManDone(id){const m=byId(S.maintenances,id);if(!m)return;m.status='fatta';save();render();toast('✓ Manutenzione segnata come fatta');}
 function markAppDone(id){const a=byId(S.appointments,id);if(!a)return;a.done=true;save();render();toast('✓ Appuntamento fatto');}
+function markPelDone(id){const p=byId(S.pellet,id);if(!p)return;p.status='consegnato';save();render();toast('🔥 Consegna registrata');}
 function renderChatPanel(){
   $('#notifbody').innerHTML=`
   <div class="wa-note">📲 <b>WhatsApp:</b> il ponte diretto richiede un server (WhatsApp Business API) — non è possibile da app locale. Il parser qui sotto è già pronto: quando attiveremo il server, gli stessi comandi funzioneranno anche via WhatsApp.</div>
@@ -1399,7 +1415,7 @@ function openMan(id){
   openSheet(`<h3>${id?'Manutenzione':'Nuova manutenzione'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Descrizione</label><input id="mn-t" value="${esc(m.title)}" placeholder="es. Pulizia caldaia pellet"></div>
   <div class="frow">
-  <div class="fld"><label>Cliente</label><select id="mn-c"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${S.clients.map(c=>`<option value="${c.id}" ${m.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Cliente</label><select id="mn-c"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${cOpt(m.clientId)}</select></div>
   <div class="fld"><label>Assegnata a</label><select id="mn-e"><option value="">—</option>${S.employees.map(e=>`<option value="${e.id}" ${m.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div></div>
   <div class="frow"><div class="fld"><label>Data</label><input id="mn-d" type="date" value="${m.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="mn-h" type="time" value="${m.time||''}"></div></div>
@@ -1482,8 +1498,9 @@ function barChart(data,color,unitLbl){
 function renderPellet(){
   if(pelView==='dash'){renderPelDash();return;}
   pelKind=pelView;
-  const open=S.pellet.filter(p=>(p.kind||'sacchi')===pelKind&&p.status!=='consegnato').sort((a,b)=>((a.date||'9999')<(b.date||'9999')?-1:1));
-  const done=S.pellet.filter(p=>(p.kind||'sacchi')===pelKind&&p.status==='consegnato').sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
+  const mine=visPellet();
+  const open=mine.filter(p=>(p.kind||'sacchi')===pelKind&&p.status!=='consegnato').sort((a,b)=>((a.date||'9999')<(b.date||'9999')?-1:1));
+  const done=mine.filter(p=>(p.kind||'sacchi')===pelKind&&p.status==='consegnato').sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
   const fc=pelKind==='sfuso'?sfusoForecast():[];
   const alerts=fc.filter(f=>f.days!=null&&f.days<=30);
   $('#main').innerHTML=`
@@ -1516,7 +1533,7 @@ function renderPellet(){
 const pelRow=p=>`<div class="item" onclick="openPel('${p.id}')">
     <span class="led" style="background:${p.status==='consegnato'?'var(--teal)':'var(--fire)'}"></span>
     <div class="bd"><div class="ti">${p.kind==='sfuso'?'🛢':'📦'} ${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${p.notes&&p.notes!==String(p.qty)?' — '+esc(p.notes):''}</div>
-    <div class="su">${esc(cName(p.clientId)||p.clientRaw||'cliente da definire')}</div></div>
+    <div class="su">${esc(cName(p.clientId)||p.clientRaw||'cliente da definire')}${p.employeeId?' · 👷 '+esc(eName(p.employeeId)):''}</div></div>
     <div class="right"><div class="d1">${p.time||''}</div><div class="d2">${p.date?fmtD(p.date):'—'}</div></div></div>`;
 function renderPelDash(){
   const mT=monthlyTotals('sfuso');
@@ -1612,7 +1629,8 @@ function openPel(id,preset){
   <div class="frow">
   <div class="fld"><label>Quantità</label><input id="pl-q" type="number" inputmode="decimal" step="any" value="${p.qty||''}"></div>
   <div class="fld"><label>Unità</label><select id="pl-u">${(p.kind==='sfuso'?['t']:['sacchi','kg']).map(u=>`<option ${p.unit===u?'selected':''}>${u}</option>`).join('')}</select></div></div>
-  <div class="fld"><label>Cliente</label><select id="pl-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${p.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Cliente</label><select id="pl-c"><option value="">—</option>${cOpt(p.clientId)}</select></div>
+  <div class="fld"><label>Assegna a (dipendente)</label><select id="pl-e"><option value="">— nessuno</option>${S.employees.map(e=>`<option value="${e.id}" ${p.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div>
   <div class="frow"><div class="fld"><label>Data</label><input id="pl-d" type="date" value="${p.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="pl-h" type="time" value="${p.time||''}"></div></div>
   ${dateChips('pl-d')}
@@ -1638,7 +1656,7 @@ const autoPrice=p=>{
 };
 function savePel(id){
   const kind=$('#pl-k .sg.on')?.dataset.k||'sacchi';
-  const data={qty:parseFloat($('#pl-q').value)||null,unit:$('#pl-u').value,kind,clientId:$('#pl-c').value||null,date:$('#pl-d').value||null,time:$('#pl-h').value||null,notes:$('#pl-n').value.trim()};
+  const data={qty:parseFloat($('#pl-q').value)||null,unit:$('#pl-u').value,kind,clientId:$('#pl-c').value||null,employeeId:$('#pl-e').value||null,date:$('#pl-d').value||null,time:$('#pl-h').value||null,notes:$('#pl-n').value.trim()};
   data.price=parseFloat($('#pl-pr').value)||autoPrice({...data})||null;
   if(id){Object.assign(byId(S.pellet,id),data);}else{S.pellet.unshift({id:uid(),status:'da_consegnare',clientRaw:null,via:'manuale',created:Date.now(),...data});}
   save();closeSheet();render();toast('🔥 Salvato');
@@ -1722,7 +1740,7 @@ function openSite(id){
     <div class="fld"><button class="btn sm" style="width:100%" onclick="addLog('${id}')">+ Registra oggi</button></div></div>
   </div>
   <div class="actions" style="flex-wrap:wrap">
-    <button class="btn danger" onclick="delItem('sites','${id}')">Elimina</button>
+    <button class="btn danger" onclick="delSite('${id}')">Elimina</button>
     ${s.status==='aperto'?`<button class="btn" style="border-color:var(--amber);color:var(--amber)" onclick="setSiteStatus('${id}','da_fatturare')">✓ Finito → fattura</button>`:''}
     ${s.status==='da_fatturare'?`<button class="btn" onclick="setSiteStatus('${id}','aperto')">↩ Riapri</button>
     <button class="btn" style="border-color:var(--teal);color:var(--teal)" onclick="setSiteStatus('${id}','chiuso')">💰 Fatturato → archivio</button>`:''}
@@ -1802,11 +1820,25 @@ async function delAtt(sid,aid){
     openSite(sid);toast('Eliminato');
   }catch(e){toast('⚠ '+(e.message||e));}
 }
+/* cancellazione cantiere: rimuove anche foto/file dallo Storage (i log spariscono via sync) */
+async function delSite(id){
+  const s=byId(S.sites,id);if(!s)return;
+  const n=(s.attachments||[]).length;
+  if(!confirm(`Eliminare il cantiere "${s.name}"?`+(n?`\nVerranno cancellate anche ${n} foto/file.`:'')+'\nNon si può annullare.'))return;
+  try{
+    const paths=(s.attachments||[]).map(a=>a.storagePath).filter(Boolean);
+    if(paths.length)await sb.storage.from('allegati').remove(paths);
+    const aids=(s.attachments||[]).map(a=>a.id);
+    if(aids.length)await sb.from('attachments').delete().in('id',aids);
+  }catch(e){toast('⚠ Pulizia allegati: '+(e.message||e));}
+  S.sites=S.sites.filter(x=>x.id!==id);
+  save();closeSheet();render();toast('🗑 Cantiere eliminato');
+}
 function editSite(id){
   const s=id?byId(S.sites,id):{name:'',clientId:null,employees:[],notes:'',status:'aperto',estHours:null,startDate:todayIso(),dueDate:null};
   openSheet(`<h3>${id?'Modifica cantiere':'Nuovo cantiere'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="st-n" value="${esc(s.name)}" placeholder="es. Installazione caldaia Via Roma"></div>
-  <div class="fld"><label>Cliente</label><select id="st-c"><option value="">—</option>${S.clients.map(c=>`<option value="${c.id}" ${s.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Cliente</label><select id="st-c"><option value="">—</option>${cOpt(s.clientId)}</select></div>
   <div class="frow">
     <div class="fld"><label>Stima ore lavoro</label><input id="st-h" type="number" inputmode="decimal" value="${s.estHours||''}" placeholder="es. 40"></div>
     <div class="fld"><label>Importo CHF</label><input id="st-am" type="number" inputmode="decimal" step="any" value="${s.amount||''}" placeholder="da fatturare"></div>
@@ -1852,8 +1884,8 @@ function renderClients(){
       c.maintenance==='si'?'🔧 manut.':c.maintenance==='no'?'✗ no manut.':''
     ].filter(Boolean);
     return`<div class="item" onclick="openClient('${c.id}')">
-    <span class="led" style="background:var(--teal)"></span>
-    <div class="bd"><div class="ti">${esc(c.name)}</div>
+    <span class="led" style="background:${c.blocked?'var(--coral)':'var(--teal)'}"></span>
+    <div class="bd"><div class="ti"${c.blocked?' style="color:var(--coral)"':''}>${esc(c.name)}${c.blocked?' <span class="badge" style="border-color:var(--coral);color:var(--coral)">🚫 BLOCCATO</span>':''}</div>
     <div class="su">${esc([c.group,c.zone,c.phone].filter(Boolean).join(' · '))}</div>
     <div class="mt">${tags.map(t=>`<span class="badge" style="border-color:var(--line2);color:var(--t2);margin-right:5px">${esc(t)}</span>`).join('')}${nm?' 🔧'+nm:''}${np?' 🔥'+np:''}</div></div></div>`;
   }).join(''):'<div class="empty"><div class="big">👥</div>Nessun cliente qui.</div>'}
@@ -1875,7 +1907,8 @@ function openClient(id){
     c.group?['Gruppo',c.group]:null,
     c.zone?['Zona',c.zone]:null,
   ].filter(Boolean);
-  openSheet(`<h3>${esc(c.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  openSheet(`<h3>${c.blocked?'🚫 ':''}${esc(c.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
+  ${c.blocked?`<div class="card" style="border-color:var(--coral);background:rgba(255,92,122,.08);padding:10px 12px;margin-bottom:10px;color:var(--coral)">🚫 <b>Cliente bloccato.</b> Non puoi assegnargli nuovi lavori finché non lo sblocchi.</div>`:''}
   <div class="subtle" style="margin-bottom:10px">
     ${c.phone?`📞 <a href="tel:${esc(c.phone)}" style="color:var(--cy)">${esc(c.phone)}</a><br>`:''}
     ${c.address?'📍 '+esc(c.address)+'<br>':''}
@@ -1890,10 +1923,12 @@ function openClient(id){
   ${not.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--teal)">📝 Note (${not.length})</div>${mini(not,n=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${esc(n.text)}</div>`)}`:''}
   ${!man.length&&!pel.length&&!sit.length&&!app.length&&!not.length?'<div class="subtle">Ancora vuoto — si riempirà da solo man mano che registri.</div>':''}
   </div>
-  <div class="actions">
-    <button class="btn danger" onclick="delItem('clients','${id}')">Elimina</button>
+  <div class="actions" style="flex-wrap:wrap">
+    <button class="btn danger" onclick="delClient('${id}')">Elimina</button>
+    <button class="btn" style="border-color:var(--coral);color:var(--coral)" onclick="toggleBlock('${id}')">${c.blocked?'🔓 Sblocca':'🚫 Blocca'}</button>
     <button class="btn pri" onclick="editClient('${id}')">Modifica</button></div>`);
 }
+function toggleBlock(id){const c=byId(S.clients,id);if(!c)return;c.blocked=!c.blocked;save();closeSheet();render();toast(c.blocked?'🚫 Cliente bloccato':'🔓 Cliente sbloccato');}
 function editClient(id){
   const c=id?byId(S.clients,id):{name:'',phone:'',address:'',zone:'',group:'',plant:'',pellet:'',maintenance:'',notes:''};
   const groups=clientGroups();
@@ -1917,6 +1952,39 @@ function saveClient(id){
   const data={name,phone:$('#cl-p').value.trim(),zone:$('#cl-z').value.trim(),group:$('#cl-g').value.trim(),address:$('#cl-a').value.trim(),plant,pellet:sv('cl-pe'),maintenance:sv('cl-ma'),notes:$('#cl-no').value.trim()};
   if(id){Object.assign(byId(S.clients,id),data);}else{S.clients.unshift({id:uid(),created:Date.now(),...data});}
   save();closeSheet();render();toast('👥 Salvato');
+}
+/* cancellazione cliente a cascata (GDPR art.17): rimuove anche figli + foto/file nello Storage */
+async function delClient(id){
+  const c=byId(S.clients,id);if(!c)return;
+  const man=S.maintenances.filter(m=>m.clientId===id);
+  const app=S.appointments.filter(a=>a.clientId===id);
+  const pel=S.pellet.filter(p=>p.clientId===id);
+  const sit=S.sites.filter(s=>s.clientId===id);
+  const not=S.notes.filter(n=>n.clientId===id);
+  const cal=S.callLog.filter(x=>x.clientId===id);
+  const atts=sit.flatMap(s=>s.attachments||[]);
+  const parts=[];
+  if(man.length)parts.push(man.length+' manutenzioni');
+  if(app.length)parts.push(app.length+' appuntamenti');
+  if(pel.length)parts.push(pel.length+' consegne pellet');
+  if(sit.length)parts.push(sit.length+' cantieri');
+  if(not.length)parts.push(not.length+' note');
+  if(atts.length)parts.push(atts.length+' foto/file');
+  if(!confirm(`Eliminare DEFINITIVAMENTE il cliente "${c.name}"?`+(parts.length?'\n\nVerranno cancellati anche:\n• '+parts.join('\n• '):'')+'\n\nNon si può annullare. (In alternativa puoi BLOCCARE il cliente.)'))return;
+  try{
+    const paths=atts.map(a=>a.storagePath).filter(Boolean);
+    if(paths.length)await sb.storage.from('allegati').remove(paths);
+    const aids=atts.map(a=>a.id);
+    if(aids.length)await sb.from('attachments').delete().in('id',aids);
+  }catch(e){toast('⚠ Pulizia allegati: '+(e.message||e));}
+  S.maintenances=S.maintenances.filter(m=>m.clientId!==id);
+  S.appointments=S.appointments.filter(a=>a.clientId!==id);
+  S.pellet=S.pellet.filter(p=>p.clientId!==id);
+  S.sites=S.sites.filter(s=>s.clientId!==id);
+  S.notes=S.notes.filter(n=>n.clientId!==id);
+  S.callLog=S.callLog.filter(x=>x.clientId!==id);
+  S.clients=S.clients.filter(x=>x.id!==id);
+  save();closeSheet();render();toast('🗑 Cliente e dati collegati eliminati');
 }
 
 /* ================= PERSONALE ================= */
