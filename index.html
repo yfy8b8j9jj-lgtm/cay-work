@@ -121,6 +121,21 @@ body::before{content:'';position:fixed;inset:0;background:
 .badge{display:inline-block;font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:99px;border:1px solid;letter-spacing:.4px}
 .empty{text-align:center;color:var(--t3);padding:34px 16px;font-size:13px;line-height:1.6}
 .empty .big{font-size:26px;margin-bottom:8px;opacity:.6}
+/* design 2026: contatori compatti, righe a fascia, avatar, intestazioni gruppo */
+.kpis{display:grid;gap:7px;margin-bottom:12px}
+.kpi{background:var(--bg1);border:1px solid var(--line);border-radius:12px;padding:9px 4px;text-align:center;min-width:0}
+.kpi .n{font-weight:700;font-size:19px;line-height:1.1}
+.kpi .l{font-size:9.5px;color:var(--t2);margin-top:2px}
+.frw{display:flex;align-items:center;gap:10px;padding:10px 11px;margin-bottom:8px;background:var(--bg1);border:1px solid var(--line);border-radius:12px;border-left:3px solid var(--line2)}
+.frw:last-child{margin-bottom:0}
+.frw .bd{flex:1;min-width:0}
+.frw .ti{font-size:13px;color:var(--t1);line-height:1.3}
+.frw .su{font-size:10.5px;color:var(--t2);margin-top:2px}
+.grp{font-size:10.5px;color:var(--t2);font-family:var(--mono);letter-spacing:.5px;margin:14px 2px 7px}
+.grp:first-child{margin-top:2px}
+.avat{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.qbtn{font-size:10px;font-weight:600;padding:6px 10px;border-radius:8px;border:none;background:var(--teal);color:#04121f;cursor:pointer;white-space:nowrap}
+.qbtn.ghost{background:transparent;border:1px solid var(--cy);color:var(--cy)}
 
 /* stats */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
@@ -137,9 +152,9 @@ body::before{content:'';position:fixed;inset:0;background:
 .cal-cell{aspect-ratio:1/1.06;border-radius:10px;border:1px solid transparent;padding:5px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;background:var(--bg1);position:relative;min-width:0}
 .cal-cell.dim{opacity:.32}
 .cal-cell .dn{font-family:var(--mono);font-size:12px;color:var(--t2)}
-.cal-cell.today{border-color:var(--cy);box-shadow:0 0 10px rgba(0,212,255,.25)}
-.cal-cell.today .dn{color:var(--cy);font-weight:600}
-.cal-cell.sel{background:var(--bg3);border-color:var(--line2)}
+.cal-cell.today{background:var(--cy);border-color:var(--cy)}
+.cal-cell.today .dn{color:#04121f;font-weight:700}
+.cal-cell.sel{border-color:var(--cy);box-shadow:0 0 0 1.5px var(--cy) inset}
 .cal-dots{display:flex;gap:2.5px;margin-top:4px;flex-wrap:wrap;justify-content:center;max-width:100%}
 .cal-dots i{width:5px;height:5px;border-radius:50%;display:block}
 .cal-cell .more{font-family:var(--mono);font-size:8px;color:var(--t3);margin-top:2px}
@@ -189,7 +204,7 @@ body::before{content:'';position:fixed;inset:0;background:
 
 /* lock screen */
 .lock{position:fixed;inset:0;background:var(--bg0);z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
-.lock::before{content:'';position:fixed;inset:0;background:radial-gradient(900px 500px at 50% -10%,rgba(0,212,255,.10),transparent 60%);pointer-events:none}
+.lock::before{content:'';position:fixed;inset:0;background:radial-gradient(680px 380px at 28% -5%,rgba(151,196,89,.14),transparent 60%),radial-gradient(720px 420px at 78% 0%,rgba(0,212,255,.12),transparent 62%);pointer-events:none}
 .lock .llogo{font-family:var(--disp);font-weight:700;font-size:26px;letter-spacing:1px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
 .lock .llogo .dot{width:12px;height:12px;border-radius:50%;background:var(--cy);box-shadow:0 0 16px var(--cy);animation:pulse 2.6s infinite}
 .lock .lsub{font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:2px;margin-bottom:30px}
@@ -270,9 +285,9 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.16-102337';
+const APP_VERSION='2026.06.16-134605';
 
-const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
+const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);}));
 
@@ -286,8 +301,8 @@ const MAPS={
   toDb:e=>({id:e.id,name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||[],is_owner:!!e.isOwner,active:e.active!==false,invite_code:e.inviteCode||null,user_id:e.userId||null}),
   fromDb:r=>({id:r.id,name:r.name,role:r.role||'',phone:r.phone||'',perms:r.perms||[],isOwner:!!r.is_owner,active:r.active!==false,inviteCode:r.invite_code,userId:r.user_id})},
  maintenances:{tbl:'maintenances',
-  toDb:m=>({id:m.id,title:m.title,client_id:m.clientId||null,client_raw:m.clientRaw||null,employee_id:m.employeeId||null,date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:num(m.price),report:m.report||null,via:m.via||'manuale'}),
-  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,status:r.status,notes:r.notes||'',recur:r.recur||0,price:r.price,report:r.report,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:m=>({id:m.id,title:m.title,client_id:m.clientId||null,client_raw:m.clientRaw||null,employee_id:m.employeeId||null,date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:num(m.price),type:m.type||null,report:m.report||null,via:m.via||'manuale'}),
+  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,status:r.status,notes:r.notes||'',recur:r.recur||0,price:r.price,type:r.type||'',report:r.report,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  appointments:{tbl:'appointments',
   toDb:a=>({id:a.id,title:a.title,client_id:a.clientId||null,client_raw:a.clientRaw||null,employee_id:a.employeeId||null,date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'manuale'}),
   fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,done:!!r.done,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
@@ -295,8 +310,8 @@ const MAPS={
   toDb:p=>({id:p.id,client_id:p.clientId||null,client_raw:p.clientRaw||null,employee_id:p.employeeId||null,qty:num(p.qty),unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:num(p.price),signature:p.signature||null,signed_name:p.signedName||'',notes:p.notes||'',via:p.via||'manuale'}),
   fromDb:r=>({id:r.id,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,qty:r.qty,unit:r.unit,kind:r.kind,date:r.date,time:r.time,status:r.status,price:r.price,signature:r.signature,signedName:r.signed_name||'',notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  sites:{tbl:'sites',
-  toDb:s=>({id:s.id,name:s.name,client_id:s.clientId||null,client_raw:s.clientRaw||null,status:s.status||'aperto',employees:s.employees||[],est_hours:num(s.estHours),amount:num(s.amount),start_date:s.startDate||null,due_date:s.dueDate||null,notes:s.notes||'',via:s.via||'manuale'}),
-  fromDb:r=>({id:r.id,name:r.name,clientId:r.client_id,clientRaw:r.client_raw,status:r.status,employees:r.employees||[],estHours:r.est_hours,amount:r.amount,startDate:r.start_date,dueDate:r.due_date,notes:r.notes||'',via:r.via,log:[],attachments:[],created:Date.parse(r.created_at)||Date.now()})},
+  toDb:s=>({id:s.id,name:s.name,client_id:s.clientId||null,client_raw:s.clientRaw||null,status:s.status||'aperto',employees:s.employees||[],est_hours:num(s.estHours),amount:num(s.amount),start_date:s.startDate||null,due_date:s.dueDate||null,closed_date:s.closedDate||null,notes:s.notes||'',via:s.via||'manuale'}),
+  fromDb:r=>({id:r.id,name:r.name,clientId:r.client_id,clientRaw:r.client_raw,status:r.status,employees:r.employees||[],estHours:r.est_hours,amount:r.amount,startDate:r.start_date,dueDate:r.due_date,closedDate:r.closed_date,notes:r.notes||'',via:r.via,log:[],attachments:[],created:Date.parse(r.created_at)||Date.now()})},
  notes:{tbl:'notes',
   toDb:n=>({id:n.id,text:n.text,client_id:n.clientId||null,group_id:n.groupId||null,date:n.date||null,pinned:!!n.pinned,archived:!!n.archived,via:n.via||'manuale'}),
   fromDb:r=>({id:r.id,text:r.text,clientId:r.client_id,groupId:r.group_id,date:r.date,pinned:!!r.pinned,archived:!!r.archived,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
@@ -309,6 +324,12 @@ const MAPS={
  callLog:{tbl:'call_log',
   toDb:c=>({id:c.id,client_id:c.clientId,year:c.year,called:!!c.called,outcome:c.outcome||'',note:c.note||'',maint_id:c.maintId||null}),
   fromDb:r=>({id:r.id,clientId:r.client_id,year:r.year,called:!!r.called,outcome:r.outcome||'',note:r.note||'',maintId:r.maint_id})},
+ expenses:{tbl:'expenses',
+  toDb:e=>({id:e.id,date:e.date||null,category:e.category||'',amount:num(e.amount),note:e.note||'',site_id:e.siteId||null,recur:e.recur||0}),
+  fromDb:r=>({id:r.id,date:r.date,category:r.category||'',amount:r.amount,note:r.note||'',siteId:r.site_id,recur:r.recur||0,created:Date.parse(r.created_at)||Date.now()})},
+ maintPrices:{tbl:'maint_prices',
+  toDb:p=>({id:p.id,kind:p.kind,price:num(p.price)}),
+  fromDb:r=>({id:r.id,kind:r.kind,price:r.price})},
 };
 /* figli annidati */
 const logToDb=(s,l)=>({id:l.id,site_id:s.id,date:l.date||null,text:l.text,hours:num(l.hours),emp_id:l.empId||null});
@@ -319,12 +340,12 @@ let snapshot={};
 function snapRows(key,rows){const o={};rows.forEach(r=>o[r.id]=JSON.stringify(r));snapshot[key]=o;}
 async function loadAll(){
   const q=t=>sb.from(t).select('*');
-  const[cl,em,ma,ap,pe,si,sl,at,no,ng,li,it,ch,cg,st]=await Promise.all([
+  const[cl,em,ma,ap,pe,si,sl,at,no,ng,li,it,ch,cg,ex,mp,st]=await Promise.all([
     q('clients'),q('employees'),q('maintenances'),q('appointments'),q('pellet'),
     q('sites'),q('site_logs').order('created_at'),q('attachments'),
     q('notes'),q('note_groups'),q('lists'),q('list_items').order('position'),
     sb.from('chat').select('*').order('created_at',{ascending:true}).limit(300),
-    q('call_log'),sb.from('settings').select('*').eq('id',1).maybeSingle()
+    q('call_log'),q('expenses'),q('maint_prices'),sb.from('settings').select('*').eq('id',1).maybeSingle()
   ]);
   const err=[cl,em,ma,ap,pe,si,sl,at,no,ng,li,it,ch,cg].find(x=>x.error);
   if(err)throw err.error;
@@ -342,6 +363,8 @@ async function loadAll(){
   (it.data||[]).forEach(r=>{const l=S.lists.find(x=>x.id===r.list_id);if(l)l.items.push({id:r.id,text:r.text,done:!!r.done});});
   S.chat=(ch.data||[]).map(r=>({id:r.id,who:r.emp_id,text:r.text,sys:!!r.sys,ts:Date.parse(r.created_at)}));
   S.callLog=(cg.data||[]).map(MAPS.callLog.fromDb);
+  S.expenses=(ex&&ex.data||[]).map(MAPS.expenses.fromDb).sort((a,b)=>b.created-a.created);
+  S.maintPrices=(mp&&mp.data||[]).map(MAPS.maintPrices.fromDb);
   if(st.data)S.settings={bagsPerPallet:st.data.bags_per_pallet||70,companyName:st.data.company_name||'',pricePerTon:st.data.price_per_ton,pricePerBag:st.data.price_per_bag};
   rebuildSnapshot();
 }
@@ -359,11 +382,13 @@ function dbRows(){
     listItems:S.lists.flatMap(l=>l.items.map((i,idx)=>itemToDb(l,i,idx))),
     siteLogs:S.sites.flatMap(s=>s.log.map(l=>logToDb(s,l))),
     callLog:S.callLog.map(MAPS.callLog.toDb),
+    expenses:S.expenses.map(MAPS.expenses.toDb),
+    maintPrices:S.maintPrices.map(MAPS.maintPrices.toDb),
   };
 }
-const TBL={employees:'employees',clients:'clients',noteGroups:'note_groups',lists:'lists',maintenances:'maintenances',appointments:'appointments',pellet:'pellet',sites:'sites',notes:'notes',listItems:'list_items',siteLogs:'site_logs',callLog:'call_log'};
-const UP_ORDER=['employees','clients','noteGroups','lists','maintenances','appointments','pellet','sites','notes','listItems','siteLogs','callLog'];
-const DEL_ORDER=['callLog','siteLogs','listItems','notes','sites','pellet','appointments','maintenances','lists','noteGroups','clients','employees'];
+const TBL={employees:'employees',clients:'clients',noteGroups:'note_groups',lists:'lists',maintenances:'maintenances',appointments:'appointments',pellet:'pellet',sites:'sites',notes:'notes',listItems:'list_items',siteLogs:'site_logs',callLog:'call_log',expenses:'expenses',maintPrices:'maint_prices'};
+const UP_ORDER=['employees','clients','noteGroups','lists','maintenances','appointments','pellet','sites','expenses','notes','listItems','siteLogs','callLog','maintPrices'];
+const DEL_ORDER=['maintPrices','callLog','siteLogs','listItems','notes','expenses','sites','pellet','appointments','maintenances','lists','noteGroups','clients','employees'];
 function rebuildSnapshot(){const r=dbRows();for(const k of UP_ORDER)snapRows(k,r[k]);snapshot._settings=JSON.stringify(S.settings);}
 
 /* ---------- sync: diff e push ---------- */
@@ -571,7 +596,7 @@ function parseInput(text){
 }
 const TYPE_META={
   maintenance:{label:'Manutenzione',color:'var(--amber)',hex:'#FFB547',ic:'🔧',view:'man'},
-  pellet:{label:'Pellet',color:'var(--fire)',hex:'#FF8A3D',ic:'🔥',view:'pellet'},
+  pellet:{label:'Pellet',color:'var(--fire)',hex:'#97C459',ic:'🪵',view:'pellet'},
   appointment:{label:'Appuntamento',color:'var(--cy)',hex:'#00D4FF',ic:'📅',view:'notes'},
   note:{label:'Nota',color:'var(--teal)',hex:'#00E5C0',ic:'📝',view:'notes'},
   site:{label:'Cantiere',color:'var(--blue)',hex:'#6FA8FF',ic:'🏗',view:'sites'},
@@ -589,7 +614,7 @@ function commitParsed(p,via){
   }else if(p.type==='pellet'){
     const kind=(p.unit==='t'||/\bsfuso\b/i.test(p.raw||''))?'sfuso':'sacchi';
     S.pellet.unshift({id:uid(),clientId,clientRaw:personRaw,employeeId,qty:p.qty,unit:kind==='sfuso'?'t':(p.unit||'sacchi'),kind,date:p.date,time:p.time,status:'da_consegnare',notes:p.title,via,created:Date.now()});
-    msg='🔥 Consegna '+(kind==='sfuso'?'sfuso':'sacchi')+' registrata'+(p.qty?' — '+p.qty+' '+(kind==='sfuso'?'t':p.unit||'sacchi'):'')+(p.person?' · '+p.person.name:'')+(p.employee?' · 👷 '+p.employee.name:'')+(p.date?' · '+fmtD(p.date):'');
+    msg='🪵 Consegna '+(kind==='sfuso'?'sfuso':'sacchi')+' registrata'+(p.qty?' — '+p.qty+' '+(kind==='sfuso'?'t':p.unit||'sacchi'):'')+(p.person?' · '+p.person.name:'')+(p.employee?' · 👷 '+p.employee.name:'')+(p.date?' · '+fmtD(p.date):'');
   }else if(p.type==='appointment'){
     S.appointments.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date||todayIso(),time:p.time,done:false,via,created:Date.now()});
     msg='📅 Appuntamento segnato — '+fmtD(p.date||todayIso())+(p.time?' '+p.time:'');
@@ -625,9 +650,10 @@ const VIEWS=[
   {id:'notes',ic:'📝',label:'Note'},
   {id:'notif',ic:'🔔',label:'Notifiche'},
   {id:'man',ic:'🔧',label:'Manut.'},
-  {id:'pellet',ic:'🔥',label:'Pellet'},
+  {id:'pellet',ic:'🪵',label:'Pellet'},
   {id:'sites',ic:'🏗',label:'Cantieri'},
   {id:'clients',ic:'👥',label:'Clienti'},
+  {id:'conti',ic:'💰',label:'Conti'},
   {id:'emps',ic:'👷',label:'Personale'},
 ];
 let view='hub';
@@ -708,7 +734,7 @@ function openBackup(){
   </div>
   <div class="fld"><label>Export CSV (per Excel / commercialista)</label>
     <div class="seg">
-      <div class="sg" onclick="csvPellet()">🔥 Pellet</div>
+      <div class="sg" onclick="csvPellet()">🪵 Pellet</div>
       <div class="sg" onclick="csvMan()">🔧 Manutenzioni</div>
       <div class="sg" onclick="csvOre()">⏱ Ore dipendenti</div>
       <div class="sg" onclick="csvSites()">🏗 Cantieri</div>
@@ -784,7 +810,7 @@ function render(){
   S.speaker=S.session.empId;
   renderNav();
   $('#todaypill').textContent=GG[new Date().getDay()].slice(0,3)+' '+new Date().getDate()+' '+MESI[new Date().getMonth()].slice(0,3);
-  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,clients:renderClients,emps:renderEmps};
+  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,clients:renderClients,conti:renderConti,emps:renderEmps};
   $('#main').innerHTML='';(R[view]||renderHub)();
   if(view==='notif'&&notifTab==='chat'){const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;}
 }
@@ -796,7 +822,13 @@ function lockShell(inner,sub){
   $('#main').innerHTML='';$('#navside').innerHTML='';$('#navbottom').innerHTML='';
   let old=document.querySelector('.lock');if(old)old.remove();
   const box=document.createElement('div');box.className='lock';
-  box.innerHTML=`<div class="llogo"><span class="dot"></span>PTEK</div><div class="lsub">${sub||'GESTIONALE'}</div><div class="lbox">${inner}</div>`;
+  const subLine=sub==='REGISTRAZIONE'?'Crea il tuo accesso':sub==='COLLEGA ACCOUNT'?'Collega il tuo account':sub==='SINCRONIZZAZIONE'?'Un attimo, preparo i tuoi dati…':'Bentornato 👋 — accedi al gestionale';
+  box.innerHTML=`<img src="./logo.png" alt="PTEK" style="width:200px;max-width:70%;margin-bottom:6px;filter:drop-shadow(0 8px 26px rgba(0,212,255,.16))" onerror="this.style.display='none';var f=document.getElementById('logofb');if(f)f.style.display='flex'">
+  <div id="logofb" class="llogo" style="display:none;margin-bottom:6px"><span class="dot"></span>PTEK</div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="height:1px;width:26px;background:linear-gradient(90deg,transparent,#97C459)"></span><span style="font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--teal)">🌿 ENERGIE RINNOVABILI</span><span style="height:1px;width:26px;background:linear-gradient(90deg,#00D4FF,transparent)"></span></div>
+  <div style="font-size:13px;color:var(--t2);margin-bottom:26px">${subLine}</div>
+  <div class="lbox">${inner}</div>
+  <div style="margin-top:18px;font-size:10px;color:var(--t3);text-align:center;line-height:1.7;max-width:330px">🔒 I tuoi dati al sicuro · server in UE<br><span style="color:var(--t2)">Pellet Tek</span> · gestionale dell'attività</div>`;
   document.body.appendChild(box);
 }
 function renderLock(){
@@ -904,29 +936,19 @@ function allEvents(){
 /* ================= HUB ================= */
 let hubParsed=null;
 function renderHub(){
-  const ev=allEvents();const t=todayIso();
+  const ev=allEvents();const t=todayIso();const mk=t.slice(0,7);
   const todayEv=ev.filter(e=>e.date===t&&!e.done);
   const next=ev.filter(e=>e.date>t&&!e.done).slice(0,5);
   const late=ev.filter(e=>e.date<t&&!e.done).slice(0,4);
   const openMan=S.maintenances.filter(m=>m.status!=='fatta').length;
   const openPel=S.pellet.filter(p=>p.status!=='consegnato').length;
-  $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent"></span>Hub</div>
-  <div class="hub" id="hub"><div class="ring"></div>
-    <div class="hub-box">
-      <textarea id="hubinput" rows="2" placeholder="Scrivi qui e ci penso io a smistare…&#10;es. «aggiungi manutenzione a Rossi domani alle 4»"></textarea>
-      <div class="hub-foot" id="hubchips"><span class="chip">🔧 manutenzioni</span><span class="chip">🔥 pellet</span><span class="chip">📅 appuntamenti</span><span class="chip">📝 note</span><span class="chip">🏗 cantieri</span><span class="chip">☑️ liste</span></div>
-      <div id="hubpreview"></div>
-    </div>
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="n" style="color:var(--cy)">${todayEv.length}</div><div class="l">Oggi</div></div>
-    <div class="stat"><div class="n" style="color:var(--amber)">${openMan}</div><div class="l">Manutenzioni aperte</div></div>
-    <div class="stat"><div class="n" style="color:var(--fire)">${openPel}</div><div class="l">Consegne pellet</div></div>
-    <div class="stat"><div class="n" style="color:var(--coral)">${late.length}</div><div class="l">In ritardo</div></div>
-  </div>
-  ${late.length?`<div class="card" style="border-color:rgba(255,92,122,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
-  <div class="card"><div class="sh"><span class="t">☑️ Liste</span><span class="a" onclick="newList()">+ Nuova lista</span></div>
+  let contiCard='';
+  if(isOwner()){const e=entrate(mk);const sp=speseTot(mk);const ut=e.tot-sp;contiCard=`<div class="card hl" style="border-color:rgba(0,229,192,.28);cursor:pointer" onclick="nav('conti')"><div class="sh"><span class="t" style="color:var(--t2)">🔒 Conti · ${monthLabel(mk)}</span><span class="a">Apri →</span></div><div style="display:flex;justify-content:space-between;margin-top:2px"><div><div class="subtle" style="font-size:10px">Entrate</div><div style="font-size:16px;font-weight:700;color:var(--teal)">${fmtQty(e.tot)}</div></div><div><div class="subtle" style="font-size:10px">Spese</div><div style="font-size:16px;font-weight:700;color:var(--coral)">${fmtQty(sp)}</div></div><div><div class="subtle" style="font-size:10px">Utile</div><div style="font-size:16px;font-weight:700;color:${ut>=0?'var(--cy)':'var(--coral)'}">${ut>=0?'+':''}${fmtQty(ut)}</div></div></div></div>`;}
+  const cantieri=visSites().filter(s=>s.status==='aperto').sort((a,b)=>b.created-a.created).slice(0,5);
+  const cantieriCard=`<div class="card"><div class="sh"><span class="t">🏗 Cantieri in corso</span><span class="a" onclick="nav('sites')">Cantieri →</span></div>
+    ${cantieri.length?cantieri.map(s=>{const hrs=siteHours(s);const pct=s.estHours?Math.min(100,Math.round(hrs/s.estHours*100)):null;return`<div class="item" onclick="openSite('${s.id}')"><div class="bd"><div class="ti">${esc(s.name)}</div><div class="su">${esc(cName(s.clientId)||s.clientRaw||'—')}${s.employees.length?' · 👷 '+s.employees.map(eName).filter(Boolean).join(', '):''}</div>${s.estHours?`<div class="ck-bar" style="margin:6px 0 3px;max-width:220px"><i style="width:${pct}%;${pct>=100?'background:var(--amber)':''}"></i></div>`:''}<div class="mt">${hrs}h${s.estHours?' / '+s.estHours+'h':''}${pct!=null?' · '+pct+'%':''}</div></div></div>`;}).join(''):'<div class="empty"><div class="big">🏗</div>Nessun cantiere in corso.</div>'}
+  </div>`;
+  const listsCard=`<div class="card"><div class="sh"><span class="t">☑️ Liste</span><span class="a" onclick="newList()">+ Nuova lista</span></div>
     ${S.lists.length?S.lists.map(L=>{
       const done=L.items.filter(i=>i.done).length,tot=L.items.length;
       return`<div class="cklist">
@@ -936,13 +958,32 @@ function renderHub(){
       <div class="ck-add"><input id="cka-${L.id}" placeholder="Aggiungi voce…" onkeydown="if(event.key==='Enter')ckAdd('${L.id}')" onclick="event.stopPropagation()"><button onclick="ckAdd('${L.id}')">+</button></div>
       </div>`;
     }).join(''):'<div class="empty">Nessuna lista. Creane una qui o dall\'Hub:<br>«lista ferramenta: viti, tasselli, silicone»</div>'}
+  </div>`;
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent"></span>Hub</div>
+  <div class="hub" id="hub"><div class="ring"></div>
+    <div class="hub-box">
+      <textarea id="hubinput" rows="2" placeholder="Scrivi qui e ci penso io a smistare…&#10;es. «aggiungi manutenzione a Rossi domani alle 4»"></textarea>
+      <div class="hub-foot" id="hubchips"><span class="chip">🔧 manutenzioni</span><span class="chip">🪵 pellet</span><span class="chip">📅 appuntamenti</span><span class="chip">📝 note</span><span class="chip">🏗 cantieri</span><span class="chip">☑️ liste</span></div>
+      <div id="hubpreview"></div>
+    </div>
   </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px">
+    <div class="stat" style="text-align:center;padding:10px 4px"><div style="font-size:20px;font-weight:700;color:var(--cy)">${todayEv.length}</div><div class="subtle" style="font-size:10px">Oggi</div></div>
+    <div class="stat" style="text-align:center;padding:10px 4px;${late.length?'border-color:rgba(255,92,122,.35)':''}"><div style="font-size:20px;font-weight:700;color:var(--coral)">${late.length}</div><div class="subtle" style="font-size:10px">In ritardo</div></div>
+    <div class="stat" style="text-align:center;padding:10px 4px"><div style="font-size:20px;font-weight:700;color:var(--amber)">${openMan}</div><div class="subtle" style="font-size:10px">Manut.</div></div>
+    <div class="stat" style="text-align:center;padding:10px 4px"><div style="font-size:20px;font-weight:700;color:var(--fire)">${openPel}</div><div class="subtle" style="font-size:10px">Pellet</div></div>
+  </div>
+  ${contiCard}
+  ${cantieriCard}
+  ${late.length?`<div class="card" style="border-color:rgba(255,92,122,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
   <div class="card hl"><div class="sh"><span class="t">Oggi</span><span class="a" onclick="nav('cal')">Calendario →</span></div>
     ${todayEv.length?todayEv.map(evRow).join(''):'<div class="empty"><div class="big">🌊</div>Niente in programma oggi.</div>'}
   </div>
   <div class="card"><div class="sh"><span class="t">Prossimi</span></div>
     ${next.length?next.map(evRow).join(''):'<div class="empty">Nessun evento futuro.</div>'}
-  </div>`;
+  </div>
+  ${listsCard}`;
   const ta=$('#hubinput');
   ta.addEventListener('input',()=>{
     const v=ta.value.trim();const hub=$('#hub');
@@ -1048,10 +1089,10 @@ function openEv(type,id){
 }
 function evRow(e){
   const M=TYPE_META[e.type];
-  return`<div class="item" onclick="openEv('${e.type}','${e.id}')">
-    <span class="led" style="background:${M.hex};box-shadow:0 0 8px ${M.hex}"></span>
-    <div class="bd"><div class="ti">${esc(e.title)}</div>${e.sub?`<div class="su">${esc(e.sub)}</div>`:''}</div>
-    <div class="right"><div class="d1">${e.time||''}</div><div class="d2">${fmtD(e.date)}</div></div>
+  return`<div onclick="openEv('${e.type}','${e.id}')" style="display:flex;align-items:center;gap:10px;background:var(--bg2);border-left:3px solid ${M.hex};border-radius:0 9px 9px 0;padding:9px 10px;margin-bottom:6px;cursor:pointer">
+    <div class="avat" style="width:30px;height:30px;background:${M.hex}22;font-size:14px;font-weight:400">${M.ic}</div>
+    <div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.3;${e.done?'text-decoration:line-through;color:var(--t3)':'color:var(--t1)'}">${esc(e.title)}</div>${e.sub?`<div style="font-size:10.5px;color:var(--t2);margin-top:1px">${esc(e.sub)}</div>`:''}</div>
+    <div style="text-align:right;flex-shrink:0;font-family:var(--mono)"><div style="font-size:11px;color:var(--t2)">${e.time||''}</div><div style="font-size:10px;color:var(--t3)">${fmtD(e.date)}</div></div>
   </div>`;
 }
 
@@ -1147,6 +1188,7 @@ function renderNotes(){
   notes.sort((a,b)=>(b.pinned-a.pinned)||(b.created-a.created));
   const gName=id=>{const g=byId(S.noteGroups,id);return g?g.name:''};
   const archN=S.notes.filter(n=>n.archived).length;
+  const noteCard=n=>{const col=n.pinned?'#FFB547':(n.groupId?avColor(gName(n.groupId)||n.groupId):'#52718A');const meta=[n.groupId?'📁 '+esc(gName(n.groupId)):'',n.clientId?'👤 '+esc(cName(n.clientId)):'',n.date?'📅 '+fmtD(n.date):''].filter(Boolean).join(' · ');return`<div style="background:var(--bg1);border:1px solid var(--line);border-left:3px solid ${col};border-radius:12px;padding:10px 11px;cursor:pointer;position:relative" onclick="openNote('${n.id}')"><div style="font-size:12.5px;color:var(--t1);line-height:1.4">${n.pinned?'📌 ':''}${esc(n.text)}</div>${meta?`<div style="font-size:9.5px;color:var(--t2);margin-top:7px">${meta}</div>`:''}${noteGroupSel!=='arch'?`<span onclick="event.stopPropagation();var nn=byId(S.notes,'${n.id}');nn.archived=true;save();render();toast('🗄 Archiviata')" style="position:absolute;top:6px;right:9px;font-size:11px;color:var(--t3)">🗄</span>`:''}</div>`;};
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Note & Appuntamenti</div>
   <div class="tabs">
@@ -1159,22 +1201,17 @@ function renderNotes(){
     <div class="tb" onclick="newGroup()">＋ Gruppo</div>
     <div class="tb ${noteGroupSel==='arch'?'on':''}" style="${archN?'':'opacity:.5'}" onclick="noteGroupSel='arch';render()">🗄 Archivio (${archN})</div>
   </div>`:''}
-  <div class="card">
   ${notesTab==='app'
-    ?(apps.length?apps.map(a=>`<div class="item" onclick="openApp('${a.id}')">
+    ?`<div class="card">`+(apps.length?apps.map(a=>`<div class="item" onclick="openApp('${a.id}')">
         <span class="led" style="background:${a.done?'var(--t3)':a.date<t?'#FF5C7A':'#00D4FF'}"></span>
         <div class="bd"><div class="ti" style="${a.done?'text-decoration:line-through;color:var(--t3)':''}">${esc(a.title)}</div>
         <div class="su">${esc(cName(a.clientId)||a.clientRaw||'')}${a.employeeId?' · 👷 '+esc(eName(a.employeeId)):''}</div></div>
         <div class="right"><div class="d1">${a.time||''}</div><div class="d2">${fmtD(a.date)}</div></div></div>`).join('')
-      :'<div class="empty"><div class="big">📅</div>Nessun appuntamento.<br>Scrivilo nell\'Hub o premi +.</div>')
-    :(notes.length?notes.map(n=>`<div class="item" onclick="openNote('${n.id}')">
-        <span class="led" style="background:var(--teal)"></span>
-        <div class="bd"><div class="ti">${n.pinned?'📌 ':''}${esc(n.text)}</div>
-        <div class="su">${[n.groupId?'📁 '+esc(gName(n.groupId)):'',n.clientId?'👥 '+esc(cName(n.clientId)):''].filter(Boolean).join(' · ')}</div>
-        <div class="mt">${n.date?'📅 '+fmtD(n.date):new Date(n.created).toLocaleDateString('it-CH')}</div></div>
-        ${noteGroupSel!=='arch'?`<span class="row-act" style="border-color:var(--t3);color:var(--t3)" onclick="event.stopPropagation();n=byId(S.notes,'${n.id}');n.archived=true;save();render();toast('🗄 Archiviata')">🗄</span>`:''}</div>`).join('')
+      :'<div class="empty"><div class="big">📅</div>Nessun appuntamento.<br>Scrivilo nell\'Hub o premi +.</div>')+`</div>`
+    :(notes.length
+      ?(notes.filter(n=>n.pinned).length?`<div style="display:flex;flex-direction:column;gap:9px;margin-bottom:9px">`+notes.filter(n=>n.pinned).map(noteCard).join('')+`</div>`:'')
+       +`<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">`+notes.filter(n=>!n.pinned).map(noteCard).join('')+`</div>`
       :`<div class="empty"><div class="big">${noteGroupSel==='arch'?'🗄':'📝'}</div>${noteGroupSel==='arch'?'Archivio vuoto.':'Nessuna nota qui.'}</div>`)}
-  </div>
   <button class="fab" onclick="${notesTab==='app'?`openQuickAdd('${todayIso()}')`:'newNote()'}">+</button>`;
 }
 /* gruppi note: un gruppo con membri è privato (solo loro + i titolari); vuoto = visibile a tutti */
@@ -1256,54 +1293,75 @@ function renderNotif(){
 }
 function renderInbox(w){
   const t=todayIso();const blocks=[];
+  const nLate=[...w.man,...w.pel].filter(x=>x.date&&x.date<t).length;
+  const m0=me();const hi=m0?esc(m0.name.split(' ')[0]):'';
+  const greet=`<div class="card" style="text-align:center;padding:11px;border-color:rgba(0,212,255,.2)"><span style="font-size:12.5px">Ciao ${hi} 👋 — hai <b style="color:var(--cy)">${w.total} cos${w.total===1?'a':'e'}</b> da fare${nLate?`, <b style="color:var(--coral)">${nLate} in ritardo</b>`:''}</span></div>`;
   if(w.man.length){
-    blocks.push(`<div class="subtle" style="margin:4px 2px 6px;font-weight:600;color:var(--t2)">🔧 Manutenzioni (${w.man.length})</div><div class="card">`+w.man.map(m=>{
-      const who=cName(m.clientId)||m.clientRaw||'';const late=m.date&&m.date<t;
-      return`<div class="item" onclick="openMan('${m.id}')">
-      <span class="led" style="background:${late?'#FF5C7A':'var(--cy)'}"></span>
+    blocks.push(`<div class="grp">🔧 MANUTENZIONI (${w.man.length})</div>`+w.man.map(m=>{
+      const who=cName(m.clientId)||m.clientRaw||'';const late=m.date&&m.date<t;const col=late?'#FF5C7A':'#00D4FF';
+      return`<div class="frw" style="border-left-color:${col}" onclick="openMan('${m.id}')">
       <div class="bd"><div class="ti">${who?`<b>${esc(who)}</b> — `:''}${esc(m.title)}</div>
-      <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">IN RITARDO</span>':''}</div></div>
-      <div class="right" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-        <span class="row-act" onclick="event.stopPropagation();startBollettino('${m.id}')">📋 BOLLETTINO</span>
-        <span class="row-act done" onclick="event.stopPropagation();markManDone('${m.id}')">✓ FATTA</span>
-      </div></div>`;
-    }).join('')+`</div>`);
+      <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        <button class="qbtn ghost" onclick="event.stopPropagation();startBollettino('${m.id}')">✍ Bollett.</button>
+        <button class="qbtn" onclick="event.stopPropagation();markManDone('${m.id}')">✓ Fatta</button></div></div>`;
+    }).join(''));
   }
   if(w.app.length){
-    blocks.push(`<div class="subtle" style="margin:12px 2px 6px;font-weight:600;color:var(--t2)">📅 Appuntamenti (${w.app.length})</div><div class="card">`+w.app.map(a=>{
+    blocks.push(`<div class="grp">📅 APPUNTAMENTI (${w.app.length})</div>`+w.app.map(a=>{
       const who=cName(a.clientId)||a.clientRaw||'';
-      return`<div class="item">
-      <span class="led" style="background:var(--teal)"></span>
+      return`<div class="frw" style="border-left-color:#00D4FF" onclick="openApp('${a.id}')">
       <div class="bd"><div class="ti">${esc(a.title)}</div>
       <div class="su">${who?esc(who)+' · ':''}${a.date?'📅 '+fmtD(a.date)+(a.time?' · '+a.time:''):'senza data'}</div></div>
-      <div class="right"><span class="row-act done" onclick="markAppDone('${a.id}')">✓ FATTO</span></div></div>`;
-    }).join('')+`</div>`);
+      <button class="qbtn" onclick="event.stopPropagation();markAppDone('${a.id}')">✓ Fatto</button></div>`;
+    }).join(''));
   }
   if(w.sit.length){
-    blocks.push(`<div class="subtle" style="margin:12px 2px 6px;font-weight:600;color:var(--t2)">🏗 Cantieri (${w.sit.length})</div><div class="card">`+w.sit.map(s=>{
+    blocks.push(`<div class="grp">🏗 CANTIERI (${w.sit.length})</div>`+w.sit.map(s=>{
       const who=cName(s.clientId)||s.clientRaw||'';
-      return`<div class="item" onclick="openSite('${s.id}')">
-      <span class="led" style="background:var(--amber)"></span>
-      <div class="bd"><div class="ti">${esc(s.name)}</div>
-      <div class="su">${who?esc(who):'cantiere'}</div></div>
-      <div class="right"><span class="row-act">APRI ›</span></div></div>`;
-    }).join('')+`</div>`);
+      return`<div class="frw" style="border-left-color:var(--amber)" onclick="openSite('${s.id}')">
+      <div class="bd"><div class="ti">${esc(s.name)}</div><div class="su">${who?esc(who):'cantiere'}</div></div>
+      <button class="qbtn ghost" onclick="event.stopPropagation();openSite('${s.id}')">Apri ›</button></div>`;
+    }).join(''));
   }
   if(w.pel&&w.pel.length){
-    blocks.push(`<div class="subtle" style="margin:12px 2px 6px;font-weight:600;color:var(--t2)">🔥 Consegne pellet (${w.pel.length})</div><div class="card">`+w.pel.map(p=>{
-      const who=cName(p.clientId)||p.clientRaw||'';const late=p.date&&p.date<t;
-      return`<div class="item" onclick="openPel('${p.id}')">
-      <span class="led" style="background:${late?'#FF5C7A':'var(--fire)'}"></span>
-      <div class="bd"><div class="ti">${p.kind==='sfuso'?'🛢':'📦'} ${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${who?` — <b>${esc(who)}</b>`:''}</div>
-      <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">IN RITARDO</span>':''}</div></div>
-      <div class="right"><span class="row-act done" onclick="event.stopPropagation();markPelDone('${p.id}')">✓ CONSEGNATA</span></div></div>`;
-    }).join('')+`</div>`);
+    blocks.push(`<div class="grp">🪵 PELLET (${w.pel.length})</div>`+w.pel.map(p=>{
+      const who=cName(p.clientId)||p.clientRaw||'';const late=p.date&&p.date<t;const col=late?'#FF5C7A':'#97C459';
+      return`<div class="frw" style="border-left-color:${col}" onclick="openPel('${p.id}')">
+      <div class="avat" style="width:34px;height:34px;background:#97C45922;border:1px solid #97C45955;font-size:15px;font-weight:400">🪵</div>
+      <div class="bd"><div class="ti">${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${who?` — <b>${esc(who)}</b>`:''}</div>
+      <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+      <button class="qbtn" onclick="event.stopPropagation();markPelDone('${p.id}')">✓ Consegnata</button></div>`;
+    }).join(''));
   }
-  $('#notifbody').innerHTML=blocks.length?blocks.join(''):`<div class="empty"><div class="big">✅</div>Nessuna cosa da fare assegnata a te.<br><span class="subtle">Qui arrivano manutenzioni, appuntamenti e cantieri assegnati a te.</span></div>`;
+  $('#notifbody').innerHTML=(w.total?greet:'')+(blocks.length?blocks.join(''):`<div class="empty"><div class="big">✅</div>Nessuna cosa da fare assegnata a te.<br><span class="subtle">Qui arrivano manutenzioni, appuntamenti, cantieri e consegne assegnati a te.</span></div>`);
 }
 function markManDone(id){const m=byId(S.maintenances,id);if(!m)return;m.status='fatta';save();render();toast('✓ Manutenzione segnata come fatta');}
 function markAppDone(id){const a=byId(S.appointments,id);if(!a)return;a.done=true;save();render();toast('✓ Appuntamento fatto');}
-function markPelDone(id){const p=byId(S.pellet,id);if(!p)return;p.status='consegnato';save();render();toast('🔥 Consegna registrata');}
+function openApp(id){
+  const a=id?byId(S.appointments,id):{title:'',clientId:null,clientRaw:null,employeeId:null,date:todayIso(),time:'',done:false};
+  if(!a)return;
+  openSheet(`<h3>${id?'Appuntamento':'Nuovo appuntamento'} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="fld"><label>Titolo</label><input id="ap-t" value="${esc(a.title)}" placeholder="es. Sopralluogo Via Roma"></div>
+  <div class="frow">
+  <div class="fld"><label>Cliente</label><select id="ap-c"><option value="">${(a.clientRaw&&!a.clientId)?'🆕 '+esc(a.clientRaw)+' (nuovo)':'—'}</option>${cOpt(a.clientId)}</select></div>
+  <div class="fld"><label>Assegnato a</label><select id="ap-e"><option value="">—</option>${S.employees.map(e=>`<option value="${e.id}" ${a.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div></div>
+  <div class="frow"><div class="fld"><label>Data</label><input id="ap-d" type="date" value="${a.date||''}"></div>
+  <div class="fld"><label>Ora</label><input id="ap-h" type="time" value="${a.time||''}"></div></div>
+  ${dateChips('ap-d')}
+  <div class="fld"><label>Stato</label><div class="seg" id="ap-s"><div class="sg ${!a.done?'on':''}" data-d="0" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">Da fare</div><div class="sg ${a.done?'on':''}" data-d="1" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">Fatto</div></div></div>
+  <div class="actions">
+    ${id?`<button class="btn danger" onclick="delApp('${id}')">Elimina</button>`:''}
+    <button class="btn pri" onclick="saveApp('${id||''}')">Salva</button></div>`);
+}
+function saveApp(id){
+  const data={title:$('#ap-t').value.trim(),clientId:$('#ap-c').value||null,employeeId:$('#ap-e').value||null,date:$('#ap-d').value||null,time:$('#ap-h').value||null,done:$('#ap-s .sg.on')?.dataset.d==='1'};
+  if(!data.title){toast('Manca il titolo');return;}
+  if(id){Object.assign(byId(S.appointments,id),data);}else{S.appointments.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  save();closeSheet();render();toast('📅 Salvato');
+}
+function delApp(id){if(!confirm('Eliminare questo appuntamento?'))return;S.appointments=S.appointments.filter(x=>x.id!==id);save();closeSheet();render();toast('🗑 Eliminato');}
+function markPelDone(id){const p=byId(S.pellet,id);if(!p)return;p.status='consegnato';save();render();toast('🪵 Consegna registrata');}
 function renderChatPanel(){
   $('#notifbody').innerHTML=`
   <div class="wa-note">📲 <b>WhatsApp:</b> il ponte diretto richiede un server (WhatsApp Business API) — non è possibile da app locale. Il parser qui sotto è già pronto: quando attiveremo il server, gli stessi comandi funzioneranno anche via WhatsApp.</div>
@@ -1349,41 +1407,57 @@ function getCall(clientId){
   if(!c){c={id:uid(),clientId,year:yr,called:false,outcome:'',note:'',maintId:null};S.callLog.push(c);}
   return c;
 }
-function renderMan(){
+function manRow(m){
   const t=todayIso();
-  const yr=new Date().getFullYear();
+  const late=m.date&&m.date<t&&m.status!=='fatta';
+  const col=late?'#FF5C7A':(m.status==='fatta'?'#00E5C0':m.status==='programmata'?'#00D4FF':'#FFB547');
+  const who=cName(m.clientId)||m.clientRaw||'';
+  const ic=MAINT_ICONS[m.type]||'🔧';
+  return`<div class="frw" style="border-left-color:${col}" onclick="openMan('${m.id}')">
+    <div class="avat" style="width:34px;height:34px;background:${col}22;border:1px solid ${col}55;font-size:15px;font-weight:400">${ic}</div>
+    <div class="bd"><div class="ti">${who?`<b>${esc(who)}</b> — `:''}${esc(m.title)}</div>
+    <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${m.employeeId?' · 👷 '+esc(eName(m.employeeId)):''}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+    ${m.status!=='fatta'?`<button class="qbtn" onclick="event.stopPropagation();startBollettino('${m.id}')">▶ Avvia</button>`:(m.report?`<button class="qbtn ghost" onclick="event.stopPropagation();viewBollettino('${m.id}')">📄</button>`:'')}
+  </div>`;
+}
+function renderMan(){
+  const t=todayIso();const yr=new Date().getFullYear();const mk=t.slice(0,7);
   if(manTab==='chiamate'){if(!isOwner()&&!can('clients')){manTab='aperte';}else{renderCalls();return;}}
-  let list=visMan().slice();
-  if(manTab==='aperte')list=list.filter(m=>m.status!=='fatta');
-  if(manTab==='fatte')list=list.filter(m=>m.status==='fatta');
-  list.sort((a,b)=>((a.date||'9999')<(b.date||'9999')?-1:1));
-  const STAT={da_fare:['DA FARE','#FFB547'],programmata:['PROGRAMMATA','#00D4FF'],fatta:['FATTA','#00E5C0']};
-  const called=S.callLog.filter(c=>c.year===yr&&c.called).length;
+  const all=visMan();
+  const nOpen=all.filter(m=>m.status!=='fatta').length;
+  const nLate=all.filter(m=>m.status!=='fatta'&&m.date&&m.date<t).length;
+  const nDoneM=all.filter(m=>m.status==='fatta'&&m.date&&m.date.slice(0,7)===mk).length;
+  const byDate=(a,b)=>((a.date||'9999')<(b.date||'9999')?-1:1);
+  let body;
+  if(manTab==='aperte'){
+    const open=all.filter(m=>m.status!=='fatta');
+    const late=open.filter(m=>m.date&&m.date<t).sort(byDate);
+    const upc=open.filter(m=>m.date&&m.date>=t).sort(byDate);
+    const noD=open.filter(m=>!m.date);
+    body=(late.length?`<div class="grp" style="color:var(--coral)">⚠ IN RITARDO (${late.length})</div>`+late.map(manRow).join(''):'')
+      +(upc.length?`<div class="grp">📅 PROSSIME (${upc.length})</div>`+upc.map(manRow).join(''):'')
+      +(noD.length?`<div class="grp">◷ DA PROGRAMMARE (${noD.length})</div>`+noD.map(manRow).join(''):'')
+      +(!open.length?'<div class="empty"><div class="big">🔧</div>Niente da fare. 👌</div>':'');
+  }else{
+    let list=all.slice();
+    if(manTab==='fatte')list=list.filter(m=>m.status==='fatta');
+    list.sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
+    body=list.length?list.map(manRow).join(''):'<div class="empty"><div class="big">🔧</div>Nessuna manutenzione qui.</div>';
+  }
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--amber)"></span>Manutenzioni</div>
   <div class="tabs">
-    <div class="tb ${manTab==='aperte'?'on':''}" onclick="manTab='aperte';render()">Aperte (${visMan().filter(m=>m.status!=='fatta').length})</div>
+    <div class="tb ${manTab==='aperte'?'on':''}" onclick="manTab='aperte';render()">Aperte (${nOpen})</div>
     <div class="tb ${manTab==='fatte'?'on':''}" onclick="manTab='fatte';render()">Fatte</div>
     <div class="tb ${manTab==='tutte'?'on':''}" onclick="manTab='tutte';render()">Tutte</div>
     ${isOwner()||can('clients')?`<div class="tb ${manTab==='chiamate'?'on':''}" onclick="manTab='chiamate';render()">📞 Chiamate ${yr}</div>`:''}
   </div>
-  <div class="card">
-  ${list.length?list.map(m=>{
-    const[sl,sc]=STAT[m.status]||STAT.da_fare;
-    const late=m.date&&m.date<t&&m.status!=='fatta';
-    const who=cName(m.clientId)||m.clientRaw||'';
-    return`<div class="item" onclick="openMan('${m.id}')">
-    <span class="led" style="background:${late?'#FF5C7A':sc}"></span>
-    <div class="bd"><div class="ti">${who?`<b>${esc(who)}</b> — `:''}${esc(m.title)}</div>
-    <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${m.employeeId?' · 👷 '+esc(eName(m.employeeId)):''}</div>
-    <div class="mt"><span class="badge" style="border-color:${late?'#FF5C7A':sc};color:${late?'#FF5C7A':sc}">${late?'IN RITARDO':sl}</span></div></div>
-    <div class="right" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-      <div><div class="d1">${m.time||''}</div><div class="d2">${m.date?fmtD(m.date):'—'}</div></div>
-      ${m.status!=='fatta'?`<span class="row-act" onclick="event.stopPropagation();startBollettino('${m.id}')">▶ AVVIA</span>`
-        :(m.report?`<span class="row-act done" onclick="event.stopPropagation();viewBollettino('${m.id}')">📄 BOLLETTINO</span>`:'')}
-    </div></div>`;
-  }).join(''):'<div class="empty"><div class="big">🔧</div>Nessuna manutenzione qui.</div>'}
+  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="n" style="color:var(--coral)">${nLate}</div><div class="l">In ritardo</div></div>
+    <div class="kpi"><div class="n" style="color:var(--amber)">${nOpen}</div><div class="l">Da fare</div></div>
+    <div class="kpi"><div class="n" style="color:var(--teal)">${nDoneM}</div><div class="l">Fatte (mese)</div></div>
   </div>
+  ${body}
   <button class="fab" onclick="openMan(null)">+</button>`;
 }
 /* ---- campagna chiamate stagionali ---- */
@@ -1474,7 +1548,7 @@ function openMan(id){
   <div class="frow"><div class="fld"><label>Data</label><input id="mn-d" type="date" value="${m.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="mn-h" type="time" value="${m.time||''}"></div></div>
   ${dateChips('mn-d')}
-  <div class="frow"><div class="fld"><label>Tariffa CHF (opzionale)</label><input id="mn-pr" type="number" inputmode="decimal" step="any" value="${m.price||''}"></div>
+  <div class="frow"><div class="fld"><label>Tipo impianto</label><select id="mn-tp"><option value="" ${!m.type?'selected':''}>— tipo —</option>${MAINT_KINDS.map(([k,l])=>`<option value="${k}" ${m.type===k?'selected':''}>${l}</option>`).join('')}</select></div>
   <div class="fld"><label>Ricorrenza</label><select id="mn-r">${[[0,'Nessuna'],[6,'Ogni 6 mesi'],[12,'Ogni anno'],[24,'Ogni 2 anni']].map(([v,l])=>`<option value="${v}" ${(m.recur||0)===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
   <div class="fld"><label>Stato</label><div class="seg" id="mn-s">${['da_fare','programmata','fatta'].map(s=>`<div class="sg ${m.status===s?'on':''}" data-s="${s}" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${s.replace('_',' ')}</div>`).join('')}</div></div>
   <div class="fld"><label>Note</label><textarea id="mn-n">${esc(m.notes||'')}</textarea></div>
@@ -1485,7 +1559,7 @@ function openMan(id){
     <button class="btn pri" onclick="saveMan('${id||''}')">Salva</button></div>`);
 }
 function saveMan(id){
-  const data={title:$('#mn-t').value.trim(),clientId:$('#mn-c').value||null,employeeId:$('#mn-e').value||null,date:$('#mn-d').value||null,time:$('#mn-h').value||null,status:$('#mn-s .sg.on')?.dataset.s||'da_fare',notes:$('#mn-n').value.trim(),recur:+($('#mn-r')?.value||0),price:parseFloat($('#mn-pr')?.value)||null};
+  const data={title:$('#mn-t').value.trim(),clientId:$('#mn-c').value||null,employeeId:$('#mn-e').value||null,date:$('#mn-d').value||null,time:$('#mn-h').value||null,status:$('#mn-s .sg.on')?.dataset.s||'da_fare',notes:$('#mn-n').value.trim(),recur:+($('#mn-r')?.value||0),type:$('#mn-tp')?.value||null};
   if(!data.title){toast('Manca la descrizione');return;}
   const old=id?byId(S.maintenances,id):null;
   const wasFatta=old?old.status==='fatta':false;
@@ -1493,7 +1567,7 @@ function saveMan(id){
   let extra='';
   if(data.status==='fatta'&&!wasFatta&&data.recur>0){
     const nextDate=addMonthsIso(data.date||todayIso(),data.recur);
-    S.maintenances.unshift({id:uid(),title:data.title,clientId:data.clientId,clientRaw:old?old.clientRaw:null,employeeId:data.employeeId,date:nextDate,time:data.time,status:'programmata',notes:'',recur:data.recur,price:data.price,via:'ricorrenza',created:Date.now()});
+    S.maintenances.unshift({id:uid(),title:data.title,clientId:data.clientId,clientRaw:old?old.clientRaw:null,employeeId:data.employeeId,date:nextDate,time:data.time,status:'programmata',notes:'',recur:data.recur,type:data.type,via:'ricorrenza',created:Date.now()});
     extra=' · 🔁 prossima creata per '+fmtD(nextDate);
   }
   save();closeSheet();render();toast('🔧 Salvato'+extra);
@@ -1558,10 +1632,10 @@ function renderPellet(){
   const fc=pelKind==='sfuso'?sfusoForecast():[];
   const alerts=fc.filter(f=>f.days!=null&&f.days<=30);
   $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--fire)"></span>Pellet — ${pelKind==='sfuso'?'🛢 Sfuso':'📦 Sacchi'}</div>
+  <div class="pagetitle"><span class="accent" style="background:var(--fire)"></span>Pellet — ${pelKind==='sfuso'?'🪵 Sfuso':'📦 Sacchi'}</div>
   <div class="tabs">
     <div class="tb" onclick="pelView='dash';render()">📊 Dashboard</div>
-    <div class="tb ${pelView==='sfuso'?'on':''}" onclick="pelView='sfuso';render()">🛢 Sfuso</div>
+    <div class="tb ${pelView==='sfuso'?'on':''}" onclick="pelView='sfuso';render()">🪵 Sfuso</div>
     <div class="tb ${pelView==='sacchi'?'on':''}" onclick="pelView='sacchi';render()">📦 Sacchi</div>
   </div>
   ${pelKind==='sfuso'&&fc.length?`<div class="card" style="${alerts.length?'border-color:rgba(255,181,71,.45)':''}">
@@ -1584,11 +1658,16 @@ function renderPellet(){
   </div>
   <button class="fab" onclick="openPel(null)">+</button>`;
 }
-const pelRow=p=>`<div class="item" onclick="openPel('${p.id}')">
-    <span class="led" style="background:${p.status==='consegnato'?'var(--teal)':'var(--fire)'}"></span>
-    <div class="bd"><div class="ti">${p.kind==='sfuso'?'🛢':'📦'} ${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${p.notes&&p.notes!==String(p.qty)?' — '+esc(p.notes):''}</div>
-    <div class="su">${esc(cName(p.clientId)||p.clientRaw||'cliente da definire')}${p.employeeId?' · 👷 '+esc(eName(p.employeeId)):''}</div></div>
-    <div class="right"><div class="d1">${p.time||''}</div><div class="d2">${p.date?fmtD(p.date):'—'}</div></div></div>`;
+const pelRow=p=>{
+  const late=p.date&&p.date<todayIso()&&p.status!=='consegnato';const done=p.status==='consegnato';
+  const col=done?'#00E5C0':(late?'#FF5C7A':'#97C459');
+  const who=cName(p.clientId)||p.clientRaw||'';
+  return`<div class="frw" style="border-left-color:${col}" onclick="openPel('${p.id}')">
+    <div class="avat" style="width:34px;height:34px;background:${col}22;border:1px solid ${col}55;font-size:15px;font-weight:400">${p.kind==='sfuso'?'🪵':'📦'}</div>
+    <div class="bd"><div class="ti">${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${p.price?` · <span style="color:var(--teal)">CHF ${fmtQty(p.price)}</span>`:''}${who?` — <b>${esc(who)}</b>`:''}</div>
+    <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${p.employeeId?' · 👷 '+esc(eName(p.employeeId)):''}${p.signature?' · ✍':''}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+    ${done?'':`<button class="qbtn" onclick="event.stopPropagation();startBolla('${p.id}')">✍ Bolla</button>`}
+  </div>`;};
 function renderPelDash(){
   const mT=monthlyTotals('sfuso');
   const mB=monthlyTotals('sacchi','sacchi');
@@ -1605,20 +1684,20 @@ function renderPelDash(){
   <div class="pagetitle"><span class="accent" style="background:var(--fire)"></span>Pellet</div>
   <div class="tabs">
     <div class="tb on">📊 Dashboard</div>
-    <div class="tb" onclick="pelView='sfuso';render()">🛢 Sfuso</div>
+    <div class="tb" onclick="pelView='sfuso';render()">🪵 Sfuso</div>
     <div class="tb" onclick="pelView='sacchi';render()">📦 Sacchi</div>
   </div>
-  <div class="stats">
-    <div class="stat"><div class="n" style="color:var(--fire)">${fmtQty(totT)} t</div><div class="l">Sfuso · 12 mesi</div></div>
-    <div class="stat"><div class="n" style="color:var(--fire)">${totB}</div><div class="l">Sacchi · 12 mesi</div></div>
-    <div class="stat"><div class="n">${openN}</div><div class="l">Da consegnare</div></div>
-    ${rev?`<div class="stat"><div class="n" style="color:var(--teal)">${fmtQty(rev)}</div><div class="l">CHF · 12 mesi</div></div>`:`<div class="stat"><div class="n" style="color:${alerts.length?'var(--amber)':'var(--t2)'}">${alerts.length}</div><div class="l">Rifornimenti in vista</div></div>`}
+  <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="n" style="color:#97C459;font-size:16px">${fmtQty(totT)}t</div><div class="l">Sfuso 12m</div></div>
+    <div class="kpi"><div class="n" style="color:var(--amber);font-size:16px">${totB}</div><div class="l">Sacchi 12m</div></div>
+    <div class="kpi"><div class="n" style="font-size:16px">${openN}</div><div class="l">Da cons.</div></div>
+    ${rev?`<div class="kpi"><div class="n" style="color:var(--teal);font-size:16px">${fmtQty(rev)}</div><div class="l">CHF 12m</div></div>`:`<div class="kpi"><div class="n" style="color:${alerts.length?'var(--amber)':'var(--t2)'};font-size:16px">${alerts.length}</div><div class="l">Rifornimenti</div></div>`}
   </div>
   ${alerts.length?`<div class="card" style="border-color:rgba(255,181,71,.45)"><div class="sh"><span class="t" style="color:var(--amber)">⏳ Da pianificare</span><span class="a" onclick="pelView='sfuso';render()">Sfuso →</span></div>
     ${alerts.map(f=>`<div class="item" onclick="openPelClient('${f.clientId}')"><span class="led" style="background:${f.days<=0?'var(--coral)':'var(--amber)'}"></span>
     <div class="bd"><div class="ti">${esc(cName(f.clientId))}</div><div class="su">~${fmtQty(f.ratePerDay*30)} t/mese</div></div>
     <div class="right"><div class="d1" style="color:${f.days<=0?'var(--coral)':'var(--amber)'}">${f.days<=0?'ADESSO':f.days+' gg'}</div><div class="d2">${fmtD(f.nextDate)}</div></div></div>`).join('')}</div>`:''}
-  <div class="card"><div class="sh"><span class="t">🛢 Sfuso — tonnellate al mese</span></div>
+  <div class="card"><div class="sh"><span class="t">🪵 Sfuso — tonnellate al mese</span></div>
     ${barChart(mT,'#FF8A3D','t')}
     ${topT&&topT.val?`<div class="subtle" style="margin-top:8px">Mese più intenso: <b style="color:var(--t1)">${topT.label}</b> con ${fmtQty(topT.val)} t</div>`:'<div class="subtle" style="margin-top:8px">Nessuna consegna sfuso registrata negli ultimi 12 mesi.</div>'}
   </div>
@@ -1627,7 +1706,7 @@ function renderPelDash(){
     ${topB&&topB.val?`<div class="subtle" style="margin-top:8px">Mese più intenso: <b style="color:var(--t1)">${topB.label}</b> con ${topB.val} sacchi</div>`:'<div class="subtle" style="margin-top:8px">Nessuna consegna in sacchi registrata negli ultimi 12 mesi.</div>'}
   </div>
   <div class="card"><div class="sh"><span class="t">Tutte le consegne</span></div>
-    ${all.length?all.slice(0,25).map(pelRow).join(''):'<div class="empty"><div class="big">🔥</div>Nessuna consegna. Dall\'Hub: «30 sacchi a Bianchi venerdì» o «3 t sfuso a Hotel Roma».</div>'}
+    ${all.length?all.slice(0,25).map(pelRow).join(''):'<div class="empty"><div class="big">🪵</div>Nessuna consegna. Dall\'Hub: «30 sacchi a Bianchi venerdì» o «3 t sfuso a Hotel Roma».</div>'}
   </div>
   <button class="fab" onclick="openPel(null)">+</button>`;
 }
@@ -1647,7 +1726,7 @@ function openPelClient(cid){
     <text x="${x+bw/2}" y="${base+16}" text-anchor="middle" fill="#52718A" font-size="9" font-family="JetBrains Mono">${p.date.slice(8,10)}.${p.date.slice(5,7)}</text>
     <text x="${x+bw/2}" y="${base+27}" text-anchor="middle" fill="#52718A" font-size="8" font-family="JetBrains Mono">${p.date.slice(2,4)}</text>`;
   });
-  openSheet(`<h3>🛢 ${esc(cName(cid))} <span class="x" onclick="closeSheet()">✕</span></h3>
+  openSheet(`<h3>🪵 ${esc(cName(cid))} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
     <div class="stat"><div class="n" style="font-size:16px">${fmtQty(ds.reduce((s,p)=>s+p.qty,0))} t</div><div class="l">Totale consegnato</div></div>
     <div class="stat"><div class="n" style="font-size:16px">${f.ratePerDay?fmtQty(f.ratePerDay*30)+' t':'—'}</div><div class="l">Consumo / mese</div></div>
@@ -1677,7 +1756,7 @@ function openPel(id,preset){
   if(preset&&preset.kind==='sfuso')p.unit='t';
   openSheet(`<h3>${id?'Consegna pellet':'Nuova consegna'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Tipo</label><div class="seg" id="pl-k">
-    <div class="sg ${p.kind==='sfuso'?'on':''}" data-k="sfuso" onclick="pelKindPick(this)">🛢 Sfuso (t)</div>
+    <div class="sg ${p.kind==='sfuso'?'on':''}" data-k="sfuso" onclick="pelKindPick(this)">🪵 Sfuso (t)</div>
     <div class="sg ${p.kind!=='sfuso'?'on':''}" data-k="sacchi" onclick="pelKindPick(this)">📦 Sacchi</div>
   </div></div>
   <div class="frow">
@@ -1713,7 +1792,7 @@ function savePel(id){
   const data={qty:parseFloat($('#pl-q').value)||null,unit:$('#pl-u').value,kind,clientId:$('#pl-c').value||null,employeeId:$('#pl-e').value||null,date:$('#pl-d').value||null,time:$('#pl-h').value||null,notes:$('#pl-n').value.trim()};
   data.price=parseFloat($('#pl-pr').value)||autoPrice({...data})||null;
   if(id){Object.assign(byId(S.pellet,id),data);}else{S.pellet.unshift({id:uid(),status:'da_consegnare',clientRaw:null,via:'manuale',created:Date.now(),...data});}
-  save();closeSheet();render();toast('🔥 Salvato');
+  save();closeSheet();render();toast('🪵 Salvato');
 }
 function togglePel(id){const p=byId(S.pellet,id);p.status=p.status==='consegnato'?'da_consegnare':'consegnato';save();closeSheet();render();}
 /* ================= CANTIERI ================= */
@@ -1721,33 +1800,42 @@ let siteTab='aperto';
 function siteHours(s){return s.log.reduce((t,l)=>t+(l.hours||0),0);}
 function renderSites(){
   const groups={aperto:[],da_fatturare:[],chiuso:[]};
-  visSites().forEach(s=>groups[s.status||'aperto'].push(s));
+  visSites().forEach(s=>{const g=groups[s.status||'aperto'];if(g)g.push(s);});
   const list=groups[siteTab]||[];
   const card=s=>{
     const hrs=siteHours(s);
     const pct=s.estHours?Math.min(100,Math.round(hrs/s.estHours*100)):null;
     const dd=s.dueDate?relDays(s.dueDate):null;
-    const ddCol=dd==null?'':dd<0?'var(--coral)':dd<=7?'var(--amber)':'var(--t3)';
-    return`<div class="item" onclick="openSite('${s.id}')">
-    <span class="led" style="background:${s.status==='chiuso'?'var(--t3)':s.status==='da_fatturare'?'var(--amber)':'var(--blue)'};box-shadow:0 0 8px ${s.status==='aperto'?'var(--blue)':'transparent'}"></span>
-    <div class="bd"><div class="ti">${esc(s.name)}</div>
-    <div class="su">${esc(cName(s.clientId)||s.clientRaw||'')}${s.employees.length?' · 👷 '+s.employees.map(eName).filter(Boolean).join(', '):''}</div>
-    ${s.estHours?`<div class="ck-bar" style="margin:6px 0 3px;max-width:200px"><i style="width:${pct}%;${pct>=100?'background:var(--amber)':''}"></i></div>`:''}
-    <div class="mt">${hrs}h${s.estHours?' / '+s.estHours+'h stimate':''} · ${s.log.length} reg.${s.attachments.length?' · 📎'+s.attachments.length:''}${s.amount&&isOwner()?' · <span style="color:var(--amber)">CHF '+fmtQty(s.amount)+'</span>':''}</div></div>
-    <div class="right">${s.dueDate&&s.status==='aperto'?`<div class="d1" style="color:${ddCol}">${dd<0?Math.abs(dd)+'gg oltre':dd+' gg'}</div><div class="d2">${fmtD(s.dueDate)}</div>`:''}</div></div>`;
+    const ddCol=dd==null?'var(--t3)':dd<0?'var(--coral)':dd<=7?'var(--amber)':'var(--t3)';
+    const stCol=s.status==='chiuso'?'#52718A':s.status==='da_fatturare'?'#FFB547':'#6FA8FF';
+    const stLbl=s.status==='chiuso'?'ARCHIVIO':s.status==='da_fatturare'?'DA FATTURARE':'IN CORSO';
+    return`<div class="card" style="border-left:3px solid ${stCol};padding:12px;margin-bottom:10px;cursor:pointer" onclick="openSite('${s.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:3px">
+      <span style="font-size:13.5px;color:var(--t1);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</span>
+      <span class="badge" style="border-color:${stCol};color:${stCol};flex-shrink:0">${stLbl}</span></div>
+    <div class="su" style="font-size:11px;color:var(--t2);margin-bottom:9px">${esc(cName(s.clientId)||s.clientRaw||'—')}${s.employees.length?' · 👷 '+s.employees.map(eName).filter(Boolean).join(', '):''}</div>
+    ${s.estHours?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:4px"><span>Ore lavorate</span><span style="font-family:var(--mono);color:${pct>=100?'var(--amber)':'var(--t1)'}">${hrs} / ${s.estHours}h · ${pct}%</span></div><div class="ck-bar" style="height:7px;margin-bottom:10px"><i style="width:${pct}%;background:${pct>=90?'var(--amber)':'var(--cy)'}"></i></div>`:`<div class="su" style="margin-bottom:9px">${hrs}h registrate</div>`}
+    <div style="display:flex;gap:11px;font-size:10px;color:var(--t3);font-family:var(--mono);align-items:center">
+      ${s.dueDate&&s.status!=='chiuso'?`<span style="color:${ddCol}">⏳ ${dd<0?Math.abs(dd)+'gg oltre':dd+' gg'}</span>`:''}
+      ${s.attachments.length?`<span>📎 ${s.attachments.length}</span>`:''}
+      <span>📝 ${s.log.length}</span>
+      ${s.amount&&isOwner()?`<span style="margin-left:auto;color:var(--teal)">CHF ${fmtQty(s.amount)}</span>`:''}
+    </div></div>`;
   };
   const totFatt=groups.da_fatturare.reduce((t,s)=>t+(s.amount||0),0);
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--blue)"></span>Cantieri</div>
+  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="n" style="color:var(--blue)">${groups.aperto.length}</div><div class="l">In corso</div></div>
+    <div class="kpi"><div class="n" style="color:var(--amber)">${groups.da_fatturare.length}</div><div class="l">Da fatturare</div></div>
+    ${isOwner()?`<div class="kpi"><div class="n" style="color:var(--teal);font-size:15px">${fmtQty(totFatt)}</div><div class="l">CHF in attesa</div></div>`:`<div class="kpi"><div class="n">${groups.chiuso.length}</div><div class="l">Archiviati</div></div>`}
+  </div>
   <div class="tabs">
-    <div class="tb ${siteTab==='aperto'?'on':''}" onclick="siteTab='aperto';render()">🏗 In corso (${groups.aperto.length})</div>
+    <div class="tb ${siteTab==='aperto'?'on':''}" onclick="siteTab='aperto';render()">🔨 In corso (${groups.aperto.length})</div>
     <div class="tb ${siteTab==='da_fatturare'?'on':''}" onclick="siteTab='da_fatturare';render()" style="${groups.da_fatturare.length?'border-color:var(--amber);color:var(--amber)':''}">💰 Da fatturare (${groups.da_fatturare.length})</div>
     <div class="tb ${siteTab==='chiuso'?'on':''}" onclick="siteTab='chiuso';render()">🗄 Archivio (${groups.chiuso.length})</div>
   </div>
-  ${siteTab==='da_fatturare'&&totFatt?`<div class="card" style="border-color:rgba(255,181,71,.45)"><div class="sh"><span class="t" style="color:var(--amber)">💰 Totale da fatturare</span><span class="t" style="font-family:var(--mono);color:var(--amber)">CHF ${fmtQty(totFatt)}</span></div></div>`:''}
-  <div class="card">
   ${list.length?list.map(card).join(''):`<div class="empty"><div class="big">${siteTab==='da_fatturare'?'💰':siteTab==='chiuso'?'🗄':'🏗'}</div>${siteTab==='aperto'?'Nessun cantiere in corso.':siteTab==='da_fatturare'?'Niente da fatturare. 👌':'Archivio vuoto.'}</div>`}
-  </div>
   <button class="fab" onclick="editSite(null)">+</button>`;
 }
 function openSite(id){
@@ -1755,8 +1843,8 @@ function openSite(id){
   ensureAttUrls(s);
   const hrs=siteHours(s);
   const pct=s.estHours?Math.min(100,Math.round(hrs/s.estHours*100)):null;
-  const STAT={aperto:['🏗 In corso','var(--blue)'],da_fatturare:['💰 Da fatturare','var(--amber)'],chiuso:['🗄 Archiviato','var(--t3)']};
-  const[sl,sc]=STAT[s.status];
+  const STAT={previsto:['📋 Lavoro futuro','var(--teal)'],aperto:['🏗 In corso','var(--blue)'],da_fatturare:['💰 Da fatturare','var(--amber)'],chiuso:['🗄 Archiviato','var(--t3)']};
+  const[sl,sc]=STAT[s.status]||STAT.aperto;
   openSheet(`<h3>${esc(s.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="subtle" style="margin-bottom:10px">${esc(cName(s.clientId)||s.clientRaw||'Nessun cliente')} · <b style="color:${sc}">${sl}</b><br>
   ${s.startDate?'Inizio: '+fmtD(s.startDate):''}${s.dueDate?' · Fine prevista: '+fmtD(s.dueDate):''}</div>
@@ -1795,13 +1883,14 @@ function openSite(id){
   </div>
   <div class="actions" style="flex-wrap:wrap">
     <button class="btn danger" onclick="delSite('${id}')">Elimina</button>
+    ${s.status==='previsto'?`<button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="setSiteStatus('${id}','aperto')">▶ Avvia → cantiere attivo</button>`:''}
     ${s.status==='aperto'?`<button class="btn" style="border-color:var(--amber);color:var(--amber)" onclick="setSiteStatus('${id}','da_fatturare')">✓ Finito → fattura</button>`:''}
     ${s.status==='da_fatturare'?`<button class="btn" onclick="setSiteStatus('${id}','aperto')">↩ Riapri</button>
     <button class="btn" style="border-color:var(--teal);color:var(--teal)" onclick="setSiteStatus('${id}','chiuso')">💰 Fatturato → archivio</button>`:''}
     ${s.status==='chiuso'?`<button class="btn" onclick="setSiteStatus('${id}','aperto')">↩ Riapri</button>`:''}
     <button class="btn pri" onclick="editSite('${id}')">Modifica</button></div>`);
 }
-function setSiteStatus(id,st){const s=byId(S.sites,id);s.status=st;if(st!=='aperto')siteTab=st;save();closeSheet();render();toast(st==='da_fatturare'?'💰 Spostato in Da fatturare':st==='chiuso'?'🗄 Archiviato':'🏗 Riaperto');}
+function setSiteStatus(id,st){const s=byId(S.sites,id);s.status=st;if(st==='chiuso'&&!s.closedDate)s.closedDate=todayIso();if(st!=='aperto'&&(st==='da_fatturare'||st==='chiuso'))siteTab=st;save();closeSheet();render();toast(st==='da_fatturare'?'💰 Spostato in Da fatturare':st==='chiuso'?'🗄 Archiviato':'🏗 Riaperto');}
 function addLog(id){const s=byId(S.sites,id);const t=$('#sl-t').value.trim();if(!t){toast('Scrivi cosa è stato fatto');return;}
   s.log.push({id:uid(),date:todayIso(),text:t,hours:parseFloat($('#sl-h').value)||null,empId:$('#sl-e')?.value||null});save();openSite(id);toast('Registrato');}
 /* allegati (Supabase Storage) */
@@ -1888,19 +1977,21 @@ async function delSite(id){
   S.sites=S.sites.filter(x=>x.id!==id);
   save();closeSheet();render();toast('🗑 Cantiere eliminato');
 }
-function editSite(id){
-  const s=id?byId(S.sites,id):{name:'',clientId:null,employees:[],notes:'',status:'aperto',estHours:null,startDate:todayIso(),dueDate:null};
-  openSheet(`<h3>${id?'Modifica cantiere':'Nuovo cantiere'} <span class="x" onclick="closeSheet()">✕</span></h3>
+function editSite(id,preset){
+  const s=id?byId(S.sites,id):{name:'',clientId:null,employees:[],notes:'',status:preset||'aperto',estHours:null,startDate:todayIso(),dueDate:null};
+  const SST=[['previsto','Previsto'],['aperto','In corso'],['da_fatturare','Da fatturare'],['chiuso','Archivio']];
+  openSheet(`<h3>${id?'Modifica cantiere':(preset==='previsto'?'Nuovo lavoro futuro':'Nuovo cantiere')} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="st-n" value="${esc(s.name)}" placeholder="es. Installazione caldaia Via Roma"></div>
   <div class="fld"><label>Cliente</label><select id="st-c"><option value="">—</option>${cOpt(s.clientId)}</select></div>
   <div class="frow">
     <div class="fld"><label>Stima ore lavoro</label><input id="st-h" type="number" inputmode="decimal" value="${s.estHours||''}" placeholder="es. 40"></div>
-    <div class="fld"><label>Importo CHF</label><input id="st-am" type="number" inputmode="decimal" step="any" value="${s.amount||''}" placeholder="da fatturare"></div>
+    ${isOwner()?`<div class="fld"><label>Importo CHF</label><input id="st-am" type="number" inputmode="decimal" step="any" value="${s.amount||''}" placeholder="da fatturare"></div>`:''}
   </div>
   <div class="frow">
     <div class="fld"><label>Inizio</label><input id="st-sd" type="date" value="${s.startDate||''}"></div>
     <div class="fld"><label>Fine prevista</label><input id="st-dd" type="date" value="${s.dueDate||''}"></div>
   </div>
+  ${isOwner()?`<div class="fld"><label>Stato</label><div class="seg" id="st-st">${SST.map(([v,l])=>`<div class="sg ${(s.status||'aperto')===v?'on':''}" data-s="${v}" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${l}</div>`).join('')}</div></div>`:''}
   <div class="fld"><label>Squadra</label><div class="seg" id="st-e">${S.employees.map(e=>`<div class="sg ${s.employees.includes(e.id)?'on':''}" data-id="${e.id}" onclick="this.classList.toggle('on')">${esc(e.name)}</div>`).join('')}</div></div>
   <div class="fld"><label>Note</label><textarea id="st-no">${esc(s.notes||'')}</textarea></div>
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveSite('${id||''}')">Salva</button></div>`);
@@ -1908,41 +1999,222 @@ function editSite(id){
 function saveSite(id){
   const name=$('#st-n').value.trim();if(!name){toast('Manca il nome');return;}
   const employees=[...document.querySelectorAll('#st-e .sg.on')].map(x=>x.dataset.id);
-  const data={name,clientId:$('#st-c').value||null,employees,estHours:parseFloat($('#st-h').value)||null,amount:parseFloat($('#st-am').value)||null,startDate:$('#st-sd').value||null,dueDate:$('#st-dd').value||null,notes:$('#st-no').value.trim()};
-  if(id){Object.assign(byId(S.sites,id),data);}else{S.sites.unshift({id:uid(),status:'aperto',log:[],attachments:[],clientRaw:null,via:'manuale',created:Date.now(),...data});}
+  const data={name,clientId:$('#st-c').value||null,employees,estHours:parseFloat($('#st-h').value)||null,startDate:$('#st-sd').value||null,dueDate:$('#st-dd').value||null,notes:$('#st-no').value.trim()};
+  const amEl=$('#st-am');if(amEl)data.amount=parseFloat(amEl.value)||null;
+  const stEl=document.querySelector('#st-st .sg.on');if(stEl)data.status=stEl.dataset.s;
+  if(id){const old=byId(S.sites,id);const wasClosed=old.status==='chiuso';Object.assign(old,data);if(old.status==='chiuso'&&!wasClosed&&!old.closedDate)old.closedDate=todayIso();}
+  else{const st=data.status||'aperto';const ns={id:uid(),status:st,log:[],attachments:[],clientRaw:null,via:'manuale',created:Date.now(),...data};if(st==='chiuso'&&!ns.closedDate)ns.closedDate=todayIso();S.sites.unshift(ns);}
   save();closeSheet();render();toast('🏗 Salvato');
 }
 
+/* ================= CONTI (solo titolari) ================= */
+const EXP_CATS=['Acquisto pellet','Affitto / Locazione','Stipendi','Veicoli','Gasolio/carburante','Materiali','Attrezzatura / Ricambi','Assicurazioni','Utenze (luce/gas/tel)','Tasse / Imposte','Altro'];
+const EXP_RECUR=[[0,'Una tantum'],[1,'Ogni mese'],[3,'Ogni 3 mesi'],[6,'Ogni 6 mesi'],[12,'Ogni anno']];
+const recurLabel=r=>({1:'🔁 ogni mese',3:'🔁 ogni 3 mesi',6:'🔁 ogni 6 mesi',12:'🔁 ogni anno'}[r]||'');
+const MAINT_KINDS=[['stufa','Stufa'],['camino','Camino'],['caldaia','Caldaia'],['altro','Altro']];
+const MAINT_ICONS={stufa:'🔥',camino:'🪵',caldaia:'♨️',altro:'🔧'};
+let contiTab='riepilogo';let contiMonth=null;let contiSiteTab='attivi';let contiSpeseView='mese';
+const curMonth=()=>todayIso().slice(0,7);
+const cMonth=()=>contiMonth||curMonth();
+function monthLabel(mk){const[y,m]=mk.split('-');const nm=MESI[+m-1]||'';return nm.charAt(0).toUpperCase()+nm.slice(1)+' '+y;}
+function shiftMonth(mk,n){let[y,m]=mk.split('-').map(Number);m+=n;while(m<1){m+=12;y--;}while(m>12){m-=12;y++;}return y+'-'+String(m).padStart(2,'0');}
+function contiSetMonth(n){contiMonth=shiftMonth(cMonth(),n);render();}
+function contiSetYear(n){contiMonth=shiftMonth(cMonth(),n*12);render();}
+function monthsOfYear(yr){const a=[];for(let m=1;m<=12;m++)a.push(yr+'-'+String(m).padStart(2,'0'));return a;}
+function speseAnnoByMonth(yr){return monthsOfYear(yr).map((k,i)=>({label:MESI[i].slice(0,3),key:k,val:speseTot(k)}));}
+function speseAnnoTot(yr){return monthsOfYear(yr).reduce((t,k)=>t+speseTot(k),0);}
+function speseCatMese(mk){const o={};speseMese(mk).forEach(e=>{const c=e.category||'Altro';o[c]=(o[c]||0)+(e.amount||0);});return o;}
+function speseCatAnno(yr){const o={};monthsOfYear(yr).forEach(k=>speseMese(k).forEach(e=>{const c=e.category||'Altro';o[c]=(o[c]||0)+(e.amount||0);}));return o;}
+function catBars(obj){
+  const ents=Object.entries(obj).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  if(!ents.length)return'<div class="subtle" style="padding:6px 2px">Nessuna spesa.</div>';
+  const max=Math.max(...ents.map(e=>e[1]));
+  return ents.map(([c,v])=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px"><span>${esc(c)}</span><span style="font-family:var(--mono);color:var(--coral)">CHF ${fmtQty(v)}</span></div><div class="ck-bar" style="height:7px"><i style="width:${Math.round(v/max*100)}%;background:var(--coral)"></i></div></div>`).join('');
+}
+function maintPrice(kind){const r=S.maintPrices.find(x=>x.kind===kind);return r&&r.price!=null?r.price:null;}
+function maintIncome(m){const lp=maintPrice(m.type);return lp!=null?lp:(m.price||0);}
+function siteIncomeMonth(s){const d=s.closedDate||s.dueDate||s.startDate||(s.created?iso(new Date(s.created)):'');return d?d.slice(0,7):'';}
+function siteSpese(sid){return S.expenses.filter(e=>e.siteId===sid).reduce((t,e)=>t+(e.amount||0),0);}
+function monthsDiff(a,b){const[ya,ma]=a.split('-').map(Number);const[yb,mb]=b.split('-').map(Number);return(yb-ya)*12+(mb-ma);}
+function expenseInMonth(e,mk){if(!e.date)return false;const em=e.date.slice(0,7);if(!e.recur)return em===mk;const d=monthsDiff(em,mk);return d>=0&&d%e.recur===0;}
+function speseMese(mk){return S.expenses.filter(e=>expenseInMonth(e,mk));}
+function speseTot(mk){return speseMese(mk).reduce((t,e)=>t+(e.amount||0),0);}
+function entrate(mk){
+  const pellet=S.pellet.filter(p=>p.status==='consegnato'&&p.date&&p.date.slice(0,7)===mk).reduce((t,p)=>t+(p.price||0),0);
+  const man=S.maintenances.filter(m=>m.status==='fatta'&&m.date&&m.date.slice(0,7)===mk).reduce((t,m)=>t+maintIncome(m),0);
+  const cant=S.sites.filter(s=>s.status==='chiuso'&&siteIncomeMonth(s)===mk).reduce((t,s)=>t+(s.amount||0),0);
+  return{pellet,man,cant,tot:pellet+man+cant};
+}
+const entrRow=(label,val)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px"><span class="subtle">${label}</span><span style="font-family:var(--mono);color:var(--teal)">CHF ${fmtQty(val)}</span></div>`;
+function expRow(e){const sn=e.siteId?(byId(S.sites,e.siteId)||{}).name:'';const rl=recurLabel(e.recur);return`<div class="item" onclick="openExpense('${e.id}')"><div class="bd"><div class="ti">${esc(e.category||'Spesa')} · <span style="color:var(--coral)">CHF ${fmtQty(e.amount||0)}</span>${rl?` <span class="badge" style="border-color:var(--cy);color:var(--cy)">${rl}</span>`:''}</div><div class="su">${fmtD(e.date)}${e.note?' · '+esc(e.note):''}${sn?' · 🏗 '+esc(sn):''}</div></div></div>`;}
+function renderConti(){
+  if(!isOwner()){view='hub';renderHub();return;}
+  const mk=cMonth();
+  const tabs=[['riepilogo','📊 Riepilogo'],['spese','💸 Spese'],['cantieri','🏗 Cantieri'],['listino','🏷 Listino']];
+  let body='';
+  if(contiTab==='spese')body=contiSpese(mk);
+  else if(contiTab==='cantieri')body=contiCantieri();
+  else if(contiTab==='listino')body=contiListino();
+  else body=contiRiepilogo(mk);
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent"></span>💰 Conti</div>
+  <div class="tabs">${tabs.map(([id,l])=>`<div class="tb ${contiTab===id?'on':''}" onclick="contiTab='${id}';render()">${l}</div>`).join('')}</div>
+  ${body}`;
+}
+const monthBar=mk=>`<div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px"><button class="cal-nav" onclick="contiSetMonth(-1)">‹</button><b style="font-size:15px">${monthLabel(mk)}</b><button class="cal-nav" onclick="contiSetMonth(1)">›</button></div>`;
+function lastMonths(mk,n){const a=[];let k=mk;for(let i=0;i<n;i++){a.unshift(k);k=shiftMonth(k,-1);}return a;}
+function contiTrend(mk){
+  const data=lastMonths(mk,6).map(k=>({k,e:entrate(k).tot,s:speseTot(k)}));
+  const max=Math.max(0.001,...data.map(d=>Math.max(d.e,d.s)));
+  const bars=data.map(d=>{const he=d.e?Math.max(3,Math.round(d.e/max*50)):0;const hs=d.s?Math.max(3,Math.round(d.s/max*50)):0;const lab=(MESI[+d.k.split('-')[1]-1]||'').slice(0,3);return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:74px"><div style="display:flex;gap:3px;align-items:flex-end;height:52px"><div style="width:8px;height:${he}px;background:var(--teal);border-radius:2px"></div><div style="width:8px;height:${hs}px;background:var(--coral);border-radius:2px"></div></div><span style="font-size:8.5px;color:var(--t3);margin-top:5px">${lab}</span></div>`;}).join('');
+  return`<div class="card"><div class="sh"><span class="t">📈 Entrate vs Spese · 6 mesi</span><span style="font-size:10px;color:var(--t3)"><span style="color:var(--teal)">▮</span> entr. <span style="color:var(--coral)">▮</span> spese</span></div><div style="display:flex;gap:6px;margin-top:4px">${bars}</div></div>`;
+}
+function contiRiepilogo(mk){
+  const e=entrate(mk);const sp=speseTot(mk);const ut=e.tot-sp;
+  const pmk=shiftMonth(mk,-1);const put=entrate(pmk).tot-speseTot(pmk);
+  const delta=put?Math.round((ut-put)/Math.abs(put)*100):null;
+  const list=speseMese(mk).slice().sort((a,b)=>(a.date<b.date?1:-1));
+  const emax=Math.max(e.pellet,e.man,e.cant,0.001);
+  const ebar=(ic,label,val,col)=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--t2)">${ic} ${label}</span><span style="font-family:var(--mono);color:var(--teal)">CHF ${fmtQty(val)}</span></div><div class="ck-bar" style="height:6px"><i style="width:${Math.round(val/emax*100)}%;background:${col}"></i></div></div>`;
+  return`${monthBar(mk)}
+  <div class="card" style="border-color:rgba(0,229,192,.4);background:rgba(0,229,192,.05);text-align:center;padding:14px">
+    <div class="subtle" style="font-size:11px;letter-spacing:.5px">UTILE DI ${monthLabel(mk).toUpperCase()}</div>
+    <div style="font-size:30px;font-weight:700;color:${ut>=0?'var(--teal)':'var(--coral)'};margin:3px 0">${ut>=0?'+':''}${fmtQty(ut)}<span style="font-size:14px;color:var(--t3);font-weight:400"> CHF</span></div>
+    ${delta!=null?`<div style="font-size:10.5px;color:${delta>=0?'var(--teal)':'var(--coral)'}">${delta>=0?'▲':'▼'} ${Math.abs(delta)}% rispetto a ${MESI[+pmk.split('-')[1]-1]}</div>`:'<div class="subtle" style="font-size:10px">entrate − spese del mese</div>'}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
+    <div class="stat"><div class="subtle" style="font-size:11px">↘ Entrate</div><div style="font-size:19px;font-weight:700;color:var(--teal)">${fmtQty(e.tot)}</div><div class="subtle" style="font-size:10px">CHF</div></div>
+    <div class="stat"><div class="subtle" style="font-size:11px">↗ Spese</div><div style="font-size:19px;font-weight:700;color:var(--coral)">${fmtQty(sp)}</div><div class="subtle" style="font-size:10px">CHF</div></div>
+  </div>
+  ${contiTrend(mk)}
+  <div class="card"><div class="sh"><span class="t">📥 Da dove arrivano le entrate</span></div>
+    ${ebar('🪵','Pellet',e.pellet,'#97C459')}
+    ${ebar('🔧','Manutenzioni',e.man,'var(--amber)')}
+    ${ebar('🏗','Cantieri',e.cant,'var(--blue)')}
+  </div>
+  <div class="card"><div class="sh"><span class="t">📤 Spese del mese</span><button class="btn sm pri" onclick="openExpense('')">+ Spesa</button></div>
+    ${list.length?list.map(expRow).join(''):'<div class="subtle" style="padding:6px 2px">Nessuna spesa in questo mese.</div>'}
+  </div>`;
+}
+function contiSpese(mk){
+  const yr=mk.slice(0,4);
+  const seg=`<div class="seg" style="margin-bottom:10px"><div class="sg ${contiSpeseView==='mese'?'on':''}" onclick="contiSpeseView='mese';render()">📅 Mese</div><div class="sg ${contiSpeseView==='anno'?'on':''}" onclick="contiSpeseView='anno';render()">📆 Anno</div></div>`;
+  const addBtn=`<button class="btn pri" style="width:100%;margin-bottom:10px" onclick="openExpense('')">+ Aggiungi spesa</button>`;
+  if(contiSpeseView==='anno'){
+    const months=speseAnnoByMonth(yr);const tot=speseAnnoTot(yr);const avg=Math.round(tot/12);
+    return`${seg}
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px"><button class="cal-nav" onclick="contiSetYear(-1)">‹</button><b style="font-size:15px">Anno ${yr}</b><button class="cal-nav" onclick="contiSetYear(1)">›</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div class="stat"><div class="subtle" style="font-size:11px">Totale anno</div><div style="font-size:18px;font-weight:700;color:var(--coral)">${fmtQty(tot)}</div><div class="subtle" style="font-size:10px">CHF</div></div>
+      <div class="stat"><div class="subtle" style="font-size:11px">Media al mese</div><div style="font-size:18px;font-weight:700;color:var(--amber)">${fmtQty(avg)}</div><div class="subtle" style="font-size:10px">CHF</div></div>
+    </div>
+    ${addBtn}
+    <div class="card"><div class="sh"><span class="t">📊 Andamento mensile ${yr}</span></div>${barChart(months,'#FF5C7A')}</div>
+    <div class="card"><div class="sh"><span class="t">🏷 Per categoria</span></div>${catBars(speseCatAnno(yr))}</div>`;
+  }
+  const list=speseMese(mk).slice().sort((a,b)=>(a.date<b.date?1:-1));const tot=speseTot(mk);
+  return`${seg}${monthBar(mk)}
+  <div class="card"><div class="sh"><span class="t">Totale del mese</span><span class="t" style="font-family:var(--mono);color:var(--coral)">CHF ${fmtQty(tot)}</span></div></div>
+  ${addBtn}
+  <div class="card"><div class="sh"><span class="t">🏷 Per categoria</span></div>${catBars(speseCatMese(mk))}</div>
+  <div class="card"><div class="sh"><span class="t">📋 Dettaglio (${list.length})</span></div>${list.length?list.map(expRow).join(''):'<div class="empty"><div class="big">💸</div>Nessuna spesa in questo mese.</div>'}</div>`;
+}
+function openExpense(id){
+  const e=id?byId(S.expenses,id):{date:todayIso(),category:EXP_CATS[0],amount:null,note:'',siteId:null,recur:0};
+  if(!e)return;
+  const stdCat=EXP_CATS.includes(e.category);
+  const selCat=stdCat?e.category:(e.category?'Altro':EXP_CATS[0]);
+  const othCat=stdCat?'':(e.category||'');
+  openSheet(`<h3>${id?'Modifica spesa':'Nuova spesa'} <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="frow"><div class="fld"><label>Data</label><input id="ex-d" type="date" value="${e.date||todayIso()}"></div>
+    <div class="fld"><label>Importo CHF</label><input id="ex-a" type="number" inputmode="decimal" step="any" value="${e.amount||''}"></div></div>
+  <div class="frow"><div class="fld"><label>Categoria</label><select id="ex-cat" onchange="$('#ex-cat-oth').style.display=this.value==='Altro'?'block':'none'">${EXP_CATS.map(c=>`<option ${selCat===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="fld"><label>Ricorrenza</label><select id="ex-r">${EXP_RECUR.map(([v,l])=>`<option value="${v}" ${(e.recur||0)===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div class="fld" id="ex-cat-oth" style="display:${selCat==='Altro'?'block':'none'}"><label>Nome categoria</label><input id="ex-cat-c" value="${esc(othCat)}" placeholder="es. Multe, Bolli, Pubblicità"></div>
+  <div class="fld"><label>Cantiere collegato (facoltativo)</label><select id="ex-s"><option value="">— nessuno</option>${S.sites.map(s=>`<option value="${s.id}" ${e.siteId===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Nota</label><textarea id="ex-n">${esc(e.note||'')}</textarea></div>
+  <div class="actions">${id?`<button class="btn danger" onclick="delExpense('${id}')">Elimina</button>`:''}<button class="btn pri" onclick="saveExpense('${id||''}')">Salva</button></div>`);
+}
+function saveExpense(id){
+  let category=$('#ex-cat').value;
+  if(category==='Altro'){const oth=($('#ex-cat-c')?.value||'').trim();if(oth)category=oth;}
+  const data={date:$('#ex-d').value||todayIso(),amount:parseFloat($('#ex-a').value)||null,category,recur:+($('#ex-r')?.value||0),siteId:$('#ex-s').value||null,note:$('#ex-n').value.trim()};
+  if(!data.amount){toast('Manca l’importo');return;}
+  if(id){Object.assign(byId(S.expenses,id),data);}else{S.expenses.unshift({id:uid(),created:Date.now(),...data});}
+  save();closeSheet();render();toast('💸 Spesa salvata');
+}
+function delExpense(id){if(!confirm('Eliminare questa spesa?'))return;S.expenses=S.expenses.filter(x=>x.id!==id);save();closeSheet();render();toast('🗑 Eliminata');}
+function contiCantieri(){
+  const tabs=[['futuri','📋 Futuri'],['attivi','🔨 Attivi'],['finiti','✅ Finiti']];const t=contiSiteTab;
+  let sites;
+  if(t==='futuri')sites=S.sites.filter(s=>s.status==='previsto');
+  else if(t==='finiti')sites=S.sites.filter(s=>s.status==='chiuso');
+  else sites=S.sites.filter(s=>s.status==='aperto'||s.status==='da_fatturare');
+  sites=sites.slice().sort((a,b)=>b.created-a.created);
+  const totAmount=sites.reduce((x,s)=>x+(s.amount||0),0);
+  const totMargin=sites.reduce((x,s)=>x+((s.amount||0)-siteSpese(s.id)),0);
+  const row=s=>{const sp=siteSpese(s.id);const mg=(s.amount||0)-sp;return`<div class="item" onclick="openSite('${s.id}')"><div class="bd"><div class="ti">${esc(s.name)}</div><div class="su">${esc(cName(s.clientId)||s.clientRaw||'—')}</div><div class="mt">Importo <b style="color:var(--amber)">${fmtQty(s.amount||0)}</b> · Spese <b style="color:var(--coral)">${fmtQty(sp)}</b> · Margine <b style="color:${mg>=0?'var(--teal)':'var(--coral)'}">${mg>=0?'+':''}${fmtQty(mg)}</b></div></div></div>`;};
+  return`<div class="tabs">${tabs.map(([id,l])=>`<div class="tb ${t===id?'on':''}" onclick="contiSiteTab='${id}';render()">${l}</div>`).join('')}</div>
+  ${t==='futuri'?`<button class="btn pri" style="width:100%;margin-bottom:10px" onclick="newFutureSite()">+ Nuovo lavoro futuro</button>`:''}
+  <div class="card"><div class="sh"><span class="t">${t==='futuri'?'Incasso previsto':t==='attivi'?'Margine in corso':'Margine finale'}</span><span class="t" style="font-family:var(--mono);color:var(--cy)">CHF ${fmtQty(t==='futuri'?totAmount:totMargin)}</span></div></div>
+  <div class="card">${sites.length?sites.map(row).join(''):`<div class="empty"><div class="big">🏗</div>${t==='futuri'?'Nessun lavoro futuro. Aggiungine uno per pianificare.':t==='attivi'?'Nessun cantiere attivo.':'Nessun cantiere finito.'}</div>`}</div>`;
+}
+function newFutureSite(){editSite(null,'previsto');}
+function contiListino(){
+  return`<div class="card"><div class="subtle" style="line-height:1.5">Imposta il prezzo fisso di ogni tipo di manutenzione. L'incasso delle manutenzioni «fatte» si calcola da solo con queste cifre. Questi prezzi li vedi solo tu.</div></div>
+  <div class="card">
+  ${MAINT_KINDS.map(([k,l])=>`<div class="fld"><label>${l} — CHF</label><input type="number" inputmode="decimal" step="any" id="lp-${k}" value="${maintPrice(k)!=null?maintPrice(k):''}" placeholder="es. ${k==='stufa'?'80':k==='camino'?'120':k==='caldaia'?'150':'0'}"></div>`).join('')}
+  <button class="btn pri" style="width:100%" onclick="saveListino()">Salva listino</button>
+  </div>`;
+}
+function saveListino(){
+  MAINT_KINDS.forEach(([k])=>{const raw=$('#lp-'+k).value;const v=parseFloat(raw);const val=(raw===''||isNaN(v))?null:v;const r=S.maintPrices.find(x=>x.kind===k);if(r){r.price=val;}else{S.maintPrices.push({id:uid(),kind:k,price:val});}});
+  save();render();toast('🏷 Listino salvato');
+}
 /* ================= CLIENTI ================= */
-let cliQ='';let cliGroup='all';
+let cliQ='';let cliGroup='all';let cliZone='all';let cliMaint='all';
 const clientGroups=()=>[...new Set(S.clients.map(c=>c.group).filter(Boolean))].sort();
+const clientZones=()=>[...new Set(S.clients.map(c=>c.zone).filter(Boolean))].sort();
+const cInitials=n=>{const p=String(n||'').trim().split(/\s+/);return((((p[0]||'')[0]||'')+((p[1]||'')[0]||'')).toUpperCase())||'?';};
+const AV_COLORS=['#00D4FF','#00E5C0','#FFB547','#FF8A3D','#6FA8FF','#FF5C7A'];
+const avColor=n=>AV_COLORS[Math.abs([...String(n||'')].reduce((h,c)=>(h*31+c.charCodeAt(0))|0,0))%AV_COLORS.length];
 function renderClients(){
   const q=norm(cliQ);
   let list=S.clients.filter(c=>!q||norm(c.name+' '+(c.zone||'')+' '+(c.group||'')+' '+(c.phone||'')).includes(q));
   if(cliGroup!=='all')list=list.filter(c=>c.group===cliGroup);
+  if(cliZone!=='all')list=list.filter(c=>(c.zone||'')===cliZone);
+  if(cliMaint==='si')list=list.filter(c=>c.maintenance==='si');
+  else if(cliMaint==='no')list=list.filter(c=>c.maintenance!=='si');
   list.sort((a,b)=>a.name.localeCompare(b.name));
-  const groups=clientGroups();
+  const groups=clientGroups();const zones=clientZones();
   const PL={'Stufa':'🔥','Caldaia':'♨️','Camino':'🪵'};
+  const fld=inner=>`<div class="fld" style="margin-bottom:0;flex:1;min-width:130px">${inner}</div>`;
+  const filterBar=`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    ${groups.length?fld(`<select onchange="cliGroup=this.value;render()"><option value="all"${cliGroup==='all'?' selected':''}>🗂 Tutti i gruppi</option>${groups.map(g=>`<option value="${esc(g)}"${cliGroup===g?' selected':''}>${esc(g)}</option>`).join('')}</select>`):''}
+    ${zones.length?fld(`<select onchange="cliZone=this.value;render()"><option value="all"${cliZone==='all'?' selected':''}>🗺 Tutte le zone</option>${zones.map(z=>`<option value="${esc(z)}"${cliZone===z?' selected':''}>${esc(z)}</option>`).join('')}</select>`):''}
+    ${fld(`<select onchange="cliMaint=this.value;render()"><option value="all"${cliMaint==='all'?' selected':''}>🔧 Manut.: tutti</option><option value="si"${cliMaint==='si'?' selected':''}>🔧 Fa manutenzione</option><option value="no"${cliMaint==='no'?' selected':''}>✗ No manutenzione</option></select>`)}
+  </div>`;
+  const shown=(cliGroup!=='all'||cliZone!=='all'||cliMaint!=='all'||q)?` <span class="subtle">· ${list.length} filtrati</span>`:'';
   $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Clienti <span class="subtle">(${S.clients.length})</span></div>
+  <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Clienti <span class="subtle">(${S.clients.length})</span>${shown}</div>
   <input class="searchbar" placeholder="🔍 Cerca nome, gruppo, zona, telefono…" value="${esc(cliQ)}" oninput="cliQ=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">
-  ${groups.length?`<div class="tabs"><div class="tb ${cliGroup==='all'?'on':''}" onclick="cliGroup='all';render()">Tutti</div>
-  ${groups.map((g,i)=>`<div class="tb ${cliGroup===g?'on':''}" data-grpidx="${i}" onclick="cliGroup=clientGroups()[this.dataset.grpidx];render()">🗺 ${esc(g)}</div>`).join('')}</div>`:''}
+  ${filterBar}
   <div class="card">
   ${list.length?list.map(c=>{
     const nm=S.maintenances.filter(m=>m.clientId===c.id).length;
     const np=S.pellet.filter(p=>p.clientId===c.id).length;
+    const col=c.blocked?'#FF5C7A':avColor(c.name);
     const tags=[
       c.plant?c.plant.split(', ').map(x=>(PL[x]||'⚙️')+' '+x).join(' '):'',
-      c.pellet==='sfuso'?'🛢 sfuso':c.pellet==='sacchi'?'📦 sacchi':'',
+      c.pellet==='sfuso'?'🪵 sfuso':c.pellet==='sacchi'?'📦 sacchi':'',
       c.maintenance==='si'?'🔧 manut.':c.maintenance==='no'?'✗ no manut.':''
     ].filter(Boolean);
     return`<div class="item" onclick="openClient('${c.id}')">
-    <span class="led" style="background:${c.blocked?'var(--coral)':'var(--teal)'}"></span>
+    <div style="width:38px;height:38px;border-radius:50%;background:${col}22;color:${col};border:1px solid ${col}55;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${esc(cInitials(c.name))}</div>
     <div class="bd"><div class="ti"${c.blocked?' style="color:var(--coral)"':''}>${esc(c.name)}${c.blocked?' <span class="badge" style="border-color:var(--coral);color:var(--coral)">🚫 BLOCCATO</span>':''}</div>
-    <div class="su">${esc([c.group,c.zone,c.phone].filter(Boolean).join(' · '))}</div>
-    <div class="mt">${tags.map(t=>`<span class="badge" style="border-color:var(--line2);color:var(--t2);margin-right:5px">${esc(t)}</span>`).join('')}${nm?' 🔧'+nm:''}${np?' 🔥'+np:''}</div></div></div>`;
-  }).join(''):'<div class="empty"><div class="big">👥</div>Nessun cliente qui.</div>'}
+    <div class="su">${esc([c.group,c.zone,c.phone].filter(Boolean).join(' · '))||'—'}</div>
+    <div class="mt">${tags.map(t=>`<span class="badge" style="border-color:var(--line2);color:var(--t2);margin-right:5px">${esc(t)}</span>`).join('')}${nm?' 🔧'+nm:''}${np?' 🪵'+np:''}</div></div>${c.phone?`<a href="tel:${esc(c.phone)}" onclick="event.stopPropagation()" class="avat" style="width:34px;height:34px;border:1px solid rgba(0,229,192,.35);color:var(--teal);text-decoration:none;font-size:14px;margin-top:2px">📞</a>`:''}</div>`;
+  }).join(''):'<div class="empty"><div class="big">👥</div>Nessun cliente con questi filtri.</div>'}
   </div>
   <button class="fab" onclick="editClient(null)">+</button>`;
 }
@@ -1971,7 +2243,7 @@ function openClient(id){
   ${info.length?`<div class="fld"><label>Profilo</label><div style="display:flex;flex-wrap:wrap;gap:6px">${info.map(([k,v])=>`<span class="badge" style="border-color:var(--line2);color:var(--t1);padding:5px 10px;font-size:11px">${k}: <b>${esc(v)}</b></span>`).join('')}</div></div>`:''}
   <div class="fld"><label>📜 Storico</label>
   ${man.length?`<div class="subtle" style="margin:4px 0 2px;color:var(--amber)">🔧 Manutenzioni (${man.length})</div>${mini(man,m=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${m.date?fmtD(m.date):m.status} — ${esc(m.title)}${m.report?' 📄':''}</div>`)}`:''}
-  ${pel.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--fire)">🔥 Pellet (${pel.length})</div>${mini(pel,p=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${p.date?fmtD(p.date):p.status} — ${fmtQty(p.qty||0)} ${esc(p.unit||'sacchi')} ${p.kind==='sfuso'?'🛢':'📦'}</div>`)}`:''}
+  ${pel.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--fire)">🪵 Pellet (${pel.length})</div>${mini(pel,p=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${p.date?fmtD(p.date):p.status} — ${fmtQty(p.qty||0)} ${esc(p.unit||'sacchi')} ${p.kind==='sfuso'?'🪵':'📦'}</div>`)}`:''}
   ${sit.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--blue)">🏗 Cantieri (${sit.length})</div>${mini(sit,s=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${esc(s.name)} (${s.status})</div>`)}`:''}
   ${app.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--cy)">📅 Appuntamenti (${app.length})</div>${mini(app,a=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${fmtD(a.date)} — ${esc(a.title)}</div>`)}`:''}
   ${not.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--teal)">📝 Note (${not.length})</div>${mini(not,n=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${esc(n.text)}</div>`)}`:''}
@@ -1990,11 +2262,11 @@ function editClient(id){
   openSheet(`<h3>${id?'Modifica cliente':'Nuovo cliente'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="cl-n" value="${esc(c.name)}"></div>
   <div class="frow"><div class="fld"><label>Telefono</label><input id="cl-p" inputmode="tel" value="${esc(c.phone||'')}"></div>
-  <div class="fld"><label>Zona</label><input id="cl-z" value="${esc(c.zone||'')}" placeholder="es. Valle"></div></div>
+  <div class="fld"><label>Zona (scrivi o scegli)</label><input id="cl-z" list="cl-zlist" value="${esc(c.zone||'')}" placeholder="es. Valle, Grono, Roveredo"><datalist id="cl-zlist">${clientZones().map(z=>`<option value="${esc(z)}">`).join('')}</datalist></div></div>
   <div class="fld"><label>Gruppo (scrivi o scegli)</label><input id="cl-g" list="cl-glist" value="${esc(c.group||'')}" placeholder="es. Grono e dintorni, Gruppo A"><datalist id="cl-glist">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist></div>
   <div class="fld"><label>Indirizzo</label><input id="cl-a" value="${esc(c.address||'')}"></div>
   <div class="fld"><label>Tipo impianto (anche più di uno)</label><div class="seg" id="cl-pl">${[['Stufa','🔥 Stufa'],['Caldaia','♨️ Caldaia'],['Camino','🪵 Camino']].map(([v,l])=>`<div class="sg ${(c.plant||'').includes(v)?'on':''}" data-v="${v}" onclick="this.classList.toggle('on')">${l}</div>`).join('')}</div></div>
-  <div class="fld"><label>Prende pellet?</label>${seg('cl-pe',[['sfuso','🛢 Sfuso'],['sacchi','📦 Sacchi'],['no','No'],['','—']],c.pellet||'')}</div>
+  <div class="fld"><label>Prende pellet?</label>${seg('cl-pe',[['sfuso','🪵 Sfuso'],['sacchi','📦 Sacchi'],['no','No'],['','—']],c.pellet||'')}</div>
   <div class="fld"><label>Fa la manutenzione?</label>${seg('cl-ma',[['si','✓ Sì'],['no','✗ No'],['','—']],c.maintenance||'')}</div>
   <div class="fld"><label>Note</label><textarea id="cl-no">${esc(c.notes||'')}</textarea></div>
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveClient('${id||''}')">Salva</button></div>`);
@@ -2043,21 +2315,28 @@ async function delClient(id){
 
 /* ================= PERSONALE ================= */
 function renderEmps(){
+  const mKey=todayIso().slice(0,7);
+  const PI={cal:['📅','Cal.'],man:['🔧','Manut.'],pellet:['🪵','Pellet'],sites:['🏗','Cant.'],notes:['📝','Note'],chat:['💬','Chat'],clients:['👥','Clienti']};
   $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Personale</div>
-  <div class="card">
+  <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Personale <span class="subtle">(${S.employees.length})</span></div>
   ${S.employees.map(e=>{
-    const tasks=S.maintenances.filter(m=>m.employeeId===e.id&&m.status!=='fatta').length
-      +S.appointments.filter(a=>a.employeeId===e.id&&!a.done).length;
+    const tasks=S.maintenances.filter(m=>m.employeeId===e.id&&m.status!=='fatta').length+S.appointments.filter(a=>a.employeeId===e.id&&!a.done).length;
     const sites=S.sites.filter(s=>s.status!=='chiuso'&&s.employees.includes(e.id)).length;
-    const mKey=todayIso().slice(0,7);
     const hrsM=S.sites.reduce((t,s)=>t+s.log.filter(l=>l.empId===e.id&&l.date&&l.date.startsWith(mKey)).reduce((a,l)=>a+(l.hours||0),0),0);
-    return`<div class="item" onclick="editEmp('${e.id}')">
-    <span class="led" style="background:var(--cy)"></span>
-    <div class="bd"><div class="ti">${esc(e.name)} ${e.isOwner?'<span class="badge" style="border-color:var(--cy);color:var(--cy)">TITOLARE</span>':e.userId?(e.active?'<span class="badge" style="border-color:var(--teal);color:var(--teal)">✓ ATTIVO</span>':'<span class="badge" style="border-color:var(--coral);color:var(--coral)">⛔ DISATTIVATO</span>'):'<span class="badge" style="border-color:var(--amber);color:var(--amber)">🔑 IN ATTESA</span>'}</div><div class="su">${esc(e.role||'')}${e.perms&&e.perms.length?' · '+e.perms.length+' sezioni':''}</div>
-    <div class="mt">${tasks} incarichi aperti${sites?' · '+sites+' cantieri':''}${hrsM?' · ⏱ '+fmtQty(hrsM)+'h questo mese':''}</div></div></div>`;
+    const col=e.isOwner?'#00D4FF':e.userId?(e.active?'#00E5C0':'#FF5C7A'):'#FFB547';
+    const badge=e.isOwner?'TITOLARE':e.userId?(e.active?'✓ ATTIVO':'⛔ DISATTIVATO'):'🔑 IN ATTESA';
+    const pending=!e.isOwner&&!e.userId&&e.inviteCode;
+    return`<div class="card" style="padding:11px;margin-bottom:9px;cursor:pointer" onclick="editEmp('${e.id}')">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div class="avat" style="width:42px;height:42px;background:${col}22;border:1px solid ${col}55;color:${col};font-size:15px">${esc(cInitials(e.name))}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:14px;color:var(--t1);font-weight:600">${esc(e.name)}${e.isOwner?' 👑':''}</div><div class="su" style="font-size:10.5px">${esc(e.role||'—')}</div></div>
+        <span class="badge" style="border-color:${col};color:${col};flex-shrink:0">${badge}</span>
+      </div>
+      ${!e.isOwner&&e.perms&&e.perms.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:9px">${e.perms.map(p=>`<span class="badge" style="border-color:var(--line2);color:var(--t2)">${(PI[p]||['','']) [0]} ${(PI[p]||['',p])[1]}</span>`).join('')}</div>`:''}
+      ${!e.isOwner?`<div class="mt" style="margin-top:8px">${tasks} incarichi${sites?' · '+sites+' cantieri':''}${hrsM?' · ⏱ '+fmtQty(hrsM)+'h mese':''}</div>`:''}
+      ${pending?`<div onclick="event.stopPropagation();if(navigator.clipboard)navigator.clipboard.writeText('${e.inviteCode}');toast('📋 Codice copiato')" style="display:flex;align-items:center;gap:8px;margin-top:9px;background:var(--bg2);border:1px dashed rgba(255,181,71,.4);border-radius:10px;padding:8px 11px"><span style="font-size:9px;color:var(--t2)">CODICE INVITO</span><span style="font-family:var(--mono);font-size:13px;color:var(--amber);letter-spacing:1px">${esc(e.inviteCode)}</span><span style="margin-left:auto;font-size:10px;color:var(--cy)">📋 Copia</span></div>`:''}
+    </div>`;
   }).join('')}
-  </div>
   <button class="fab" onclick="editEmp(null)">+</button>`;
 }
 function editEmp(id){
@@ -2068,7 +2347,7 @@ function editEmp(id){
     ...S.appointments.filter(a=>a.employeeId===id&&!a.done).map(a=>'📅 '+a.title+' — '+fmtD(a.date)),
     ...S.sites.filter(s=>s.status!=='chiuso'&&s.employees.includes(id)).map(s=>'🏗 '+s.name)
   ]:[];
-  const PERMS=[['cal','📅 Calendario'],['man','🔧 Manutenzioni'],['pellet','🔥 Pellet'],['sites','🏗 Cantieri'],['notes','📝 Note'],['chat','💬 Chat'],['clients','👥 Clienti']];
+  const PERMS=[['cal','📅 Calendario'],['man','🔧 Manutenzioni'],['pellet','🪵 Pellet'],['sites','🏗 Cantieri'],['notes','📝 Note'],['chat','💬 Chat'],['clients','👥 Clienti']];
   openSheet(`<h3>${id?'Scheda personale':'Nuova persona'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="em-n" value="${esc(e.name)}"></div>
   <div class="frow"><div class="fld"><label>Ruolo</label><input id="em-r" value="${esc(e.role||'')}" placeholder="es. Tecnico"></div>
@@ -2126,8 +2405,8 @@ function gsRun(){
   const sec=(title,rows)=>rows.length?`<div class="fld"><label>${title} (${rows.length})</label>${rows.slice(0,5).join('')}</div>`:'';
   const r1=S.clients.filter(c=>hit(c.name)||hit(c.zone)||hit(c.group)||hit(c.phone)).map(c=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openClient('${c.id}')">👥 ${esc(c.name)} <span style="color:var(--t3)">${esc(c.group||c.zone||'')}</span></div>`);
   const r2=S.maintenances.filter(m=>hit(m.title)||hit(cName(m.clientId))||hit(m.clientRaw)).map(m=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openMan('${m.id}')">🔧 ${esc(cName(m.clientId)||m.clientRaw||'')} — ${esc(m.title)} <span style="color:var(--t3)">${m.date?fmtD(m.date):m.status}</span></div>`);
-  const r3=S.pellet.filter(p=>hit(cName(p.clientId))||hit(p.clientRaw)||hit(p.notes)).map(p=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openPel('${p.id}')">${p.kind==='sfuso'?'🛢':'📦'} ${esc(cName(p.clientId)||p.clientRaw||'')} — ${fmtQty(p.qty||0)} ${esc(p.unit||'')} <span style="color:var(--t3)">${p.date?fmtD(p.date):p.status}</span></div>`);
-  const r4=S.sites.filter(s=>hit(s.name)||hit(cName(s.clientId))).map(s=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openSite('${s.id}')">🏗 ${esc(s.name)} <span style="color:var(--t3)">${s.status.replace('_',' ')}</span></div>`);
+  const r3=S.pellet.filter(p=>hit(cName(p.clientId))||hit(p.clientRaw)||hit(p.notes)).map(p=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openPel('${p.id}')">${p.kind==='sfuso'?'🪵':'📦'} ${esc(cName(p.clientId)||p.clientRaw||'')} — ${fmtQty(p.qty||0)} ${esc(p.unit||'')} <span style="color:var(--t3)">${p.date?fmtD(p.date):p.status}</span></div>`);
+  const r4=S.sites.filter(s=>(isOwner()||s.status!=='previsto')&&(hit(s.name)||hit(cName(s.clientId)))).map(s=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openSite('${s.id}')">🏗 ${esc(s.name)} <span style="color:var(--t3)">${(s.status||'').replace('_',' ')}</span></div>`);
   const r5=S.notes.filter(n=>hit(n.text)).map(n=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openNote('${n.id}')">📝 ${esc(n.text.slice(0,60))}</div>`);
   const r6=S.appointments.filter(a=>hit(a.title)||hit(cName(a.clientId))).map(a=>`<div class="subtle" style="padding:5px 0;cursor:pointer;color:var(--t1)" onclick="closeSheet();openApp('${a.id}')">📅 ${esc(a.title)} <span style="color:var(--t3)">${fmtD(a.date)}</span></div>`);
   const html=sec('Clienti',r1)+sec('Manutenzioni',r2)+sec('Pellet',r3)+sec('Cantieri',r4)+sec('Note',r5)+sec('Appuntamenti',r6);
@@ -2323,7 +2602,7 @@ function startBolla(id){
   bolla={pid:id,signature:null,signedName:cName(p.clientId)||p.clientRaw||''};
   openSheet(`<h3>✍ Bolla di consegna <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="subtle" style="margin-bottom:12px"><b style="color:var(--t1)">${esc(cName(p.clientId)||p.clientRaw||'Cliente')}</b><br>
-  ${p.kind==='sfuso'?'🛢 Sfuso':'📦 Sacchi'} — ${fmtQty(p.qty||0)} ${esc(p.unit||'')} · ${fmtD(todayIso())}${p.price?' · CHF '+fmtQty(p.price):''}</div>
+  ${p.kind==='sfuso'?'🪵 Sfuso':'📦 Sacchi'} — ${fmtQty(p.qty||0)} ${esc(p.unit||'')} · ${fmtD(todayIso())}${p.price?' · CHF '+fmtQty(p.price):''}</div>
   <div class="fld"><label>Firma del cliente alla consegna</label>
     <div class="sig-wrap"><canvas class="sig-canvas" id="bsigpad"></canvas><div class="sig-hint" id="bsighint">firma qui con il dito</div></div>
     <div class="sig-tools">
@@ -2356,7 +2635,7 @@ function saveBolla(){
   p.status='consegnato';p.signature=bolla.signature;p.signedName=bolla.signedName;
   if(!p.date)p.date=todayIso();
   if(!p.price)p.price=autoPrice(p)||null;
-  save();closeSheet();render();toast('🔥 Consegnato'+(p.signature?' e firmato':''));
+  save();closeSheet();render();toast('🪵 Consegnato'+(p.signature?' e firmato':''));
   if(p.signature)setTimeout(()=>printBollaAsk(p.id),350);
 }
 function printBollaAsk(id){

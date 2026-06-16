@@ -68,3 +68,54 @@ create policy not_del on public.notes for delete to authenticated using (
   public.is_owner() or (public.has_perm('notes') and (group_id is null or exists (
     select 1 from public.note_groups g where g.id=notes.group_id
       and (coalesce(array_length(g.members,1),0)=0 or public.my_emp()=any(g.members))))));
+
+
+-- ============================================================
+-- 16 giu 2026 — 💰 Sezione CONTI (solo titolari)
+-- Spese + listino prezzi manutenzioni + tipo manutenzione
+-- + data chiusura cantiere (per l'utile del mese).
+-- Le entrate sono calcolate dall'app dai dati esistenti: nessuna tabella nuova per loro.
+-- ------------------------------------------------------------
+
+-- 1) SPESE — visibili/modificabili SOLO ai titolari
+create table if not exists public.expenses(
+  id uuid primary key,
+  date date,
+  category text,
+  amount numeric,
+  note text,
+  site_id uuid references public.sites(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+alter table public.expenses enable row level security;
+drop policy if exists exp_all on public.expenses;
+create policy exp_all on public.expenses for all to authenticated
+  using (public.is_owner()) with check (public.is_owner());
+
+-- 2) LISTINO PREZZI MANUTENZIONI (stufa/camino/caldaia/altro) — SOLO titolari
+create table if not exists public.maint_prices(
+  id uuid primary key,
+  kind text,
+  price numeric,
+  created_at timestamptz not null default now()
+);
+alter table public.maint_prices enable row level security;
+drop policy if exists mp_all on public.maint_prices;
+create policy mp_all on public.maint_prices for all to authenticated
+  using (public.is_owner()) with check (public.is_owner());
+
+-- 3) Manutenzioni: tipo impianto (stufa/camino/caldaia/altro). Il PREZZO non sta più qui:
+--    si calcola dal listino in Conti. La colonna price resta per i dati vecchi/override.
+alter table public.maintenances add column if not exists type text;
+
+-- 4) Cantieri: data di chiusura (timbrata quando va in archivio) per il conto del mese.
+--    Lo stato "previsto" (lavori futuri) usa la colonna status già esistente: nessuna modifica.
+alter table public.sites add column if not exists closed_date date;
+
+-- 5) Realtime (best-effort): le due tabelle nuove nel feed in tempo reale, se possibile.
+do $$ begin
+  alter publication supabase_realtime add table public.expenses, public.maint_prices;
+exception when others then null; end $$;
+
+-- 6) Spese ricorrenti: intervallo in mesi (0=una tantum, 1=mensile, 3, 6, 12=annuale).
+alter table public.expenses add column if not exists recur integer not null default 0;
