@@ -270,7 +270,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.16-002649';
+const APP_VERSION='2026.06.16-092632';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -301,8 +301,8 @@ const MAPS={
   toDb:n=>({id:n.id,text:n.text,client_id:n.clientId||null,group_id:n.groupId||null,date:n.date||null,pinned:!!n.pinned,archived:!!n.archived,via:n.via||'manuale'}),
   fromDb:r=>({id:r.id,text:r.text,clientId:r.client_id,groupId:r.group_id,date:r.date,pinned:!!r.pinned,archived:!!r.archived,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  noteGroups:{tbl:'note_groups',
-  toDb:g=>({id:g.id,name:g.name}),
-  fromDb:r=>({id:r.id,name:r.name})},
+  toDb:g=>({id:g.id,name:g.name,members:g.members||[]}),
+  fromDb:r=>({id:r.id,name:r.name,members:r.members||[]})},
  lists:{tbl:'lists',
   toDb:l=>({id:l.id,name:l.name,via:l.via||'manuale'}),
   fromDb:r=>({id:r.id,name:r.name,via:r.via,items:[],created:Date.parse(r.created_at)||Date.now()})},
@@ -639,25 +639,65 @@ const randCode=(len=5)=>{const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';const a=new U
 const genInvite=n=>(norm(n).replace(/[^a-z]/g,'').slice(0,5).toUpperCase()||'USER')+'-'+randCode(5);
 async function logout(){try{await sb.auth.signOut();}catch(e){}S=blank();authMode='login';closeSheet();renderLock();}
 function nav(v){view=v;render();window.scrollTo(0,0);}
+/* barra in basso (mobile) personalizzabile — salvata sul dispositivo, una per utente */
+const NAV_DEFAULT=['hub','cal','man','pellet','sites'];
+let bottomNavMem={};
+function navKey(){return 'caywork_nav_'+(S.session?S.session.empId:'x');}
+function getBottomNav(){const k=navKey();if(bottomNavMem[k])return bottomNavMem[k];try{const v=JSON.parse(localStorage.getItem(k)||'null');if(Array.isArray(v)&&v.length){bottomNavMem[k]=v;return v;}}catch(e){}return NAV_DEFAULT;}
+function setBottomNav(ids){const k=navKey();bottomNavMem[k]=ids.slice();try{localStorage.setItem(k,JSON.stringify(ids));}catch(e){}}
 function renderNav(){
   const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
   $('#navside').innerHTML=vis.map(v=>{const c=v.id==='notif'?notifCount():0;return`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}${c?` <span class="badge" style="margin-left:auto;border-color:var(--cy);color:var(--cy)">${c}</span>`:''}</div>`;}).join('')
     +(isOwner()?`<div class="ni" style="margin-top:10px;border-top:1px solid var(--line);border-radius:0;padding-top:14px" onclick="openBackup()"><span class="ic">💾</span>Backup dati</div>`:'')
     +`<div class="ni" onclick="logout()"><span class="ic">🚪</span>Esci (${esc(me().name)})</div>`;
-  const mobAll=vis.filter(v=>v.id!=='emps'&&v.id!=='clients'&&v.id!=='notes'&&v.id!=='notif').slice(0,5);
+  const allowed=new Set(vis.map(v=>v.id));
+  let chosen=getBottomNav().filter(id=>allowed.has(id)).slice(0,5);
+  if(!chosen.length)chosen=vis.filter(v=>v.id!=='notif').slice(0,5).map(v=>v.id);
+  const mobAll=chosen.map(id=>VIEWS.find(v=>v.id===id)).filter(Boolean);
   const mob=[...mobAll,{id:'menu',ic:'☰',label:'Altro'}];
-  const nc=notifCount();
-  $('#navbottom').innerHTML=mob.map(v=>`<div class="nb ${view===v.id||(v.id==='menu'&&['notes','notif','clients','emps'].includes(view))?'act':''}" onclick="${v.id==='menu'?'openMenu()':`nav('${v.id}')`}"><span class="ic">${v.ic}${v.id==='menu'&&nc?`<span class="nbdot">${nc>9?'9+':nc}</span>`:''}</span>${v.label}</div>`).join('');
+  const nc=notifCount();const inBar=new Set(mobAll.map(v=>v.id));
+  $('#navbottom').innerHTML=mob.map(v=>{
+    const dot=((v.id==='notif')||(v.id==='menu'&&!inBar.has('notif')))&&nc?`<span class="nbdot">${nc>9?'9+':nc}</span>`:'';
+    const act=view===v.id||(v.id==='menu'&&!inBar.has(view));
+    return`<div class="nb ${act?'act':''}" onclick="${v.id==='menu'?'openMenu()':`nav('${v.id}')`}"><span class="ic">${v.ic}${dot}</span>${v.label}</div>`;
+  }).join('');
 }
 function openMenu(){
-  const items=[['notes','📝 Note & Appuntamenti'],['notif','🔔 Notifiche'+(notifCount()?' ('+notifCount()+')':'')],['clients','👥 Clienti'],['emps','👷 Personale']].filter(([id])=>id==='notif'||can(id));
+  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
+  const inBar=new Set(getBottomNav().filter(id=>vis.some(v=>v.id===id)).slice(0,5));
+  const overflow=vis.filter(v=>!inBar.has(v.id));
   openSheet(`<h3>Sezioni <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="seg" style="flex-direction:column;gap:8px">
-    ${items.map(([id,l])=>`<div class="sg" style="padding:13px" onclick="closeSheet();nav('${id}')">${l}</div>`).join('')}
+    ${overflow.map(v=>`<div class="sg" style="padding:13px" onclick="closeSheet();nav('${v.id}')">${v.ic} ${v.label}${v.id==='notif'&&notifCount()?' ('+notifCount()+')':''}</div>`).join('')||'<div class="subtle" style="padding:4px 2px">Tutte le sezioni sono già nella barra in basso.</div>'}
+    <div class="sg" style="padding:13px;border-color:var(--cy);color:var(--cy)" onclick="closeSheet();editBottomNav()">⚙️ Personalizza la barra in basso</div>
     ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openBackup()">💾 Backup dati</div>`:''}
     <div class="sg" style="padding:13px;border-color:rgba(255,92,122,.35);color:var(--coral)" onclick="logout()">🚪 Esci (${esc(me().name)})</div>
   </div>`);
 }
+/* personalizzazione barra in basso */
+function editBottomNav(){
+  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
+  const cur=getBottomNav().filter(id=>vis.some(v=>v.id===id));
+  openSheet(`<h3>⚙️ Barra in basso <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:10px">Tocca le sezioni che vuoi nella barra in basso (massimo 5). Le altre restano dentro «☰ Altro».</div>
+  <div class="seg" id="nav-pick" style="flex-direction:column;gap:8px">
+    ${vis.map(v=>`<div class="sg ${cur.includes(v.id)?'on':''}" data-v="${v.id}" style="padding:13px;justify-content:flex-start" onclick="toggleNavPick(this)">${v.ic} ${v.label}</div>`).join('')}
+  </div>
+  <div class="subtle" id="nav-count" style="margin-top:8px"></div>
+  <div class="actions"><button class="btn ghost" onclick="resetBottomNav()">↩ Ripristina</button><button class="btn pri" onclick="saveBottomNav()">Salva</button></div>`);
+  updateNavCount();
+}
+function toggleNavPick(el){
+  if(!el.classList.contains('on')&&document.querySelectorAll('#nav-pick .sg.on').length>=5){toast('Massimo 5 nella barra');return;}
+  el.classList.toggle('on');updateNavCount();
+}
+function updateNavCount(){const el=$('#nav-count');if(el)el.textContent=document.querySelectorAll('#nav-pick .sg.on').length+' / 5 selezionate';}
+function saveBottomNav(){
+  const ids=[...document.querySelectorAll('#nav-pick .sg.on')].map(x=>x.dataset.v);
+  if(!ids.length){toast('Scegli almeno 1 sezione');return;}
+  setBottomNav(ids);closeSheet();renderNav();toast('✓ Barra aggiornata');
+}
+function resetBottomNav(){setBottomNav(NAV_DEFAULT);closeSheet();renderNav();toast('↩ Barra ripristinata');}
 function openBackup(){
   const counts=`${S.clients.length} clienti · ${S.maintenances.length} manutenzioni · ${S.pellet.length} consegne · ${S.sites.length} cantieri · ${S.appointments.length} appuntamenti · ${S.notes.length} note · ${S.lists.length} liste`;
   openSheet(`<h3>💾 Backup & impostazioni <span class="x" onclick="closeSheet()">✕</span></h3>
@@ -704,7 +744,7 @@ function importBackup(ev){
       const map={};const mid=o=>{if(!o)return null;if(o==='me')return S.session.empId;if(!map[o])map[o]=uid();return map[o];};
       (d.employees||[]).forEach(e=>{if(e.id==='me')return;S.employees.push({id:mid(e.id),name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||['cal','man','chat'],isOwner:false,active:e.active!==false,inviteCode:genInvite(e.name),userId:null});});
       (d.clients||[]).forEach(c=>S.clients.push({id:mid(c.id),name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||'',created:c.created||Date.now()}));
-      (d.noteGroups||[]).forEach(g=>S.noteGroups.push({id:mid(g.id),name:g.name}));
+      (d.noteGroups||[]).forEach(g=>S.noteGroups.push({id:mid(g.id),name:g.name,members:(g.members||[]).map(mid)}));
       (d.maintenances||[]).forEach(m=>S.maintenances.push({id:mid(m.id),title:m.title,clientId:mid(m.clientId),clientRaw:m.clientRaw||null,employeeId:mid(m.employeeId),date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:m.price||null,report:m.report||null,via:m.via||'import',created:m.created||Date.now()}));
       (d.appointments||[]).forEach(a=>S.appointments.push({id:mid(a.id),title:a.title,clientId:mid(a.clientId),clientRaw:a.clientRaw||null,employeeId:mid(a.employeeId),date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'import',created:a.created||Date.now()}));
       (d.pellet||[]).forEach(p=>{const kind=(p.kind==='sfuso'||p.unit==='t')?'sfuso':'sacchi';const unit=kind==='sfuso'?'t':(['sacchi','kg'].includes(p.unit)?p.unit:'sacchi');S.pellet.push({id:mid(p.id),clientId:mid(p.clientId),clientRaw:p.clientRaw||null,qty:p.qty||null,unit,kind,date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:p.price||null,signature:p.signature||null,signedName:p.signedName||'',notes:p.notes||'',via:p.via||'import',created:p.created||Date.now()});});
@@ -1103,6 +1143,7 @@ function renderNotes(){
   let notes=S.notes.slice();
   if(noteGroupSel==='arch')notes=notes.filter(n=>n.archived);
   else{notes=notes.filter(n=>!n.archived);if(noteGroupSel!=='all')notes=notes.filter(n=>n.groupId===noteGroupSel);}
+  notes=notes.filter(n=>!n.groupId||groupVisible(byId(S.noteGroups,n.groupId)));
   notes.sort((a,b)=>(b.pinned-a.pinned)||(b.created-a.created));
   const gName=id=>{const g=byId(S.noteGroups,id);return g?g.name:''};
   const archN=S.notes.filter(n=>n.archived).length;
@@ -1114,7 +1155,7 @@ function renderNotes(){
   </div>
   ${notesTab==='note'?`<div class="tabs" style="margin-top:-4px">
     <div class="tb ${noteGroupSel==='all'?'on':''}" onclick="noteGroupSel='all';render()">Tutte</div>
-    ${S.noteGroups.map(g=>`<div class="tb ${noteGroupSel===g.id?'on':''}" onclick="noteGroupSel==='${g.id}'?groupMenu('${g.id}'):(noteGroupSel='${g.id}',render())">📁 ${esc(g.name)}${noteGroupSel===g.id?' ⋯':''}</div>`).join('')}
+    ${S.noteGroups.filter(groupVisible).map(g=>`<div class="tb ${noteGroupSel===g.id?'on':''}" onclick="noteGroupSel==='${g.id}'?groupMenu('${g.id}'):(noteGroupSel='${g.id}',render())">📁 ${esc(g.name)}${g.members&&g.members.length?' 🔒':''}${noteGroupSel===g.id?' ⋯':''}</div>`).join('')}
     <div class="tb" onclick="newGroup()">＋ Gruppo</div>
     <div class="tb ${noteGroupSel==='arch'?'on':''}" style="${archN?'':'opacity:.5'}" onclick="noteGroupSel='arch';render()">🗄 Archivio (${archN})</div>
   </div>`:''}
@@ -1136,20 +1177,33 @@ function renderNotes(){
   </div>
   <button class="fab" onclick="${notesTab==='app'?`openQuickAdd('${todayIso()}')`:'newNote()'}">+</button>`;
 }
+/* gruppi note: un gruppo con membri è privato (solo loro + i titolari); vuoto = visibile a tutti */
+function groupVisible(g){if(isOwner())return true;if(!g)return false;return !g.members||g.members.length===0||(!!S.session&&g.members.includes(S.session.empId));}
+function groupMembersField(members){
+  if(!S.employees.length)return '';
+  return `<div class="fld"><label>👥 Chi può vedere questo gruppo</label>
+    <div class="seg" id="ng-mem" style="flex-wrap:wrap;gap:7px">${S.employees.map(e=>`<div class="sg ${(members||[]).includes(e.id)?'on':''}" data-v="${e.id}" onclick="this.classList.toggle('on')">${esc(e.name)}${e.isOwner?' 👑':''}</div>`).join('')}</div>
+    <div class="subtle" style="margin-top:7px">Lascia tutto spento = visibile a tutti. Seleziona delle persone = gruppo privato, visibile solo a loro (e ai titolari).</div></div>`;
+}
+const groupMembersRead=()=>[...document.querySelectorAll('#ng-mem .sg.on')].map(x=>x.dataset.v);
 function newGroup(){
   openSheet(`<h3>Nuovo gruppo note <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="ng-n" placeholder="es. Fornitori, Idee, Cantiere Via Roma"></div>
-  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="const n=$('#ng-n').value.trim();if(!n)return;S.noteGroups.push({id:uid(),name:n});save();closeSheet();render();toast('📁 Gruppo creato')">Crea</button></div>`);
+  ${groupMembersField([])}
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveNewGroup()">Crea</button></div>`);
 }
+function saveNewGroup(){const n=$('#ng-n').value.trim();if(!n)return;S.noteGroups.push({id:uid(),name:n,members:groupMembersRead()});save();closeSheet();render();toast('📁 Gruppo creato');}
 function groupMenu(gid){
   const g=byId(S.noteGroups,gid);if(!g)return;
   openSheet(`<h3>📁 ${esc(g.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Rinomina</label><input id="gm-n" value="${esc(g.name)}"></div>
+  ${groupMembersField(g.members||[])}
   <div class="actions">
     <button class="btn danger" onclick="if(confirm('Eliminare il gruppo? Le note restano, senza gruppo.')){S.noteGroups=S.noteGroups.filter(x=>x.id!=='${gid}');S.notes.forEach(n=>{if(n.groupId==='${gid}')n.groupId=null;});noteGroupSel='all';save();closeSheet();render();}">Elimina gruppo</button>
-    <button class="btn pri" onclick="const g=byId(S.noteGroups,'${gid}');g.name=$('#gm-n').value.trim()||g.name;save();closeSheet();render()">Salva</button></div>`);
+    <button class="btn pri" onclick="saveGroupEdit('${gid}')">Salva</button></div>`);
 }
-const groupOpts=sel=>`<option value="">— nessun gruppo —</option>`+S.noteGroups.map(g=>`<option value="${g.id}" ${sel===g.id?'selected':''}>${esc(g.name)}</option>`).join('');
+function saveGroupEdit(gid){const g=byId(S.noteGroups,gid);if(!g)return;g.name=$('#gm-n').value.trim()||g.name;g.members=groupMembersRead();save();closeSheet();render();}
+const groupOpts=sel=>`<option value="">— nessun gruppo —</option>`+S.noteGroups.filter(groupVisible).map(g=>`<option value="${g.id}" ${sel===g.id?'selected':''}>${esc(g.name)}</option>`).join('');
 function newNote(){
   openSheet(`<h3>Nuova nota <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Testo</label><textarea id="nn-t" placeholder="Scrivi…"></textarea></div>
@@ -2008,6 +2062,7 @@ function renderEmps(){
 }
 function editEmp(id){
   const e=id?byId(S.employees,id):{name:'',role:'',phone:'',perms:['cal','man','chat'],isOwner:false};
+  const isMe=!!(id&&S.session&&id===S.session.empId);
   const tasks=id?[
     ...S.maintenances.filter(m=>m.employeeId===id&&m.status!=='fatta').map(m=>'🔧 '+(cName(m.clientId)||'')+' '+m.title+(m.date?' — '+fmtD(m.date):'')),
     ...S.appointments.filter(a=>a.employeeId===id&&!a.done).map(a=>'📅 '+a.title+' — '+fmtD(a.date)),
@@ -2022,7 +2077,10 @@ function editEmp(id){
     <div class="seg" id="em-perms" style="gap:7px">${PERMS.map(([v,l])=>`<div class="sg ${(e.perms||[]).includes(v)?'on':''}" data-v="${v}" onclick="this.classList.toggle('on')">${l}</div>`).join('')}</div>
     <div class="subtle" style="margin-top:7px">Definisce cosa vede e riceve questa persona: sezioni nell'app condivisa, notifiche personalizzate e comandi bot Telegram (si attiva con la fase cloud).</div>
   </div>
-  ${id&&id&&!e.isOwner&&isOwner()?`<div class="fld"><label>🔑 Accesso</label>
+  ${isOwner()&&!isMe?`<div class="fld"><label>👑 Ruolo titolare</label>
+    <div class="seg"><div class="sg ${e.isOwner?'on':''}" id="em-owner" onclick="this.classList.toggle('on')">👑 Titolare — accesso completo</div></div>
+    <div class="subtle" style="margin-top:7px">Se attivo, questa persona vede e gestisce <b>tutto</b> come te (clienti, dipendenti, incarichi, prezzi) e le sezioni qui sopra diventano tutte attive. Puoi attivarlo su più persone.</div></div>`:''}
+  ${id&&!isMe&&isOwner()?`<div class="fld"><label>🔑 Accesso</label>
     ${e.userId?`<div class="subtle">✓ Registrato — entra con la sua email e password.</div>
       <div style="display:flex;gap:8px;margin-top:7px">
       <button class="btn sm" onclick="const u=byId(S.employees,'${id}');u.userId=null;u.inviteCode=genInvite(u.name);save();editEmp('${id}');toast('Accesso scollegato, nuovo codice generato')">↻ Resetta accesso</button>
@@ -2037,13 +2095,17 @@ function editEmp(id){
   </div>`:''}
   ${tasks.length?`<div class="fld"><label>Incarichi aperti (${tasks.length})</label>${tasks.map(t=>`<div class="subtle" style="padding:3px 0">• ${esc(t)}</div>`).join('')}</div>`:''}
   <div class="actions">
-    ${id&&!e.isOwner&&isOwner()?`<button class="btn danger" onclick="delItem('employees','${id}')">Elimina</button>`:''}
+    ${id&&!isMe&&isOwner()?`<button class="btn danger" onclick="delItem('employees','${id}')">Elimina</button>`:''}
     <button class="btn pri" onclick="saveEmp('${id||''}')">Salva</button></div>`);
 }
 function saveEmp(id){
   const name=$('#em-n').value.trim();if(!name){toast('Manca il nome');return;}
-  const perms=[...document.querySelectorAll('#em-perms .sg.on')].map(x=>x.dataset.v);
+  let perms=[...document.querySelectorAll('#em-perms .sg.on')].map(x=>x.dataset.v);
+  const ot=$('#em-owner');
+  const makeOwner=(ot&&isOwner())?ot.classList.contains('on'):null; // null = toggle non mostrato → non cambiare
+  if(makeOwner===true)perms=['hub','cal','notes','chat','man','pellet','sites','clients','emps']; // titolare = tutte le sezioni
   const data={name,role:$('#em-r').value.trim(),phone:$('#em-p').value.trim(),perms};
+  if(makeOwner!==null)data.isOwner=makeOwner;
   if(id){Object.assign(byId(S.employees,id),data);}else{S.employees.push({id:uid(),inviteCode:genInvite(name),userId:null,isOwner:false,active:true,...data});toast('🔑 Codice invito generato — aprilo dalla scheda');}
   save();closeSheet();render();toast('👷 Salvato');
 }
@@ -2072,7 +2134,8 @@ function gsRun(){
   box.innerHTML=html||'<div class="empty">Nessun risultato per «'+esc($('#gs-q').value)+'»</div>';
 }
 /* ================= BOLLETTINO INTERVENTO ================= */
-const DEFAULT_TASKS=['Pulizia braciere e camera di combustione','Pulizia scambiatore di calore','Svuotamento cassetto ceneri','Pulizia ventilatore / estrattore fumi','Controllo e pulizia raccordo fumi','Controllo guarnizioni porta','Controllo coclea e serbatoio pellet','Controllo candeletta di accensione','Pulizia sensori e verifica parametri','Prova di accensione e funzionamento'];
+const DEFAULT_TASKS=['Pulizia braciere','Pulizia scambiatore di calore','Pulizia cassetto cenere','Pulizia giro fumi','Pulizia valvole di ispezione','Controllo componenti di usura (motoriduttori e estrattore fumi, ingranaggio pulizia automatica)','Pulizia serbatoio pellet','Prova di combustione'];
+const LOGO_URL='https://yfy8b8j9jj-lgtm.github.io/cay-work/logo.png';
 let blt=null; // bozza bollettino corrente
 function startBollettino(id){
   const m=byId(S.maintenances,id);if(!m)return;
@@ -2218,7 +2281,13 @@ function printBollettino(id){
     .esito{display:inline-block;border:1.5px solid #16243a;padding:4px 12px;border-radius:4px;font-weight:bold;margin-top:4px}
     @media print{body{margin:0 auto}}
   </style></head><body>
-  <h1>${company?esc(company):'BOLLETTINO D\'INTERVENTO'} <small>${company?'Bollettino d\'intervento — ':''}N. ${m.id.slice(-6).toUpperCase()} · ${r.date.split('-').reverse().join('.')}</small></h1>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2.5px solid #16243a;padding-bottom:10px;margin-bottom:4px;min-height:70px">
+    <div>
+      <div style="font-size:19px;font-weight:bold">${company?esc(company):'BOLLETTINO D\'INTERVENTO'}</div>
+      <div style="font-size:11px;color:#667;margin-top:3px">${company?'Bollettino d\'intervento — ':''}N. ${m.id.slice(-6).toUpperCase()} · ${r.date.split('-').reverse().join('.')}</div>
+    </div>
+    <img src="${LOGO_URL}" alt="" style="max-height:70px;max-width:210px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
+  </div>
   <h2>Cliente</h2>
   <table>
     <tr><td>Nome</td><td><b>${esc(cName(m.clientId)||m.clientRaw||'—')}</b></td></tr>
