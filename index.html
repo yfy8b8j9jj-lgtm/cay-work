@@ -285,7 +285,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.16-142641';
+const APP_VERSION='2026.06.16-145345';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -464,6 +464,10 @@ async function pushNotify(empIds,title,body){
   try{await sb.functions.invoke('send-push',{body:{empIds,title,body}});}catch(e){}
 }
 const ownerIds=()=>S.employees.filter(e=>e.isOwner&&e.active!==false).map(e=>e.id);
+async function pushTest(){
+  if(!S.session)return;
+  try{const{error}=await sb.functions.invoke('send-push',{body:{empIds:[S.session.empId],title:'🔔 Notifica di prova',body:'Funziona! Le notifiche di Ptek sono attive su questo dispositivo.'}});if(error)throw error;toast('📩 Inviata — dovrebbe arrivarti tra pochi secondi');}catch(e){toast('⚠ '+(e.message||e));}
+}
 /* ================= UTILS ================= */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -725,7 +729,7 @@ function openMenu(){
   const ps=pushState();
   const pushRow=ps==='unsupported'?''
     :ps==='blocked'?`<div class="sg" style="padding:13px;border-color:var(--line2);color:var(--t3)">🔕 Notifiche bloccate dal telefono — abilitale nelle impostazioni del dispositivo</div>`
-    :ps==='on'?`<div class="sg" style="padding:13px;border-color:var(--teal);color:var(--teal)" onclick="closeSheet();disablePush()">🔔 Notifiche attive su questo telefono — tocca per disattivare</div>`
+    :ps==='on'?`<div class="sg" style="padding:13px;border-color:var(--cy);color:var(--cy)" onclick="closeSheet();pushTest()">📩 Invia notifica di prova</div><div class="sg" style="padding:13px;border-color:var(--teal);color:var(--teal)" onclick="closeSheet();disablePush()">🔔 Notifiche attive — tocca per disattivare</div>`
     :`<div class="sg" style="padding:13px;border-color:var(--amber);color:var(--amber)" onclick="closeSheet();enablePush()">🔔 Attiva notifiche su questo telefono</div>`;
   openSheet(`<h3>Sezioni <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="seg" style="flex-direction:column;gap:8px">
