@@ -1,0 +1,225 @@
+/* Ptek — Schede Macchine: stili del prototipo, scopati sotto #macroot
+   per non collidere con il CSS dell'app (la specificità ID vince sulle classi).
+   Variabili colore/font (--bg/--cy/--disp…) ereditate dal :root di index.html. */
+
+#macroot .pagetitle{font-family:var(--disp);font-weight:700;font-size:22px;margin:6px 0 14px;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
+#macroot .pagetitle .accent{width:4px;height:22px;border-radius:2px;background:var(--cy);box-shadow:0 0 12px var(--cy)}
+
+#macroot .search{display:flex;align-items:center;gap:8px;background:var(--bg1);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px}
+#macroot .search input{border:none;outline:none;background:transparent;font-family:var(--body);font-size:14px;color:var(--t1);width:100%}
+#macroot .search input::placeholder{color:var(--t3)}
+#macroot .search .ico{color:var(--t3);font-size:15px}
+
+#macroot .card{background:linear-gradient(180deg,var(--bg1),var(--bg0));border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+#macroot .mcard{display:flex;gap:14px;cursor:pointer;align-items:center;transition:border-color .15s,box-shadow .15s}
+#macroot .mcard:hover{border-color:var(--line2);box-shadow:var(--glow)}
+#macroot .mcard .thumb{width:74px;height:88px;border-radius:10px;background:var(--bg2);border:1px solid var(--line);object-fit:cover;flex-shrink:0}
+#macroot .mcard .nm{font-family:var(--disp);font-weight:600;font-size:16px}
+#macroot .mcard .br{font-size:12px;color:var(--t2);margin-top:2px}
+#macroot .mcard .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+#macroot .tag{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg2)}
+#macroot .mcard .arrow{margin-left:auto;color:var(--t3);font-size:20px;align-self:center}
+
+#macroot .back{display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--t2);background:var(--bg1);border:1px solid var(--line);padding:7px 12px;border-radius:10px;cursor:pointer;margin-bottom:12px}
+#macroot .hero{position:relative;background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+#macroot .hero h2{font-family:var(--disp);font-weight:700;font-size:20px}
+#macroot .hero .sub{font-size:12.5px;color:var(--t2);margin:2px 0 12px}
+#macroot .viewtoggle{display:flex;gap:6px;margin-bottom:10px}
+#macroot .vt{font-family:var(--disp);font-weight:600;font-size:12px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--bg2);color:var(--t2);cursor:pointer}
+#macroot .vt.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 10px rgba(111,178,58,.2)}
+
+#macroot .stage{position:relative;border-radius:12px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);display:flex;justify-content:center;align-items:center;min-height:240px}
+#macroot .fotowrap{position:relative;display:inline-block;line-height:0}
+#macroot .fotowrap img{max-height:330px;max-width:100%;display:block}
+#macroot .stage.hide, #macroot .svgstage.hide{display:none}
+/* markers on photo */
+#macroot .mk{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:3}
+#macroot .mk .dot{width:28px;height:28px;border-radius:50%;background:var(--cy);border:2px solid #fff;color:#fff;font-weight:700;font-family:var(--mono);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.35);font-size:12px;position:relative}
+#macroot .mk .dot::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--cy);opacity:.5;animation:ping 1.8s infinite}
+@keyframes ping{0%{transform:scale(.7);opacity:.6}100%{transform:scale(1.5);opacity:0}}
+#macroot #stageSchema .mk .dot::after{display:none}
+
+#macroot .svgstage{position:relative;display:flex;justify-content:center;background:linear-gradient(180deg,#fff,var(--bg2));border:1px solid var(--line);border-radius:12px;padding:12px}
+#macroot .hint{font-size:11px;color:var(--t3);text-align:center;margin-top:8px;font-family:var(--mono)}
+
+/* ricambi 3D strip */
+#macroot .r3strip{margin-top:12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}
+#macroot .r3strip .lab{font-family:var(--disp);font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px;margin-bottom:9px}
+#macroot .r3strip .lab .b{font-family:var(--mono);font-size:9px;color:#03121F;background:var(--cy);padding:2px 7px;border-radius:99px}
+#macroot .r3btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg1);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;cursor:pointer;font-family:var(--body)}
+#macroot .r3btn:last-child{margin-bottom:0}
+#macroot .r3btn .n{width:24px;height:24px;border-radius:50%;background:var(--t1);color:#fff;font-family:var(--mono);font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#macroot .r3btn .nm{font-weight:600;font-size:13px}
+#macroot .r3btn .sb{font-size:11px;color:var(--t2);margin-top:1px}
+#macroot .r3btn .go{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--cy);border:1px solid rgba(91,160,44,.4);border-radius:99px;padding:4px 9px;white-space:nowrap}
+
+#macroot .specs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+#macroot .spec{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+#macroot .spec .v{font-family:var(--disp);font-weight:700;font-size:15px}
+#macroot .spec .k{font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:2px;letter-spacing:.3px}
+
+#macroot .tabs{display:flex;gap:6px;overflow-x:auto;margin:14px 0 12px;padding-bottom:2px}
+#macroot .tab{font-family:var(--disp);font-weight:600;font-size:13px;padding:8px 13px;border-radius:99px;border:1px solid var(--line);background:var(--bg1);color:var(--t2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+#macroot .tab.on{background:var(--t1);color:var(--bg0);border-color:var(--t1)}
+#macroot .tabcount{font-family:var(--mono);font-size:10px;opacity:.7;margin-left:4px}
+
+#macroot .pane{display:none}
+#macroot .pane.on{display:block}
+
+#macroot .alsearch{margin-bottom:12px}
+#macroot .al{background:var(--bg1);border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:12px;margin-bottom:10px}
+#macroot .al.sev-info{border-left-color:var(--teal)}
+#macroot .al.sev-warn{border-left-color:var(--amber)}
+#macroot .al.sev-crit{border-left-color:var(--coral)}
+#macroot .al .alh{display:flex;align-items:center;gap:10px}
+#macroot .al .code{font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;background:var(--t1);border-radius:8px;padding:4px 8px;min-width:34px;text-align:center}
+#macroot .al.sev-warn .code{background:var(--amber)}
+#macroot .al.sev-crit .code{background:var(--coral)}
+#macroot .al.sev-info .code{background:var(--teal)}
+#macroot .al .alname{font-family:var(--disp);font-weight:600;font-size:14px;line-height:1.2}
+#macroot .al .row{display:flex;gap:8px;margin-top:9px;font-size:12.5px;line-height:1.45}
+#macroot .al .lab{font-family:var(--mono);font-size:9.5px;color:var(--t3);letter-spacing:.3px;flex-shrink:0;width:52px;padding-top:2px}
+#macroot .al .val{color:var(--t1)}
+#macroot .al .partlink{display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--cy);border:1px solid rgba(91,160,44,.35);border-radius:99px;padding:3px 9px;cursor:pointer;margin-right:5px}
+
+#macroot .part{background:var(--bg1);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;gap:12px}
+#macroot .part .pn{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;background:var(--bg2);border:1px solid var(--line)}
+#macroot .part .pt{font-family:var(--disp);font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#macroot .wear{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:99px}
+#macroot .wear.alta{background:rgba(214,69,40,.12);color:var(--coral)}
+#macroot .wear.media{background:rgba(199,127,18,.14);color:var(--amber)}
+#macroot .wear.bassa{background:rgba(46,158,94,.14);color:var(--teal)}
+#macroot .part .meta{font-size:12px;color:var(--t2);margin-top:5px;line-height:1.5}
+#macroot .part .meta b{color:var(--t1);font-weight:600}
+#macroot .part .sym{font-size:11.5px;color:var(--t2);margin-top:5px}
+#macroot .part .pnote{font-size:11.5px;color:var(--t2);margin-top:6px;line-height:1.5;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+#macroot .part .prow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px}
+#macroot .part .prlab{font-family:var(--mono);font-size:9.5px;color:var(--t3)}
+#macroot .alchip{font-family:var(--mono);font-size:10.5px;color:var(--coral);border:1px solid rgba(214,69,40,.35);border-radius:99px;padding:2px 8px;cursor:pointer}
+#macroot .alchip:hover{background:rgba(214,69,40,.08)}
+#macroot .part .v3d{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--cy);border:1px solid rgba(91,160,44,.4);border-radius:99px;padding:4px 10px;cursor:pointer;background:transparent;display:inline-flex;gap:5px;align-items:center}
+
+/* tagliando editor */
+#macroot .tgadd{display:flex;gap:7px;margin-bottom:12px}
+#macroot .tgadd input{flex:1;background:var(--bg1);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--body);font-size:13px;color:var(--t1);outline:none}
+#macroot .tgadd input:focus{border-color:var(--cy)}
+#macroot .tgadd .freqin{flex:0 0 96px}
+#macroot .tgaddbtn{flex:0 0 44px;background:linear-gradient(135deg,#6FB23A,#5BA02C);color:#03121F;border:none;border-radius:10px;font-size:20px;font-weight:700;cursor:pointer}
+#macroot .chk .ctw{flex:1}
+#macroot .chk .chkact{display:flex;gap:4px;align-self:center;flex-shrink:0}
+#macroot .chk .chkact span{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:13px;color:var(--t3);border:1px solid transparent}
+#macroot .chk .chkact .edit:hover{color:var(--blue);border-color:var(--line)}
+#macroot .chk .chkact .del:hover{color:var(--coral);border-color:rgba(214,69,40,.3)}
+#macroot .tgfoot{display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--t3)}
+#macroot .tgexport{display:flex;align-items:center;gap:12px;width:100%;margin-top:14px;padding:13px 14px;border:none;border-radius:13px;cursor:pointer;background:linear-gradient(135deg,#6FB23A,#5BA02C);color:#03121F;text-align:left;box-shadow:0 4px 16px rgba(91,160,44,.3)}
+#macroot .tgexport .ic{font-size:20px}
+#macroot .tgexport .el{font-family:var(--disp);font-weight:700;font-size:14px;display:block}
+#macroot .tgexport .es{font-size:11px;opacity:.8;display:block;margin-top:1px}
+#macroot .tgexport .ar{margin-left:auto;font-size:20px;font-weight:700}
+/* sheet esportazione */
+#macroot .sheet{position:fixed;inset:0;background:rgba(43,42,36,.55);backdrop-filter:blur(4px);z-index:150;display:none;align-items:flex-end;justify-content:center}
+#macroot .sheet.on{display:flex}
+#macroot .sheetcard{background:var(--bg0);width:100%;max-width:560px;border-radius:18px 18px 0 0;max-height:90vh;overflow-y:auto;padding:16px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+#macroot .sheethead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+#macroot .sheethead .st{font-family:var(--disp);font-weight:700;font-size:18px}
+#macroot .sheethead .ss{font-size:12px;color:var(--t2);margin-top:2px}
+#macroot .sheethead .x{font-size:20px;color:var(--t3);cursor:pointer;padding:2px 4px}
+#macroot .expstep{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.5px;margin-bottom:8px}
+#macroot .connbox{text-align:center;padding:22px 12px}
+#macroot .connbox .logo{display:inline-flex;align-items:center;gap:8px;font-family:var(--disp);font-weight:700;font-size:20px;margin-bottom:6px}
+#macroot .connbox .logo .dot{width:10px;height:10px;border-radius:50%;background:var(--cy);box-shadow:0 0 10px var(--cy)}
+#macroot .connbox p{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:16px;max-width:340px;margin-left:auto;margin-right:auto}
+#macroot .spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--cy);border-radius:50%;margin:0 auto 14px;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#macroot .mrow{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px;cursor:pointer;background:var(--bg1)}
+#macroot .mrow:hover{border-color:var(--cy);box-shadow:0 0 10px rgba(91,160,44,.18)}
+#macroot .mrow .av{width:38px;height:38px;border-radius:10px;background:var(--bg2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+#macroot .mrow .mc{font-family:var(--disp);font-weight:600;font-size:14px}
+#macroot .mrow .mm{font-size:11.5px;color:var(--t2);margin-top:2px}
+#macroot .mrow .mt{font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:3px}
+#macroot .mrow .mbol{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--cy);border:1px solid rgba(91,160,44,.35);border-radius:99px;padding:3px 8px;align-self:flex-start}
+#macroot .okcard{text-align:center;padding:10px 6px 4px}
+#macroot .okcard .check{width:54px;height:54px;border-radius:50%;background:var(--cy);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 0 18px rgba(91,160,44,.4)}
+#macroot .okcard .ot{font-family:var(--disp);font-weight:700;font-size:17px}
+#macroot .linkrec{background:var(--bg1);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:14px;text-align:left}
+#macroot .linkrec .lr{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+#macroot .linkrec .lr:last-child{border-bottom:none}
+#macroot .linkrec .lr .k{color:var(--t2);font-size:12px}
+#macroot .linkrec .lr .v{font-weight:600;text-align:right}
+#macroot .recap{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:12px;text-align:left;font-size:12px;color:var(--t2);max-height:150px;overflow-y:auto}
+#macroot .recap .ri{display:flex;gap:7px;padding:2px 0}
+#macroot .recap .ri .mk{font-family:var(--mono)}
+#macroot .expnote{font-size:11px;color:var(--t3);line-height:1.5;margin-top:12px;background:var(--bg2);border:1px dashed var(--line2);border-radius:9px;padding:9px 11px}
+#macroot .expbtns{display:flex;gap:8px;margin-top:14px}
+#macroot .expbtns button{flex:1;font-family:var(--disp);font-weight:600;font-size:13px;padding:11px;border-radius:11px;cursor:pointer;border:1px solid var(--line2);background:var(--bg1);color:var(--t1)}
+#macroot .expbtns button.pri{background:linear-gradient(135deg,#6FB23A,#5BA02C);color:#03121F;border:none}
+#macroot .tgreset{font-family:var(--mono);font-size:11px;color:var(--t2);background:var(--bg1);border:1px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer}
+#macroot .tgreset:hover{border-color:var(--line2)}
+
+#macroot .comp{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--bg1);border:1px solid var(--line);border-radius:11px;margin-bottom:8px}
+#macroot .comp .ci{width:26px;height:26px;border-radius:50%;background:var(--t1);color:#fff;font-family:var(--mono);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#macroot .comp .cn{font-weight:600;font-size:13.5px}
+#macroot .comp .cd{font-size:11.5px;color:var(--t2);margin-top:1px}
+
+#macroot .chk{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;background:var(--bg1);border:1px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer}
+#macroot .chk .box{width:21px;height:21px;border-radius:6px;border:2px solid var(--line2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;transition:.15s}
+#macroot .chk.done .box{background:var(--cy);border-color:var(--cy)}
+#macroot .chk.done .ct{color:var(--t3);text-decoration:line-through}
+#macroot .chk .ct{font-size:13.5px;line-height:1.4}
+#macroot .chk .freq{font-family:var(--mono);font-size:9.5px;color:var(--t3);margin-top:2px}
+
+#macroot .tt{width:100%;border-collapse:collapse;font-size:13px}
+#macroot .tt td{padding:9px 8px;border-bottom:1px solid var(--line)}
+#macroot .tt td:first-child{color:var(--t2)}
+#macroot .tt td:last-child{text-align:right;font-family:var(--mono);font-weight:500}
+#macroot .note{font-size:11.5px;color:var(--t3);margin-top:10px;line-height:1.5}
+#macroot .dl{display:inline-flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:600;font-size:13px;color:#03121F;background:linear-gradient(135deg,#6FB23A,#5BA02C);border:none;border-radius:11px;padding:10px 16px;cursor:pointer;margin-top:4px}
+
+#macroot .hsdot{cursor:pointer}
+#macroot .pop{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:min(420px,92vw);background:var(--t1);color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 8px 30px rgba(0,0,0,.3);z-index:90;display:none}
+#macroot .pop.on{display:block}
+#macroot .pop .pt{font-family:var(--disp);font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+#macroot .pop .pt .n{font-family:var(--mono);background:var(--cy);color:#03121F;border-radius:7px;padding:2px 7px;font-size:12px}
+#macroot .pop .pd{font-size:12.5px;color:#d8d3c8;margin-top:7px;line-height:1.5}
+#macroot .pop .pa{font-family:var(--mono);font-size:10.5px;color:#9fd17a;margin-top:8px}
+#macroot .pop .x{position:absolute;top:10px;right:12px;color:#fff;opacity:.6;cursor:pointer;font-size:18px}
+#macroot .screen{display:none}
+#macroot .screen.on{display:block}
+
+/* ===== 3D modal ===== */
+#macroot .t3{position:fixed;inset:0;background:rgba(20,18,12,.92);backdrop-filter:blur(6px);z-index:200;display:none;flex-direction:column}
+#macroot .t3.on{display:flex}
+#macroot .t3head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;color:#fff}
+#macroot .t3head .ti{font-family:var(--disp);font-weight:700;font-size:16px}
+#macroot .t3head .sb{font-size:11.5px;color:#bdb6a6;margin-top:2px}
+#macroot .t3head .cl{font-size:24px;color:#fff;opacity:.7;cursor:pointer;line-height:1}
+#macroot #t3canvas{flex:1;position:relative;touch-action:none;background:radial-gradient(120% 90% at 50% 30%, #43403a 0%, #2a2823 55%, #1d1b17 100%)}
+#macroot #t3canvas canvas{display:block;width:100%;height:100%}
+#macroot .t3rotate{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-family:var(--mono);font-size:10.5px;color:#cfc9ba;background:rgba(0,0,0,.35);padding:5px 12px;border-radius:99px;pointer-events:none}
+#macroot .t3sel{display:flex;gap:7px;overflow-x:auto;padding:12px 14px}
+#macroot .t3chip{font-family:var(--disp);font-weight:600;font-size:12px;color:#cfc9ba;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:7px 13px;white-space:nowrap;cursor:pointer;flex-shrink:0}
+#macroot .t3chip.on{background:var(--cy);color:#03121F;border-color:var(--cy)}
+#macroot .t3info{padding:0 16px 22px;color:#e8e3d6}
+#macroot .t3info .nm{font-family:var(--disp);font-weight:600;font-size:14px}
+#macroot .t3info .ds{font-size:12.5px;color:#bdb6a6;margin-top:4px;line-height:1.5}
+#macroot .t3info .t3tech{font-size:11.5px;color:#e0dac9;margin-top:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;line-height:1.5}
+#macroot .t3info .al{background:transparent;border:none;padding:0;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:#9fd17a}
+#macroot .t3warn{font-family:var(--mono);font-size:9.5px;color:#8a8472;margin-top:10px}
+
+/* --- Installazioni & storico + manuale (Fase C) --- */
+#macroot .mono{font-family:var(--mono)}
+#macroot .mc-h{font-family:var(--disp);font-size:14px;color:var(--t1)}
+#macroot .mc-sec{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--t2);margin:16px 0 8px;letter-spacing:.3px}
+#macroot .mc-in{width:100%;background:var(--bg1);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-family:var(--body);font-size:13px;color:var(--t1);outline:none;margin-bottom:8px}
+#macroot .mc-in:focus{border-color:var(--cy)}
+#macroot .mc-row{display:flex;gap:8px}
+#macroot .mc-row .mc-in{flex:1}
+#macroot .mc-parts{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+#macroot .mc-part{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:7px 9px}
+#macroot .mc-pn{font-size:12.5px;color:var(--t1);font-weight:600;flex:1;min-width:140px}
+#macroot .mc-pd{font-family:var(--mono);font-size:10px;color:var(--t3)}
+#macroot .mc-btn{font-family:var(--mono);font-size:10px;color:var(--cy);border:1px solid rgba(91,160,44,.4);border-radius:99px;padding:4px 10px;cursor:pointer;background:transparent;white-space:nowrap}
+#macroot .mc-btn:hover{background:rgba(91,160,44,.08)}
+#macroot .mc-hist{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--t2);background:var(--bg1);border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:7px}
+#macroot .mc-up{display:inline-flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--t2);background:var(--bg1);border:1px solid var(--line);border-radius:11px;padding:9px 14px;cursor:pointer;margin-top:8px;margin-left:8px}
+#macroot .mc-up:hover{border-color:var(--line2)}

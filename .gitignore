@@ -3,3 +3,8 @@
 Skill sicurezza
 vapid_private.txt
 vapid_public.txt
+# Artefatti di sviluppo della sezione Macchine: non servono all'app live
+# (i dati macchina sono in macchine.js, i manuali vanno su Supabase Storage).
+# Restano sul disco locale come riferimento, ma non si pubblicano (~23MB di PDF).
+prototipo-schede-macchine/
+server.js

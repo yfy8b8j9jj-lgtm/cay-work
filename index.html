@@ -9,19 +9,20 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ptek">
-<meta name="theme-color" content="#040B16">
+<meta name="theme-color" content="#F5F2EA">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="icon" type="image/png" href="./icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./macchine.css">
 <style>
 :root{
-  --bg0:#040B16; --bg1:#081323; --bg2:#0D1D33; --bg3:#122742;
-  --line:rgba(0,212,255,.10); --line2:rgba(0,212,255,.22);
-  --cy:#00D4FF; --teal:#00E5C0; --amber:#FFB547; --fire:#FF8A3D; --coral:#FF5C7A; --blue:#6FA8FF;
-  --t1:#EAF6FF; --t2:#8FB3CC; --t3:#52718A;
-  --glow:0 0 18px rgba(0,212,255,.25);
+  --bg0:#F5F2EA; --bg1:#FFFFFF; --bg2:#F2EEE4; --bg3:#E9E3D5;
+  --line:rgba(70,55,30,.12); --line2:rgba(70,55,30,.24);
+  --cy:#5BA02C; --teal:#2E9E5E; --amber:#C77F12; --fire:#E2722E; --coral:#D64528; --blue:#A9742F;
+  --t1:#2B2A24; --t2:#6E6557; --t3:#9C9384;
+  --glow:0 0 16px rgba(111,178,58,.22);
   --r:14px;
   --disp:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
 }
@@ -29,8 +30,9 @@
 html,body{height:100%}
 body{background:var(--bg0);color:var(--t1);font-family:var(--body);font-size:14px;overflow:hidden}
 body::before{content:'';position:fixed;inset:0;background:
-  radial-gradient(1100px 600px at 80% -10%,rgba(0,212,255,.07),transparent 60%),
-  radial-gradient(900px 500px at -10% 110%,rgba(0,229,192,.05),transparent 60%);
+  radial-gradient(900px 520px at 82% -8%,rgba(111,178,58,.12),transparent 60%),
+  radial-gradient(820px 480px at -8% 108%,rgba(226,114,46,.07),transparent 60%),
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46'%3E%3Cg fill='none' stroke='%236FB23A' stroke-width='1' opacity='0.16'%3E%3Cpath d='M12 9c6 4 6 15 0 23c-6-8-6-19 0-23z'/%3E%3Cpath d='M34 20c6 4 6 15 0 23c-6-8-6-19 0-23z'/%3E%3C/g%3E%3C/svg%3E");
   pointer-events:none;z-index:0}
 #app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column}
 
@@ -64,11 +66,11 @@ body::before{content:'';position:fixed;inset:0;background:
 .nav-side .ni.act{background:var(--bg2);color:var(--t1);border-color:var(--line2);box-shadow:var(--glow)}
 .nav-side .ni .ic{width:18px;text-align:center}
 
-.nav-bottom{position:fixed;bottom:0;left:0;right:0;background:rgba(6,15,28,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50}
+.nav-bottom{position:fixed;bottom:0;left:0;right:0;background:rgba(255,253,248,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line);box-shadow:0 -2px 14px rgba(70,55,30,.06);display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50}
 .nav-bottom .nb{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--t3);font-size:9.5px;font-weight:600;cursor:pointer;padding:2px 6px;min-width:48px}
 .nav-bottom .nb .ic{font-size:18px;line-height:1;position:relative}
 .nav-bottom .nb .nbdot{position:absolute;top:-5px;right:-11px;background:var(--cy);color:#04121f;font-family:var(--mono);font-size:8px;font-weight:700;line-height:1;padding:2px 4px;border-radius:99px;min-width:13px;text-align:center}
-.nav-bottom .nb.act{color:var(--cy);text-shadow:0 0 12px rgba(0,212,255,.6)}
+.nav-bottom .nb.act{color:var(--cy);text-shadow:0 0 12px rgba(111,178,58,.6)}
 
 /* ---------- CARDS ---------- */
 .card{background:linear-gradient(180deg,var(--bg1),var(--bg0));border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
@@ -81,7 +83,7 @@ body::before{content:'';position:fixed;inset:0;background:
 
 /* ---------- HUB INPUT (signature) ---------- */
 .hub{position:relative;margin:6px 0 16px}
-.hub .ring{position:absolute;inset:-1px;border-radius:18px;background:linear-gradient(120deg,rgba(0,212,255,.5),rgba(0,229,192,.2),rgba(0,212,255,.5));opacity:.35;filter:blur(6px);pointer-events:none;transition:opacity .3s}
+.hub .ring{position:absolute;inset:-1px;border-radius:18px;background:linear-gradient(120deg,rgba(111,178,58,.5),rgba(46,158,94,.2),rgba(111,178,58,.5));opacity:.35;filter:blur(6px);pointer-events:none;transition:opacity .3s}
 .hub.live .ring{opacity:.8}
 .hub-box{position:relative;background:var(--bg1);border:1px solid var(--line2);border-radius:18px;padding:14px}
 .hub-box textarea{width:100%;background:transparent;border:none;outline:none;color:var(--t1);font-family:var(--body);font-size:15px;resize:none;min-height:46px;line-height:1.45}
@@ -89,13 +91,13 @@ body::before{content:'';position:fixed;inset:0;background:
 .hub-foot{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
 .hub-foot .sp{flex:1}
 .chip{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg2)}
-.chip.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 10px rgba(0,212,255,.25)}
+.chip.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 10px rgba(111,178,58,.25)}
 .chip.warn{border-color:var(--amber);color:var(--amber)}
 .btn{font-family:var(--disp);font-weight:600;font-size:13px;padding:9px 16px;border-radius:11px;border:1px solid var(--line2);background:var(--bg2);color:var(--t1);cursor:pointer}
-.btn.pri{background:linear-gradient(135deg,#00B8E0,#00D4FF);color:#03121F;border:none;box-shadow:0 0 16px rgba(0,212,255,.35)}
+.btn.pri{background:linear-gradient(135deg,#6FB23A,#5BA02C);color:#03121F;border:none;box-shadow:0 0 16px rgba(111,178,58,.35)}
 .btn.ghost{background:transparent;border-color:var(--line)}
 .btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
-.btn.danger{border-color:rgba(255,92,122,.4);color:var(--coral)}
+.btn.danger{border-color:rgba(214,69,40,.4);color:var(--coral)}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.4;pointer-events:none}
 
@@ -167,17 +169,18 @@ body::before{content:'';position:fixed;inset:0;background:
 @media(min-width:900px){.chatwrap{height:calc(100dvh - 200px)}}
 .chat-scroll{flex:1;overflow-y:auto;padding:6px 2px;display:flex;flex-direction:column;gap:10px}
 .msg{max-width:82%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;position:relative}
-.msg.me{align-self:flex-end;background:linear-gradient(135deg,#063A4F,#075066);border:1px solid rgba(0,212,255,.25);border-bottom-right-radius:4px}
+.msg.me{align-self:flex-end;background:linear-gradient(135deg,#6FB23A,#5BA02C);border:1px solid rgba(111,178,58,.3);border-bottom-right-radius:4px;color:#fff}
+.msg.me .tm{color:rgba(255,255,255,.82)}
 .msg.them{align-self:flex-start;background:var(--bg2);border:1px solid var(--line);border-bottom-left-radius:4px}
-.msg.sys{align-self:center;background:rgba(0,229,192,.08);border:1px solid rgba(0,229,192,.3);color:var(--teal);font-size:12px;max-width:92%;border-radius:10px;font-family:var(--mono)}
+.msg.sys{align-self:center;background:rgba(46,158,94,.08);border:1px solid rgba(46,158,94,.3);color:var(--teal);font-size:12px;max-width:92%;border-radius:10px;font-family:var(--mono)}
 .msg .who{font-family:var(--mono);font-size:9.5px;color:var(--cy);margin-bottom:3px;letter-spacing:.5px}
 .msg .tm{font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:4px;text-align:right}
 .chat-input{display:flex;gap:8px;padding-top:10px;align-items:flex-end}
 .chat-input textarea{flex:1;background:var(--bg1);border:1px solid var(--line2);border-radius:14px;color:var(--t1);font-family:var(--body);font-size:14px;padding:11px 13px;resize:none;outline:none;max-height:110px;min-height:44px;line-height:1.4}
-.send{width:44px;height:44px;border-radius:13px;border:none;background:linear-gradient(135deg,#00B8E0,#00D4FF);color:#03121F;font-size:17px;cursor:pointer;box-shadow:0 0 14px rgba(0,212,255,.35);flex-shrink:0}
+.send{width:44px;height:44px;border-radius:13px;border:none;background:linear-gradient(135deg,#6FB23A,#5BA02C);color:#03121F;font-size:17px;cursor:pointer;box-shadow:0 0 14px rgba(111,178,58,.35);flex-shrink:0}
 .speaker-row{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px}
 .speaker{font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg1);cursor:pointer;white-space:nowrap}
-.speaker.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 10px rgba(0,212,255,.2)}
+.speaker.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 10px rgba(111,178,58,.2)}
 .wa-note{font-size:11px;color:var(--t3);background:var(--bg1);border:1px dashed var(--line2);border-radius:10px;padding:8px 11px;margin-bottom:8px;line-height:1.5}
 
 /* ---------- MODAL ---------- */
@@ -204,14 +207,14 @@ body::before{content:'';position:fixed;inset:0;background:
 
 /* lock screen */
 .lock{position:fixed;inset:0;background:var(--bg0);z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
-.lock::before{content:'';position:fixed;inset:0;background:radial-gradient(680px 380px at 28% -5%,rgba(151,196,89,.14),transparent 60%),radial-gradient(720px 420px at 78% 0%,rgba(0,212,255,.12),transparent 62%);pointer-events:none}
+.lock::before{content:'';position:fixed;inset:0;background:radial-gradient(680px 380px at 28% -5%,rgba(151,196,89,.14),transparent 60%),radial-gradient(720px 420px at 78% 0%,rgba(111,178,58,.12),transparent 62%);pointer-events:none}
 .lock .llogo{font-family:var(--disp);font-weight:700;font-size:26px;letter-spacing:1px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
 .lock .llogo .dot{width:12px;height:12px;border-radius:50%;background:var(--cy);box-shadow:0 0 16px var(--cy);animation:pulse 2.6s infinite}
 .lock .lsub{font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:2px;margin-bottom:30px}
 .lock .lbox{width:100%;max-width:360px;background:var(--bg1);border:1px solid var(--line2);border-radius:20px;padding:22px;position:relative;z-index:1}
 .lock .users{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
 .lock .uchip{font-size:13px;font-weight:600;padding:9px 16px;border-radius:99px;border:1px solid var(--line);color:var(--t2);background:var(--bg2);cursor:pointer}
-.lock .uchip.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 12px rgba(0,212,255,.25)}
+.lock .uchip.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 12px rgba(111,178,58,.25)}
 .lock input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:12px;color:var(--t1);font-family:var(--mono);font-size:20px;text-align:center;letter-spacing:8px;padding:13px;outline:none;margin-bottom:12px}
 .lock input:focus{border-color:var(--cy)}
 .lock input.txt{font-family:var(--body);font-size:14px;letter-spacing:normal;text-align:left}
@@ -227,7 +230,7 @@ body::before{content:'';position:fixed;inset:0;background:
 .tabs .tb.on{border-color:var(--cy);color:var(--cy)}
 .searchbar{width:100%;background:var(--bg1);border:1px solid var(--line);border-radius:11px;color:var(--t1);font-size:13.5px;padding:10px 13px;outline:none;margin-bottom:10px}
 .searchbar:focus{border-color:var(--cy)}
-.fab{position:fixed;right:18px;bottom:84px;width:54px;height:54px;border-radius:17px;border:none;background:linear-gradient(135deg,#00B8E0,#00D4FF);color:#03121F;font-size:25px;cursor:pointer;box-shadow:0 6px 20px rgba(0,212,255,.4);z-index:40}
+.fab{position:fixed;right:18px;bottom:84px;width:54px;height:54px;border-radius:17px;border:none;background:linear-gradient(135deg,#6FB23A,#5BA02C);color:#03121F;font-size:25px;cursor:pointer;box-shadow:0 6px 20px rgba(111,178,58,.4);z-index:40}
 @media(min-width:900px){.fab{bottom:26px;right:26px}}
 .linkline{font-size:12px;color:var(--cy);cursor:pointer;font-weight:600}
 /* checklist */
@@ -237,10 +240,10 @@ body::before{content:'';position:fixed;inset:0;background:
 .cklist .ck-name{font-family:var(--disp);font-weight:600;font-size:13.5px;flex:1}
 .cklist .ck-prog{font-family:var(--mono);font-size:10px;color:var(--t3)}
 .ck-bar{height:3px;border-radius:2px;background:var(--bg0);margin-bottom:8px;overflow:hidden}
-.ck-bar i{display:block;height:100%;background:linear-gradient(90deg,#00D4FF,#00E5C0);border-radius:2px;transition:width .3s;box-shadow:0 0 6px rgba(0,212,255,.5)}
+.ck-bar i{display:block;height:100%;background:linear-gradient(90deg,#5BA02C,#2E9E5E);border-radius:2px;transition:width .3s;box-shadow:0 0 6px rgba(111,178,58,.5)}
 .ck-it{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer}
 .ck-box{width:19px;height:19px;border-radius:6px;border:1.5px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#03121F;transition:all .15s}
-.ck-it.done .ck-box{background:var(--teal);border-color:var(--teal);box-shadow:0 0 8px rgba(0,229,192,.4)}
+.ck-it.done .ck-box{background:var(--teal);border-color:var(--teal);box-shadow:0 0 8px rgba(46,158,94,.4)}
 .ck-it .ck-tx{font-size:13px;flex:1}
 .ck-it.done .ck-tx{color:var(--t3);text-decoration:line-through}
 .ck-add{display:flex;gap:7px;margin-top:7px}
@@ -248,8 +251,8 @@ body::before{content:'';position:fixed;inset:0;background:
 .ck-add input:focus{border-color:var(--cy)}
 .ck-add button{width:32px;border-radius:9px;border:1px solid var(--line2);background:var(--bg1);color:var(--cy);font-size:15px;cursor:pointer}
 /* bollettino & firma */
-.row-act{font-family:var(--mono);font-size:10px;padding:5px 10px;border-radius:99px;border:1px solid var(--cy);color:var(--cy);cursor:pointer;white-space:nowrap;background:rgba(0,212,255,.06)}
-.row-act.done{border-color:var(--teal);color:var(--teal);background:rgba(0,229,192,.06)}
+.row-act{font-family:var(--mono);font-size:10px;padding:5px 10px;border-radius:99px;border:1px solid var(--cy);color:var(--cy);cursor:pointer;white-space:nowrap;background:rgba(111,178,58,.06)}
+.row-act.done{border-color:var(--teal);color:var(--teal);background:rgba(46,158,94,.06)}
 .blt-task{display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--line)}
 .blt-task:last-child{border-bottom:none}
 .part-row{display:flex;gap:7px;margin-bottom:7px}
@@ -285,7 +288,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.16-145932';
+const APP_VERSION='2026.06.18-111613';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -301,20 +304,20 @@ const MAPS={
   toDb:e=>({id:e.id,name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||[],is_owner:!!e.isOwner,active:e.active!==false,invite_code:e.inviteCode||null,user_id:e.userId||null}),
   fromDb:r=>({id:r.id,name:r.name,role:r.role||'',phone:r.phone||'',perms:r.perms||[],isOwner:!!r.is_owner,active:r.active!==false,inviteCode:r.invite_code,userId:r.user_id})},
  maintenances:{tbl:'maintenances',
-  toDb:m=>({id:m.id,title:m.title,client_id:m.clientId||null,client_raw:m.clientRaw||null,employee_id:m.employeeId||null,date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:num(m.price),type:m.type||null,report:m.report||null,via:m.via||'manuale'}),
-  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,status:r.status,notes:r.notes||'',recur:r.recur||0,price:r.price,type:r.type||'',report:r.report,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:m=>({id:m.id,title:m.title,client_id:m.clientId||null,client_raw:m.clientRaw||null,employee_id:(m.employees&&m.employees[0])||m.employeeId||null,employees:m.employees||(m.employeeId?[m.employeeId]:[]),date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:num(m.price),type:m.type||null,report:m.report||null,via:m.via||'manuale'}),
+  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,employees:(r.employees&&r.employees.length)?r.employees:(r.employee_id?[r.employee_id]:[]),date:r.date,time:r.time,status:r.status,notes:r.notes||'',recur:r.recur||0,price:r.price,type:r.type||'',report:r.report,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  appointments:{tbl:'appointments',
-  toDb:a=>({id:a.id,title:a.title,client_id:a.clientId||null,client_raw:a.clientRaw||null,employee_id:a.employeeId||null,date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'manuale'}),
-  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,date:r.date,time:r.time,done:!!r.done,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:a=>({id:a.id,title:a.title,client_id:a.clientId||null,client_raw:a.clientRaw||null,employee_id:(a.employees&&a.employees[0])||a.employeeId||null,employees:a.employees||(a.employeeId?[a.employeeId]:[]),date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'manuale'}),
+  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,employees:(r.employees&&r.employees.length)?r.employees:(r.employee_id?[r.employee_id]:[]),date:r.date,time:r.time,done:!!r.done,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  pellet:{tbl:'pellet',
-  toDb:p=>({id:p.id,client_id:p.clientId||null,client_raw:p.clientRaw||null,employee_id:p.employeeId||null,qty:num(p.qty),unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:num(p.price),signature:p.signature||null,signed_name:p.signedName||'',notes:p.notes||'',via:p.via||'manuale'}),
-  fromDb:r=>({id:r.id,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,qty:r.qty,unit:r.unit,kind:r.kind,date:r.date,time:r.time,status:r.status,price:r.price,signature:r.signature,signedName:r.signed_name||'',notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:p=>({id:p.id,client_id:p.clientId||null,client_raw:p.clientRaw||null,employee_id:(p.employees&&p.employees[0])||p.employeeId||null,employees:p.employees||(p.employeeId?[p.employeeId]:[]),qty:num(p.qty),unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:num(p.price),signature:p.signature||null,signed_name:p.signedName||'',notes:p.notes||'',via:p.via||'manuale'}),
+  fromDb:r=>({id:r.id,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,employees:(r.employees&&r.employees.length)?r.employees:(r.employee_id?[r.employee_id]:[]),qty:r.qty,unit:r.unit,kind:r.kind,date:r.date,time:r.time,status:r.status,price:r.price,signature:r.signature,signedName:r.signed_name||'',notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  sites:{tbl:'sites',
   toDb:s=>({id:s.id,name:s.name,client_id:s.clientId||null,client_raw:s.clientRaw||null,status:s.status||'aperto',employees:s.employees||[],est_hours:num(s.estHours),amount:num(s.amount),start_date:s.startDate||null,due_date:s.dueDate||null,closed_date:s.closedDate||null,notes:s.notes||'',via:s.via||'manuale'}),
   fromDb:r=>({id:r.id,name:r.name,clientId:r.client_id,clientRaw:r.client_raw,status:r.status,employees:r.employees||[],estHours:r.est_hours,amount:r.amount,startDate:r.start_date,dueDate:r.due_date,closedDate:r.closed_date,notes:r.notes||'',via:r.via,log:[],attachments:[],created:Date.parse(r.created_at)||Date.now()})},
  notes:{tbl:'notes',
-  toDb:n=>({id:n.id,text:n.text,client_id:n.clientId||null,group_id:n.groupId||null,date:n.date||null,pinned:!!n.pinned,archived:!!n.archived,via:n.via||'manuale'}),
-  fromDb:r=>({id:r.id,text:r.text,clientId:r.client_id,groupId:r.group_id,date:r.date,pinned:!!r.pinned,archived:!!r.archived,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:n=>({id:n.id,text:n.text,client_id:n.clientId||null,group_id:n.groupId||null,employees:n.employees||[],date:n.date||null,pinned:!!n.pinned,archived:!!n.archived,via:n.via||'manuale'}),
+  fromDb:r=>({id:r.id,text:r.text,clientId:r.client_id,groupId:r.group_id,employees:r.employees||[],date:r.date,pinned:!!r.pinned,archived:!!r.archived,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  noteGroups:{tbl:'note_groups',
   toDb:g=>({id:g.id,name:g.name,members:g.members||[]}),
   fromDb:r=>({id:r.id,name:r.name,members:r.members||[]})},
@@ -629,12 +632,12 @@ function parseInput(text){
   return r;
 }
 const TYPE_META={
-  maintenance:{label:'Manutenzione',color:'var(--amber)',hex:'#FFB547',ic:'🔧',view:'man'},
-  pellet:{label:'Pellet',color:'var(--fire)',hex:'#97C459',ic:'🪵',view:'pellet'},
-  appointment:{label:'Appuntamento',color:'var(--cy)',hex:'#00D4FF',ic:'📅',view:'notes'},
-  note:{label:'Nota',color:'var(--teal)',hex:'#00E5C0',ic:'📝',view:'notes'},
-  site:{label:'Cantiere',color:'var(--blue)',hex:'#6FA8FF',ic:'🏗',view:'sites'},
-  list:{label:'Lista',color:'#4FD8E8',hex:'#4FD8E8',ic:'☑️',view:'hub'},
+  maintenance:{label:'Manutenzione',color:'var(--amber)',hex:'#C77F12',ic:'🔧',view:'man'},
+  pellet:{label:'Pellet',color:'var(--fire)',hex:'#5E9E2E',ic:'🪵',view:'pellet'},
+  appointment:{label:'Appuntamento',color:'var(--cy)',hex:'#5BA02C',ic:'📅',view:'notes'},
+  note:{label:'Nota',color:'var(--teal)',hex:'#2E9E5E',ic:'📝',view:'notes'},
+  site:{label:'Cantiere',color:'var(--blue)',hex:'#A9742F',ic:'🏗',view:'sites'},
+  list:{label:'Lista',color:'#2E9E5E',hex:'#2E9E5E',ic:'☑️',view:'hub'},
 };
 /* commit parsed object into state */
 function commitParsed(p,via){
@@ -686,6 +689,7 @@ const VIEWS=[
   {id:'man',ic:'🔧',label:'Manut.'},
   {id:'pellet',ic:'🪵',label:'Pellet'},
   {id:'sites',ic:'🏗',label:'Cantieri'},
+  {id:'macchine',ic:'⚙️',label:'Macchine'},
   {id:'clients',ic:'👥',label:'Clienti'},
   {id:'conti',ic:'💰',label:'Conti'},
   {id:'emps',ic:'👷',label:'Personale'},
@@ -743,7 +747,7 @@ function openMenu(){
     <div class="sg" style="padding:13px;border-color:var(--cy);color:var(--cy)" onclick="closeSheet();editBottomNav()">⚙️ Personalizza la barra in basso</div>
     ${pushRow}
     ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openBackup()">💾 Backup dati</div>`:''}
-    <div class="sg" style="padding:13px;border-color:rgba(255,92,122,.35);color:var(--coral)" onclick="logout()">🚪 Esci (${esc(me().name)})</div>
+    <div class="sg" style="padding:13px;border-color:rgba(214,69,40,.35);color:var(--coral)" onclick="logout()">🚪 Esci (${esc(me().name)})</div>
   </div>`);
 }
 /* personalizzazione barra in basso */
@@ -856,7 +860,7 @@ function render(){
   S.speaker=S.session.empId;
   renderNav();
   $('#todaypill').textContent=GG[new Date().getDay()].slice(0,3)+' '+new Date().getDate()+' '+MESI[new Date().getMonth()].slice(0,3);
-  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,clients:renderClients,conti:renderConti,emps:renderEmps};
+  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,macchine:window.renderMacchine,clients:renderClients,conti:renderConti,emps:renderEmps};
   $('#main').innerHTML='';(R[view]||renderHub)();
   if(view==='notif'&&notifTab==='chat'){const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;}
 }
@@ -869,9 +873,9 @@ function lockShell(inner,sub){
   let old=document.querySelector('.lock');if(old)old.remove();
   const box=document.createElement('div');box.className='lock';
   const subLine=sub==='REGISTRAZIONE'?'Crea il tuo accesso':sub==='COLLEGA ACCOUNT'?'Collega il tuo account':sub==='SINCRONIZZAZIONE'?'Un attimo, preparo i tuoi dati…':'Bentornato 👋 — accedi al gestionale';
-  box.innerHTML=`<img src="./logo.png" alt="PTEK" style="width:200px;max-width:70%;margin-bottom:6px;filter:drop-shadow(0 8px 26px rgba(0,212,255,.16))" onerror="this.style.display='none';var f=document.getElementById('logofb');if(f)f.style.display='flex'">
+  box.innerHTML=`<img src="./logo.png" alt="PTEK" style="width:200px;max-width:70%;margin-bottom:6px;filter:drop-shadow(0 8px 26px rgba(111,178,58,.16))" onerror="this.style.display='none';var f=document.getElementById('logofb');if(f)f.style.display='flex'">
   <div id="logofb" class="llogo" style="display:none;margin-bottom:6px"><span class="dot"></span>PTEK</div>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="height:1px;width:26px;background:linear-gradient(90deg,transparent,#97C459)"></span><span style="font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--teal)">🌿 ENERGIE RINNOVABILI</span><span style="height:1px;width:26px;background:linear-gradient(90deg,#00D4FF,transparent)"></span></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="height:1px;width:26px;background:linear-gradient(90deg,transparent,#5E9E2E)"></span><span style="font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--teal)">🌿 ENERGIE RINNOVABILI</span><span style="height:1px;width:26px;background:linear-gradient(90deg,#5BA02C,transparent)"></span></div>
   <div style="font-size:13px;color:var(--t2);margin-bottom:26px">${subLine}</div>
   <div class="lbox">${inner}</div>
   <div style="margin-top:18px;font-size:10px;color:var(--t3);text-align:center;line-height:1.7;max-width:330px">🔒 I tuoi dati al sicuro · server in UE<br><span style="color:var(--t2)">Pellet Tek</span> · gestionale dell'attività</div>`;
@@ -965,10 +969,17 @@ function closeSheet(){const o=$('#overlay');if(o)o.remove();}
 
 /* ================= AGGREGATED EVENTS (per calendario/agenda) ================= */
 /* visibilità per ruolo: il titolare vede tutto, gli altri solo ciò che è loro */
-const visMan=()=>isOwner()?S.maintenances:S.maintenances.filter(m=>m.employeeId===S.session.empId);
-const visApp=()=>isOwner()?S.appointments:S.appointments.filter(a=>a.employeeId===S.session.empId||!a.employeeId);
+/* assegnatari: gestisce sia il nuovo array "employees" sia il vecchio singolo "employeeId" */
+const empIdsOf=x=>(x&&x.employees&&x.employees.length)?x.employees:((x&&x.employeeId)?[x.employeeId]:[]);
+const empNames=x=>empIdsOf(x).map(eName).filter(Boolean).join(', ');
+const assignedToMe=x=>!!(S.session&&empIdsOf(x).includes(S.session.empId));
+/* selettore multiplo dipendenti (riuso in manut/pellet/appuntamenti/note) */
+const empSeg=(idd,sel)=>`<div class="seg" id="${idd}" style="flex-wrap:wrap;gap:7px">${S.employees.filter(e=>e.active!==false).map(e=>`<div class="sg ${(sel||[]).includes(e.id)?'on':''}" data-id="${e.id}" onclick="this.classList.toggle('on')">${esc(e.name)}${e.isOwner?' 👑':''}</div>`).join('')||'<span class="subtle">Nessun dipendente ancora — aggiungili in Personale</span>'}</div>`;
+const empSegRead=idd=>[...document.querySelectorAll('#'+idd+' .sg.on')].map(x=>x.dataset.id);
+const visMan=()=>isOwner()?S.maintenances:S.maintenances.filter(assignedToMe);
+const visApp=()=>isOwner()?S.appointments:S.appointments.filter(a=>assignedToMe(a)||!empIdsOf(a).length);
 const visSites=()=>isOwner()?S.sites:S.sites.filter(s=>s.employees.includes(S.session.empId));
-const visPellet=()=>isOwner()?S.pellet:S.pellet.filter(p=>p.employeeId===S.session.empId);
+const visPellet=()=>isOwner()?S.pellet:S.pellet.filter(assignedToMe);
 function allEvents(){
   const ev=[];
   visApp().forEach(a=>{if(a.date)ev.push({type:'appointment',date:a.date,time:a.time,title:a.title,sub:cName(a.clientId)||a.clientRaw||'',done:a.done,id:a.id});});
@@ -989,7 +1000,7 @@ function renderHub(){
   const openMan=S.maintenances.filter(m=>m.status!=='fatta').length;
   const openPel=S.pellet.filter(p=>p.status!=='consegnato').length;
   let contiCard='';
-  if(isOwner()){const e=entrate(mk);const sp=speseTot(mk);const ut=e.tot-sp;contiCard=`<div class="card hl" style="border-color:rgba(0,229,192,.28);cursor:pointer" onclick="nav('conti')"><div class="sh"><span class="t" style="color:var(--t2)">🔒 Conti · ${monthLabel(mk)}</span><span class="a">Apri →</span></div><div style="display:flex;justify-content:space-between;margin-top:2px"><div><div class="subtle" style="font-size:10px">Entrate</div><div style="font-size:16px;font-weight:700;color:var(--teal)">${fmtQty(e.tot)}</div></div><div><div class="subtle" style="font-size:10px">Spese</div><div style="font-size:16px;font-weight:700;color:var(--coral)">${fmtQty(sp)}</div></div><div><div class="subtle" style="font-size:10px">Utile</div><div style="font-size:16px;font-weight:700;color:${ut>=0?'var(--cy)':'var(--coral)'}">${ut>=0?'+':''}${fmtQty(ut)}</div></div></div></div>`;}
+  if(isOwner()){const e=entrate(mk);const sp=speseTot(mk);const ut=e.tot-sp;contiCard=`<div class="card hl" style="border-color:rgba(46,158,94,.28);cursor:pointer" onclick="nav('conti')"><div class="sh"><span class="t" style="color:var(--t2)">🔒 Conti · ${monthLabel(mk)}</span><span class="a">Apri →</span></div><div style="display:flex;justify-content:space-between;margin-top:2px"><div><div class="subtle" style="font-size:10px">Entrate</div><div style="font-size:16px;font-weight:700;color:var(--teal)">${fmtQty(e.tot)}</div></div><div><div class="subtle" style="font-size:10px">Spese</div><div style="font-size:16px;font-weight:700;color:var(--coral)">${fmtQty(sp)}</div></div><div><div class="subtle" style="font-size:10px">Utile</div><div style="font-size:16px;font-weight:700;color:${ut>=0?'var(--cy)':'var(--coral)'}">${ut>=0?'+':''}${fmtQty(ut)}</div></div></div></div>`;}
   const cantieri=visSites().filter(s=>s.status==='aperto').sort((a,b)=>b.created-a.created).slice(0,5);
   const cantieriCard=`<div class="card"><div class="sh"><span class="t">🏗 Cantieri in corso</span><span class="a" onclick="nav('sites')">Cantieri →</span></div>
     ${cantieri.length?cantieri.map(s=>{const hrs=siteHours(s);const pct=s.estHours?Math.min(100,Math.round(hrs/s.estHours*100)):null;return`<div class="item" onclick="openSite('${s.id}')"><div class="bd"><div class="ti">${esc(s.name)}</div><div class="su">${esc(cName(s.clientId)||s.clientRaw||'—')}${s.employees.length?' · 👷 '+s.employees.map(eName).filter(Boolean).join(', '):''}</div>${s.estHours?`<div class="ck-bar" style="margin:6px 0 3px;max-width:220px"><i style="width:${pct}%;${pct>=100?'background:var(--amber)':''}"></i></div>`:''}<div class="mt">${hrs}h${s.estHours?' / '+s.estHours+'h':''}${pct!=null?' · '+pct+'%':''}</div></div></div>`;}).join(''):'<div class="empty"><div class="big">🏗</div>Nessun cantiere in corso.</div>'}
@@ -1016,13 +1027,13 @@ function renderHub(){
   </div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px">
     <div class="stat" style="text-align:center;padding:10px 4px"><div style="font-size:20px;font-weight:700;color:var(--cy)">${todayEv.length}</div><div class="subtle" style="font-size:10px">Oggi</div></div>
-    <div class="stat" style="text-align:center;padding:10px 4px;${late.length?'border-color:rgba(255,92,122,.35)':''}"><div style="font-size:20px;font-weight:700;color:var(--coral)">${late.length}</div><div class="subtle" style="font-size:10px">In ritardo</div></div>
+    <div class="stat" style="text-align:center;padding:10px 4px;${late.length?'border-color:rgba(214,69,40,.35)':''}"><div style="font-size:20px;font-weight:700;color:var(--coral)">${late.length}</div><div class="subtle" style="font-size:10px">In ritardo</div></div>
     <div class="stat" style="text-align:center;padding:10px 4px"><div style="font-size:20px;font-weight:700;color:var(--amber)">${openMan}</div><div class="subtle" style="font-size:10px">Manut.</div></div>
     <div class="stat" style="text-align:center;padding:10px 4px"><div style="font-size:20px;font-weight:700;color:var(--fire)">${openPel}</div><div class="subtle" style="font-size:10px">Pellet</div></div>
   </div>
   ${contiCard}
   ${cantieriCard}
-  ${late.length?`<div class="card" style="border-color:rgba(255,92,122,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
+  ${late.length?`<div class="card" style="border-color:rgba(214,69,40,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
   <div class="card hl"><div class="sh"><span class="t">Oggi</span><span class="a" onclick="nav('cal')">Calendario →</span></div>
     ${todayEv.length?todayEv.map(evRow).join(''):'<div class="empty"><div class="big">🌊</div>Niente in programma oggi.</div>'}
   </div>
@@ -1201,7 +1212,7 @@ function renderAgenda(){
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Calendario</div>
   <div class="tabs"><div class="tb" onclick="calMode='mese';render()">Mese</div><div class="tb on">Agenda</div></div>
-  ${late.length?`<div class="card" style="border-color:rgba(255,92,122,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
+  ${late.length?`<div class="card" style="border-color:rgba(214,69,40,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
   ${daysHtml||'<div class="card"><div class="empty"><div class="big">🌊</div>Prossime 2 settimane libere.</div></div>'}`;
 }
 function calToday(){calCur=new Date();calSel=todayIso();render();}
@@ -1234,7 +1245,7 @@ function renderNotes(){
   notes.sort((a,b)=>(b.pinned-a.pinned)||(b.created-a.created));
   const gName=id=>{const g=byId(S.noteGroups,id);return g?g.name:''};
   const archN=S.notes.filter(n=>n.archived).length;
-  const noteCard=n=>{const col=n.pinned?'#FFB547':(n.groupId?avColor(gName(n.groupId)||n.groupId):'#52718A');const meta=[n.groupId?'📁 '+esc(gName(n.groupId)):'',n.clientId?'👤 '+esc(cName(n.clientId)):'',n.date?'📅 '+fmtD(n.date):''].filter(Boolean).join(' · ');return`<div style="background:var(--bg1);border:1px solid var(--line);border-left:3px solid ${col};border-radius:12px;padding:10px 11px;cursor:pointer;position:relative" onclick="openNote('${n.id}')"><div style="font-size:12.5px;color:var(--t1);line-height:1.4">${n.pinned?'📌 ':''}${esc(n.text)}</div>${meta?`<div style="font-size:9.5px;color:var(--t2);margin-top:7px">${meta}</div>`:''}${noteGroupSel!=='arch'?`<span onclick="event.stopPropagation();var nn=byId(S.notes,'${n.id}');nn.archived=true;save();render();toast('🗄 Archiviata')" style="position:absolute;top:6px;right:9px;font-size:11px;color:var(--t3)">🗄</span>`:''}</div>`;};
+  const noteCard=n=>{const col=n.pinned?'#C77F12':(n.groupId?avColor(gName(n.groupId)||n.groupId):'#8A8170');const meta=[n.groupId?'📁 '+esc(gName(n.groupId)):'',n.clientId?'👤 '+esc(cName(n.clientId)):'',n.date?'📅 '+fmtD(n.date):''].filter(Boolean).join(' · ');return`<div style="background:var(--bg1);border:1px solid var(--line);border-left:3px solid ${col};border-radius:12px;padding:10px 11px;cursor:pointer;position:relative" onclick="openNote('${n.id}')"><div style="font-size:12.5px;color:var(--t1);line-height:1.4">${n.pinned?'📌 ':''}${esc(n.text)}</div>${meta?`<div style="font-size:9.5px;color:var(--t2);margin-top:7px">${meta}</div>`:''}${noteGroupSel!=='arch'?`<span onclick="event.stopPropagation();var nn=byId(S.notes,'${n.id}');nn.archived=true;save();render();toast('🗄 Archiviata')" style="position:absolute;top:6px;right:9px;font-size:11px;color:var(--t3)">🗄</span>`:''}</div>`;};
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Note & Appuntamenti</div>
   <div class="tabs">
@@ -1249,9 +1260,9 @@ function renderNotes(){
   </div>`:''}
   ${notesTab==='app'
     ?`<div class="card">`+(apps.length?apps.map(a=>`<div class="item" onclick="openApp('${a.id}')">
-        <span class="led" style="background:${a.done?'var(--t3)':a.date<t?'#FF5C7A':'#00D4FF'}"></span>
+        <span class="led" style="background:${a.done?'var(--t3)':a.date<t?'#D64528':'#5BA02C'}"></span>
         <div class="bd"><div class="ti" style="${a.done?'text-decoration:line-through;color:var(--t3)':''}">${esc(a.title)}</div>
-        <div class="su">${esc(cName(a.clientId)||a.clientRaw||'')}${a.employeeId?' · 👷 '+esc(eName(a.employeeId)):''}</div></div>
+        <div class="su">${esc(cName(a.clientId)||a.clientRaw||'')}${empNames(a)?' · 👷 '+esc(empNames(a)):''}</div></div>
         <div class="right"><div class="d1">${a.time||''}</div><div class="d2">${fmtD(a.date)}</div></div></div>`).join('')
       :'<div class="empty"><div class="big">📅</div>Nessun appuntamento.<br>Scrivilo nell\'Hub o premi +.</div>')+`</div>`
     :(notes.length
@@ -1293,9 +1304,10 @@ function newNote(){
   <div class="fld"><label>Gruppo</label><select id="nn-g">${groupOpts(noteGroupSel!=='all'&&noteGroupSel!=='arch'?noteGroupSel:null)}</select></div>
   <div class="frow"><div class="fld"><label>Data (va a calendario)</label><input id="nn-d" type="date"></div>
   <div class="fld"><label>Cliente</label><select id="nn-c"><option value="">—</option>${cOpt('')}</select></div></div>
+  <div class="fld"><label>Assegna a (uno o più, facoltativo)</label>${empSeg('nn-e',[])}</div>
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveNewNote()">Salva</button></div>`);
 }
-function saveNewNote(){const t=$('#nn-t').value.trim();if(!t)return;S.notes.unshift({id:uid(),text:t,clientId:$('#nn-c').value||null,groupId:$('#nn-g').value||null,date:$('#nn-d').value||null,pinned:false,archived:false,via:'manuale',created:Date.now()});save();closeSheet();render();toast('📝 Nota salvata');}
+function saveNewNote(){const t=$('#nn-t').value.trim();if(!t)return;const employees=empSegRead('nn-e');S.notes.unshift({id:uid(),text:t,clientId:$('#nn-c').value||null,groupId:$('#nn-g').value||null,employees,date:$('#nn-d').value||null,pinned:false,archived:false,via:'manuale',created:Date.now()});if(employees.length)pushNotify(employees,'📝 Nota per te',t.slice(0,90));save();closeSheet();render();toast('📝 Nota salvata');}
 function openNote(id){
   const n=byId(S.notes,id);if(!n)return;
   openSheet(`<h3>Nota <span class="x" onclick="closeSheet()">✕</span></h3>
@@ -1303,13 +1315,14 @@ function openNote(id){
   <div class="fld"><label>Gruppo</label><select id="en-g">${groupOpts(n.groupId)}</select></div>
   <div class="frow"><div class="fld"><label>Data (va a calendario)</label><input id="en-d" type="date" value="${n.date||''}"></div>
   <div class="fld"><label>Cliente</label><select id="en-c"><option value="">—</option>${cOpt(n.clientId)}</select></div></div>
+  <div class="fld"><label>Assegna a (uno o più, facoltativo)</label>${empSeg('en-e',empIdsOf(n))}</div>
   <div class="actions">
     <button class="btn danger" onclick="delItem('notes','${id}')">Elimina</button>
     <button class="btn" onclick="const n=byId(S.notes,'${id}');n.archived=!n.archived;save();closeSheet();render();toast(n.archived?'🗄 Archiviata':'Ripristinata')">${n.archived?'↩ Ripristina':'🗄 Archivia'}</button>
     <button class="btn" onclick="togglePin('${id}')">${n.pinned?'Stacca':'📌 Fissa'}</button>
     <button class="btn pri" onclick="saveNote('${id}')">Salva</button></div>`);
 }
-function saveNote(id){const n=byId(S.notes,id);n.text=$('#en-t').value.trim()||n.text;n.date=$('#en-d').value||null;n.clientId=$('#en-c').value||null;n.groupId=$('#en-g').value||null;save();closeSheet();render();toast('Salvato');}
+function saveNote(id){const n=byId(S.notes,id);const prevEmps=empIdsOf(n);n.text=$('#en-t').value.trim()||n.text;n.date=$('#en-d').value||null;n.clientId=$('#en-c').value||null;n.groupId=$('#en-g').value||null;n.employees=empSegRead('en-e');const added=n.employees.filter(e=>!prevEmps.includes(e));if(added.length)pushNotify(added,'📝 Nota per te',(n.text||'').slice(0,90));save();closeSheet();render();toast('Salvato');}
 function togglePin(id){const n=byId(S.notes,id);n.pinned=!n.pinned;save();closeSheet();render();}
 function delItem(coll,id){if(!confirm('Eliminare definitivamente?'))return;S[coll]=S[coll].filter(x=>x.id!==id);save();closeSheet();render();toast('Eliminato');}
 
@@ -1319,10 +1332,10 @@ let notifTab='inbox';
 function myWork(){
   if(!S.session)return{man:[],app:[],sit:[],pel:[],total:0};
   const id=S.session.empId;
-  const man=S.maintenances.filter(m=>m.employeeId===id&&m.status!=='fatta');
-  const app=S.appointments.filter(a=>a.employeeId===id&&!a.done);
+  const man=S.maintenances.filter(m=>empIdsOf(m).includes(id)&&m.status!=='fatta');
+  const app=S.appointments.filter(a=>empIdsOf(a).includes(id)&&!a.done);
   const sit=S.sites.filter(s=>(s.employees||[]).includes(id)&&s.status==='aperto');
-  const pel=S.pellet.filter(p=>p.employeeId===id&&p.status!=='consegnato');
+  const pel=S.pellet.filter(p=>empIdsOf(p).includes(id)&&p.status!=='consegnato');
   return{man,app,sit,pel,total:man.length+app.length+sit.length+pel.length};
 }
 function notifCount(){return myWork().total;}
@@ -1341,13 +1354,13 @@ function renderInbox(w){
   const t=todayIso();const blocks=[];
   const nLate=[...w.man,...w.pel].filter(x=>x.date&&x.date<t).length;
   const m0=me();const hi=m0?esc(m0.name.split(' ')[0]):'';
-  const greet=`<div class="card" style="text-align:center;padding:11px;border-color:rgba(0,212,255,.2)"><span style="font-size:12.5px">Ciao ${hi} 👋 — hai <b style="color:var(--cy)">${w.total} cos${w.total===1?'a':'e'}</b> da fare${nLate?`, <b style="color:var(--coral)">${nLate} in ritardo</b>`:''}</span></div>`;
+  const greet=`<div class="card" style="text-align:center;padding:11px;border-color:rgba(111,178,58,.2)"><span style="font-size:12.5px">Ciao ${hi} 👋 — hai <b style="color:var(--cy)">${w.total} cos${w.total===1?'a':'e'}</b> da fare${nLate?`, <b style="color:var(--coral)">${nLate} in ritardo</b>`:''}</span></div>`;
   if(w.man.length){
     blocks.push(`<div class="grp">🔧 MANUTENZIONI (${w.man.length})</div>`+w.man.map(m=>{
-      const who=cName(m.clientId)||m.clientRaw||'';const late=m.date&&m.date<t;const col=late?'#FF5C7A':'#00D4FF';
+      const who=cName(m.clientId)||m.clientRaw||'';const late=m.date&&m.date<t;const col=late?'#D64528':'#5BA02C';
       return`<div class="frw" style="border-left-color:${col}" onclick="openMan('${m.id}')">
       <div class="bd"><div class="ti">${who?`<b>${esc(who)}</b> — `:''}${esc(m.title)}</div>
-      <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+      <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${late?' · <span style="color:#D64528">in ritardo</span>':''}</div></div>
       <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
         <button class="qbtn ghost" onclick="event.stopPropagation();startBollettino('${m.id}')">✍ Bollett.</button>
         <button class="qbtn" onclick="event.stopPropagation();markManDone('${m.id}')">✓ Fatta</button></div></div>`;
@@ -1356,7 +1369,7 @@ function renderInbox(w){
   if(w.app.length){
     blocks.push(`<div class="grp">📅 APPUNTAMENTI (${w.app.length})</div>`+w.app.map(a=>{
       const who=cName(a.clientId)||a.clientRaw||'';
-      return`<div class="frw" style="border-left-color:#00D4FF" onclick="openApp('${a.id}')">
+      return`<div class="frw" style="border-left-color:#5BA02C" onclick="openApp('${a.id}')">
       <div class="bd"><div class="ti">${esc(a.title)}</div>
       <div class="su">${who?esc(who)+' · ':''}${a.date?'📅 '+fmtD(a.date)+(a.time?' · '+a.time:''):'senza data'}</div></div>
       <button class="qbtn" onclick="event.stopPropagation();markAppDone('${a.id}')">✓ Fatto</button></div>`;
@@ -1372,11 +1385,11 @@ function renderInbox(w){
   }
   if(w.pel&&w.pel.length){
     blocks.push(`<div class="grp">🪵 PELLET (${w.pel.length})</div>`+w.pel.map(p=>{
-      const who=cName(p.clientId)||p.clientRaw||'';const late=p.date&&p.date<t;const col=late?'#FF5C7A':'#97C459';
+      const who=cName(p.clientId)||p.clientRaw||'';const late=p.date&&p.date<t;const col=late?'#D64528':'#5E9E2E';
       return`<div class="frw" style="border-left-color:${col}" onclick="openPel('${p.id}')">
-      <div class="avat" style="width:34px;height:34px;background:#97C45922;border:1px solid #97C45955;font-size:15px;font-weight:400">🪵</div>
+      <div class="avat" style="width:34px;height:34px;background:#5E9E2E22;border:1px solid #5E9E2E55;font-size:15px;font-weight:400">🪵</div>
       <div class="bd"><div class="ti">${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${who?` — <b>${esc(who)}</b>`:''}</div>
-      <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+      <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${late?' · <span style="color:#D64528">in ritardo</span>':''}</div></div>
       <button class="qbtn" onclick="event.stopPropagation();markPelDone('${p.id}')">✓ Consegnata</button></div>`;
     }).join(''));
   }
@@ -1389,9 +1402,8 @@ function openApp(id){
   if(!a)return;
   openSheet(`<h3>${id?'Appuntamento':'Nuovo appuntamento'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Titolo</label><input id="ap-t" value="${esc(a.title)}" placeholder="es. Sopralluogo Via Roma"></div>
-  <div class="frow">
   <div class="fld"><label>Cliente</label><select id="ap-c"><option value="">${(a.clientRaw&&!a.clientId)?'🆕 '+esc(a.clientRaw)+' (nuovo)':'—'}</option>${cOpt(a.clientId)}</select></div>
-  <div class="fld"><label>Assegnato a</label><select id="ap-e"><option value="">—</option>${S.employees.map(e=>`<option value="${e.id}" ${a.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('ap-e',empIdsOf(a))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="ap-d" type="date" value="${a.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="ap-h" type="time" value="${a.time||''}"></div></div>
   ${dateChips('ap-d')}
@@ -1401,11 +1413,12 @@ function openApp(id){
     <button class="btn pri" onclick="saveApp('${id||''}')">Salva</button></div>`);
 }
 function saveApp(id){
-  const data={title:$('#ap-t').value.trim(),clientId:$('#ap-c').value||null,employeeId:$('#ap-e').value||null,date:$('#ap-d').value||null,time:$('#ap-h').value||null,done:$('#ap-s .sg.on')?.dataset.d==='1'};
+  const data={title:$('#ap-t').value.trim(),clientId:$('#ap-c').value||null,employees:empSegRead('ap-e'),date:$('#ap-d').value||null,time:$('#ap-h').value||null,done:$('#ap-s .sg.on')?.dataset.d==='1'};
   if(!data.title){toast('Manca il titolo');return;}
-  const oldA=id?byId(S.appointments,id):null;const prevEmp=oldA?oldA.employeeId:null;
+  const oldA=id?byId(S.appointments,id):null;const prevEmps=oldA?empIdsOf(oldA):[];
   if(id){Object.assign(oldA,data);}else{S.appointments.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
-  if(data.employeeId&&data.employeeId!==prevEmp&&!data.done)pushNotify([data.employeeId],'📅 Appuntamento assegnato',`${data.title}${data.date?' · '+fmtD(data.date):''}${data.time?' '+data.time:''}`);
+  const added=data.employees.filter(e=>!prevEmps.includes(e));
+  if(added.length&&!data.done)pushNotify(added,'📅 Appuntamento assegnato',`${data.title}${data.date?' · '+fmtD(data.date):''}${data.time?' '+data.time:''}`);
   save();closeSheet();render();toast('📅 Salvato');
 }
 function delApp(id){if(!confirm('Eliminare questo appuntamento?'))return;S.appointments=S.appointments.filter(x=>x.id!==id);save();closeSheet();render();toast('🗑 Eliminato');}
@@ -1458,13 +1471,13 @@ function getCall(clientId){
 function manRow(m){
   const t=todayIso();
   const late=m.date&&m.date<t&&m.status!=='fatta';
-  const col=late?'#FF5C7A':(m.status==='fatta'?'#00E5C0':m.status==='programmata'?'#00D4FF':'#FFB547');
+  const col=late?'#D64528':(m.status==='fatta'?'#2E9E5E':m.status==='programmata'?'#5BA02C':'#C77F12');
   const who=cName(m.clientId)||m.clientRaw||'';
   const ic=MAINT_ICONS[m.type]||'🔧';
   return`<div class="frw" style="border-left-color:${col}" onclick="openMan('${m.id}')">
     <div class="avat" style="width:34px;height:34px;background:${col}22;border:1px solid ${col}55;font-size:15px;font-weight:400">${ic}</div>
     <div class="bd"><div class="ti">${who?`<b>${esc(who)}</b> — `:''}${esc(m.title)}</div>
-    <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${m.employeeId?' · 👷 '+esc(eName(m.employeeId)):''}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+    <div class="su">${m.date?'📅 '+fmtD(m.date)+(m.time?' · '+m.time:''):'senza data'}${empNames(m)?' · 👷 '+esc(empNames(m)):''}${late?' · <span style="color:#D64528">in ritardo</span>':''}</div></div>
     ${m.status!=='fatta'?`<button class="qbtn" onclick="event.stopPropagation();startBollettino('${m.id}')">▶ Avvia</button>`:(m.report?`<button class="qbtn ghost" onclick="event.stopPropagation();viewBollettino('${m.id}')">📄</button>`:'')}
   </div>`;
 }
@@ -1590,9 +1603,8 @@ function openMan(id){
   const m=id?byId(S.maintenances,id):{title:'',clientId:null,employeeId:null,date:'',time:'',status:'da_fare',notes:'',recur:0};
   openSheet(`<h3>${id?'Manutenzione':'Nuova manutenzione'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Descrizione</label><input id="mn-t" value="${esc(m.title)}" placeholder="es. Pulizia caldaia pellet"></div>
-  <div class="frow">
   <div class="fld"><label>Cliente</label><select id="mn-c"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${cOpt(m.clientId)}</select></div>
-  <div class="fld"><label>Assegnata a</label><select id="mn-e"><option value="">—</option>${S.employees.map(e=>`<option value="${e.id}" ${m.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('mn-e',empIdsOf(m))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="mn-d" type="date" value="${m.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="mn-h" type="time" value="${m.time||''}"></div></div>
   ${dateChips('mn-d')}
@@ -1601,22 +1613,24 @@ function openMan(id){
   <div class="fld"><label>Stato</label><div class="seg" id="mn-s">${['da_fare','programmata','fatta'].map(s=>`<div class="sg ${m.status===s?'on':''}" data-s="${s}" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${s.replace('_',' ')}</div>`).join('')}</div></div>
   <div class="fld"><label>Note</label><textarea id="mn-n">${esc(m.notes||'')}</textarea></div>
   ${id&&m.status!=='fatta'?`<button class="btn pri" style="width:100%;margin-bottom:10px" onclick="startBollettino('${id}')">▶ Avvia intervento (bollettino)</button>`:''}
+  ${id&&typeof macCanCatalog==='function'&&macCanCatalog()?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--cy);color:var(--cy)" onclick="macFromMaint('${id}')">⚙️ Scheda macchina · compila tagliando</button>`:''}
   ${id&&m.report?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--teal);color:var(--teal)" onclick="viewBollettino('${id}')">📄 Vedi bollettino firmato</button>`:''}
   <div class="actions">
     ${id?`<button class="btn danger" onclick="delItem('maintenances','${id}')">Elimina</button>`:''}
     <button class="btn pri" onclick="saveMan('${id||''}')">Salva</button></div>`);
 }
 function saveMan(id){
-  const data={title:$('#mn-t').value.trim(),clientId:$('#mn-c').value||null,employeeId:$('#mn-e').value||null,date:$('#mn-d').value||null,time:$('#mn-h').value||null,status:$('#mn-s .sg.on')?.dataset.s||'da_fare',notes:$('#mn-n').value.trim(),recur:+($('#mn-r')?.value||0),type:$('#mn-tp')?.value||null};
+  const data={title:$('#mn-t').value.trim(),clientId:$('#mn-c').value||null,employees:empSegRead('mn-e'),date:$('#mn-d').value||null,time:$('#mn-h').value||null,status:$('#mn-s .sg.on')?.dataset.s||'da_fare',notes:$('#mn-n').value.trim(),recur:+($('#mn-r')?.value||0),type:$('#mn-tp')?.value||null};
   if(!data.title){toast('Manca la descrizione');return;}
   const old=id?byId(S.maintenances,id):null;
-  const wasFatta=old?old.status==='fatta':false;const prevEmp=old?old.employeeId:null;
+  const wasFatta=old?old.status==='fatta':false;const prevEmps=old?empIdsOf(old):[];
   if(id){Object.assign(old,data);}else{S.maintenances.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
-  if(data.employeeId&&data.employeeId!==prevEmp&&data.status!=='fatta')pushNotify([data.employeeId],'🔧 Manutenzione assegnata',`${cName(data.clientId)||(old&&old.clientRaw)||''} — ${data.title}${data.date?' · '+fmtD(data.date):''}${data.time?' '+data.time:''}`);
+  const added=data.employees.filter(e=>!prevEmps.includes(e));
+  if(added.length&&data.status!=='fatta')pushNotify(added,'🔧 Manutenzione assegnata',`${cName(data.clientId)||(old&&old.clientRaw)||''} — ${data.title}${data.date?' · '+fmtD(data.date):''}${data.time?' '+data.time:''}`);
   let extra='';
   if(data.status==='fatta'&&!wasFatta&&data.recur>0){
     const nextDate=addMonthsIso(data.date||todayIso(),data.recur);
-    S.maintenances.unshift({id:uid(),title:data.title,clientId:data.clientId,clientRaw:old?old.clientRaw:null,employeeId:data.employeeId,date:nextDate,time:data.time,status:'programmata',notes:'',recur:data.recur,type:data.type,via:'ricorrenza',created:Date.now()});
+    S.maintenances.unshift({id:uid(),title:data.title,clientId:data.clientId,clientRaw:old?old.clientRaw:null,employees:data.employees,date:nextDate,time:data.time,status:'programmata',notes:'',recur:data.recur,type:data.type,via:'ricorrenza',created:Date.now()});
     extra=' · 🔁 prossima creata per '+fmtD(nextDate);
   }
   save();closeSheet();render();toast('🔧 Salvato'+extra);
@@ -1662,13 +1676,13 @@ function barChart(data,color,unitLbl){
   const bw=20,gap=8,W=14+data.length*(bw+gap),H=130,base=96;
   return`<div style="overflow-x:auto;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 4px">
   <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="6" y1="${base}" x2="${W-6}" y2="${base}" stroke="rgba(0,212,255,.15)"/>
+    <line x1="6" y1="${base}" x2="${W-6}" y2="${base}" stroke="rgba(111,178,58,.15)"/>
     ${data.map((d,i)=>{
       const h=d.val?Math.max(3,Math.round(d.val/max*72)):0;
       const x=10+i*(bw+gap);
       return`<rect x="${x}" y="${base-h}" width="${bw}" height="${Math.max(h,1)}" rx="4" fill="${d.val?color:'rgba(82,113,138,.25)'}"/>
-      ${d.val?`<text x="${x+bw/2}" y="${base-h-5}" text-anchor="middle" fill="#EAF6FF" font-size="9" font-family="JetBrains Mono">${fmtQty(d.val)}</text>`:''}
-      <text x="${x+bw/2}" y="${base+14}" text-anchor="middle" fill="#52718A" font-size="8.5" font-family="JetBrains Mono">${d.label}</text>`;
+      ${d.val?`<text x="${x+bw/2}" y="${base-h-5}" text-anchor="middle" fill="#2B2A24" font-size="9" font-family="JetBrains Mono">${fmtQty(d.val)}</text>`:''}
+      <text x="${x+bw/2}" y="${base+14}" text-anchor="middle" fill="#8A8170" font-size="8.5" font-family="JetBrains Mono">${d.label}</text>`;
     }).join('')}
   </svg></div>`;
 }
@@ -1687,7 +1701,7 @@ function renderPellet(){
     <div class="tb ${pelView==='sfuso'?'on':''}" onclick="pelView='sfuso';render()">🪵 Sfuso</div>
     <div class="tb ${pelView==='sacchi'?'on':''}" onclick="pelView='sacchi';render()">📦 Sacchi</div>
   </div>
-  ${pelKind==='sfuso'&&fc.length?`<div class="card" style="${alerts.length?'border-color:rgba(255,181,71,.45)':''}">
+  ${pelKind==='sfuso'&&fc.length?`<div class="card" style="${alerts.length?'border-color:rgba(199,127,18,.45)':''}">
     <div class="sh"><span class="t" style="color:var(--amber)">⏳ Previsioni rifornimento</span></div>
     ${fc.map(f=>{
       const urgent=f.days!=null&&f.days<=0;const soon=f.days!=null&&f.days<=30;
@@ -1709,12 +1723,12 @@ function renderPellet(){
 }
 const pelRow=p=>{
   const late=p.date&&p.date<todayIso()&&p.status!=='consegnato';const done=p.status==='consegnato';
-  const col=done?'#00E5C0':(late?'#FF5C7A':'#97C459');
+  const col=done?'#2E9E5E':(late?'#D64528':'#5E9E2E');
   const who=cName(p.clientId)||p.clientRaw||'';
   return`<div class="frw" style="border-left-color:${col}" onclick="openPel('${p.id}')">
     <div class="avat" style="width:34px;height:34px;background:${col}22;border:1px solid ${col}55;font-size:15px;font-weight:400">${p.kind==='sfuso'?'🪵':'📦'}</div>
     <div class="bd"><div class="ti">${p.qty?fmtQty(p.qty)+' '+esc(p.unit||'sacchi'):'Consegna'}${p.price?` · <span style="color:var(--teal)">CHF ${fmtQty(p.price)}</span>`:''}${who?` — <b>${esc(who)}</b>`:''}</div>
-    <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${p.employeeId?' · 👷 '+esc(eName(p.employeeId)):''}${p.signature?' · ✍':''}${late?' · <span style="color:#FF5C7A">in ritardo</span>':''}</div></div>
+    <div class="su">${p.date?'📅 '+fmtD(p.date)+(p.time?' · '+p.time:''):'senza data'}${empNames(p)?' · 👷 '+esc(empNames(p)):''}${p.signature?' · ✍':''}${late?' · <span style="color:#D64528">in ritardo</span>':''}</div></div>
     ${done?'':`<button class="qbtn" onclick="event.stopPropagation();startBolla('${p.id}')">✍ Bolla</button>`}
   </div>`;};
 function renderPelDash(){
@@ -1737,21 +1751,21 @@ function renderPelDash(){
     <div class="tb" onclick="pelView='sacchi';render()">📦 Sacchi</div>
   </div>
   <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
-    <div class="kpi"><div class="n" style="color:#97C459;font-size:16px">${fmtQty(totT)}t</div><div class="l">Sfuso 12m</div></div>
+    <div class="kpi"><div class="n" style="color:#5E9E2E;font-size:16px">${fmtQty(totT)}t</div><div class="l">Sfuso 12m</div></div>
     <div class="kpi"><div class="n" style="color:var(--amber);font-size:16px">${totB}</div><div class="l">Sacchi 12m</div></div>
     <div class="kpi"><div class="n" style="font-size:16px">${openN}</div><div class="l">Da cons.</div></div>
     ${rev?`<div class="kpi"><div class="n" style="color:var(--teal);font-size:16px">${fmtQty(rev)}</div><div class="l">CHF 12m</div></div>`:`<div class="kpi"><div class="n" style="color:${alerts.length?'var(--amber)':'var(--t2)'};font-size:16px">${alerts.length}</div><div class="l">Rifornimenti</div></div>`}
   </div>
-  ${alerts.length?`<div class="card" style="border-color:rgba(255,181,71,.45)"><div class="sh"><span class="t" style="color:var(--amber)">⏳ Da pianificare</span><span class="a" onclick="pelView='sfuso';render()">Sfuso →</span></div>
+  ${alerts.length?`<div class="card" style="border-color:rgba(199,127,18,.45)"><div class="sh"><span class="t" style="color:var(--amber)">⏳ Da pianificare</span><span class="a" onclick="pelView='sfuso';render()">Sfuso →</span></div>
     ${alerts.map(f=>`<div class="item" onclick="openPelClient('${f.clientId}')"><span class="led" style="background:${f.days<=0?'var(--coral)':'var(--amber)'}"></span>
     <div class="bd"><div class="ti">${esc(cName(f.clientId))}</div><div class="su">~${fmtQty(f.ratePerDay*30)} t/mese</div></div>
     <div class="right"><div class="d1" style="color:${f.days<=0?'var(--coral)':'var(--amber)'}">${f.days<=0?'ADESSO':f.days+' gg'}</div><div class="d2">${fmtD(f.nextDate)}</div></div></div>`).join('')}</div>`:''}
   <div class="card"><div class="sh"><span class="t">🪵 Sfuso — tonnellate al mese</span></div>
-    ${barChart(mT,'#FF8A3D','t')}
+    ${barChart(mT,'#E2722E','t')}
     ${topT&&topT.val?`<div class="subtle" style="margin-top:8px">Mese più intenso: <b style="color:var(--t1)">${topT.label}</b> con ${fmtQty(topT.val)} t</div>`:'<div class="subtle" style="margin-top:8px">Nessuna consegna sfuso registrata negli ultimi 12 mesi.</div>'}
   </div>
   <div class="card"><div class="sh"><span class="t">📦 Sacchi al mese</span></div>
-    ${barChart(mB,'#FFB547','sacchi')}
+    ${barChart(mB,'#C77F12','sacchi')}
     ${topB&&topB.val?`<div class="subtle" style="margin-top:8px">Mese più intenso: <b style="color:var(--t1)">${topB.label}</b> con ${topB.val} sacchi</div>`:'<div class="subtle" style="margin-top:8px">Nessuna consegna in sacchi registrata negli ultimi 12 mesi.</div>'}
   </div>
   <div class="card"><div class="sh"><span class="t">Tutte le consegne</span></div>
@@ -1771,9 +1785,9 @@ function openPelClient(cid){
     const h=Math.max(4,Math.round((p.qty/maxQ)*100));
     const x=14+i*(bw+10);
     bars+=`<rect x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="5" fill="url(#pelg)"/>
-    <text x="${x+bw/2}" y="${base-h-7}" text-anchor="middle" fill="#EAF6FF" font-size="11" font-family="JetBrains Mono">${fmtQty(p.qty)}</text>
-    <text x="${x+bw/2}" y="${base+16}" text-anchor="middle" fill="#52718A" font-size="9" font-family="JetBrains Mono">${p.date.slice(8,10)}.${p.date.slice(5,7)}</text>
-    <text x="${x+bw/2}" y="${base+27}" text-anchor="middle" fill="#52718A" font-size="8" font-family="JetBrains Mono">${p.date.slice(2,4)}</text>`;
+    <text x="${x+bw/2}" y="${base-h-7}" text-anchor="middle" fill="#2B2A24" font-size="11" font-family="JetBrains Mono">${fmtQty(p.qty)}</text>
+    <text x="${x+bw/2}" y="${base+16}" text-anchor="middle" fill="#8A8170" font-size="9" font-family="JetBrains Mono">${p.date.slice(8,10)}.${p.date.slice(5,7)}</text>
+    <text x="${x+bw/2}" y="${base+27}" text-anchor="middle" fill="#8A8170" font-size="8" font-family="JetBrains Mono">${p.date.slice(2,4)}</text>`;
   });
   openSheet(`<h3>🪵 ${esc(cName(cid))} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
@@ -1784,8 +1798,8 @@ function openPelClient(cid){
   <div class="fld"><label>Consegne sfuso (tonnellate)</label>
     <div style="overflow-x:auto;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 4px">
     <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <defs><linearGradient id="pelg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#B35415"/><stop offset="1" stop-color="#FF8A3D"/></linearGradient></defs>
-      <line x1="8" y1="${base}" x2="${W-8}" y2="${base}" stroke="rgba(0,212,255,.18)"/>
+      <defs><linearGradient id="pelg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#B35415"/><stop offset="1" stop-color="#E2722E"/></linearGradient></defs>
+      <line x1="8" y1="${base}" x2="${W-8}" y2="${base}" stroke="rgba(111,178,58,.18)"/>
       ${bars}
     </svg></div>
   </div>
@@ -1812,7 +1826,7 @@ function openPel(id,preset){
   <div class="fld"><label>Quantità</label><input id="pl-q" type="number" inputmode="decimal" step="any" value="${p.qty||''}"></div>
   <div class="fld"><label>Unità</label><select id="pl-u">${(p.kind==='sfuso'?['t']:['sacchi','kg']).map(u=>`<option ${p.unit===u?'selected':''}>${u}</option>`).join('')}</select></div></div>
   <div class="fld"><label>Cliente</label><select id="pl-c"><option value="">—</option>${cOpt(p.clientId)}</select></div>
-  <div class="fld"><label>Assegna a (dipendente)</label><select id="pl-e"><option value="">— nessuno</option>${S.employees.map(e=>`<option value="${e.id}" ${p.employeeId===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div>
+  <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('pl-e',empIdsOf(p))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="pl-d" type="date" value="${p.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="pl-h" type="time" value="${p.time||''}"></div></div>
   ${dateChips('pl-d')}
@@ -1838,11 +1852,12 @@ const autoPrice=p=>{
 };
 function savePel(id){
   const kind=$('#pl-k .sg.on')?.dataset.k||'sacchi';
-  const data={qty:parseFloat($('#pl-q').value)||null,unit:$('#pl-u').value,kind,clientId:$('#pl-c').value||null,employeeId:$('#pl-e').value||null,date:$('#pl-d').value||null,time:$('#pl-h').value||null,notes:$('#pl-n').value.trim()};
+  const data={qty:parseFloat($('#pl-q').value)||null,unit:$('#pl-u').value,kind,clientId:$('#pl-c').value||null,employees:empSegRead('pl-e'),date:$('#pl-d').value||null,time:$('#pl-h').value||null,notes:$('#pl-n').value.trim()};
   data.price=parseFloat($('#pl-pr').value)||autoPrice({...data})||null;
-  const oldP=id?byId(S.pellet,id):null;const prevEmp=oldP?oldP.employeeId:null;
+  const oldP=id?byId(S.pellet,id):null;const prevEmps=oldP?empIdsOf(oldP):[];
   if(id){Object.assign(oldP,data);}else{S.pellet.unshift({id:uid(),status:'da_consegnare',clientRaw:null,via:'manuale',created:Date.now(),...data});}
-  if(data.employeeId&&data.employeeId!==prevEmp&&(oldP?oldP.status:'da_consegnare')!=='consegnato')pushNotify([data.employeeId],'🪵 Consegna pellet assegnata',`${data.qty?fmtQty(data.qty)+' '+(data.unit||'sacchi'):'Consegna'} a ${cName(data.clientId)||(oldP&&oldP.clientRaw)||''}${data.date?' · '+fmtD(data.date):''}`);
+  const added=data.employees.filter(e=>!prevEmps.includes(e));
+  if(added.length&&(oldP?oldP.status:'da_consegnare')!=='consegnato')pushNotify(added,'🪵 Consegna pellet assegnata',`${data.qty?fmtQty(data.qty)+' '+(data.unit||'sacchi'):'Consegna'} a ${cName(data.clientId)||(oldP&&oldP.clientRaw)||''}${data.date?' · '+fmtD(data.date):''}`);
   save();closeSheet();render();toast('🪵 Salvato');
 }
 function togglePel(id){const p=byId(S.pellet,id);p.status=p.status==='consegnato'?'da_consegnare':'consegnato';save();closeSheet();render();}
@@ -1858,7 +1873,7 @@ function renderSites(){
     const pct=s.estHours?Math.min(100,Math.round(hrs/s.estHours*100)):null;
     const dd=s.dueDate?relDays(s.dueDate):null;
     const ddCol=dd==null?'var(--t3)':dd<0?'var(--coral)':dd<=7?'var(--amber)':'var(--t3)';
-    const stCol=s.status==='chiuso'?'#52718A':s.status==='da_fatturare'?'#FFB547':'#6FA8FF';
+    const stCol=s.status==='chiuso'?'#8A8170':s.status==='da_fatturare'?'#C77F12':'#A9742F';
     const stLbl=s.status==='chiuso'?'ARCHIVIO':s.status==='da_fatturare'?'DA FATTURARE':'IN CORSO';
     return`<div class="card" style="border-left:3px solid ${stCol};padding:12px;margin-bottom:10px;cursor:pointer" onclick="openSite('${s.id}')">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:3px">
@@ -1932,6 +1947,7 @@ function openSite(id){
     <div class="frow"><div class="fld"><select id="sl-e"><option value="">Chi? —</option>${(s.employees.length?s.employees.map(eid=>byId(S.employees,eid)).filter(Boolean):S.employees).map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div>
     <div class="fld"><button class="btn sm" style="width:100%" onclick="addLog('${id}')">+ Registra oggi</button></div></div>
   </div>
+  <div class="fld"><label>⚙️ Macchine sul cantiere</label><div id="site-machines"><div class="subtle">…</div></div></div>
   <div class="actions" style="flex-wrap:wrap">
     <button class="btn danger" onclick="delSite('${id}')">Elimina</button>
     ${s.status==='previsto'?`<button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="setSiteStatus('${id}','aperto')">▶ Avvia → cantiere attivo</button>`:''}
@@ -1940,6 +1956,7 @@ function openSite(id){
     <button class="btn" style="border-color:var(--teal);color:var(--teal)" onclick="setSiteStatus('${id}','chiuso')">💰 Fatturato → archivio</button>`:''}
     ${s.status==='chiuso'?`<button class="btn" onclick="setSiteStatus('${id}','aperto')">↩ Riapri</button>`:''}
     <button class="btn pri" onclick="editSite('${id}')">Modifica</button></div>`);
+  if(typeof macRenderSiteMachines==='function') macRenderSiteMachines(id,s.clientId||'','site-machines');
 }
 function setSiteStatus(id,st){const s=byId(S.sites,id);s.status=st;if(st==='chiuso'&&!s.closedDate)s.closedDate=todayIso();if(st!=='aperto'&&(st==='da_fatturare'||st==='chiuso'))siteTab=st;save();closeSheet();render();toast(st==='da_fatturare'?'💰 Spostato in Da fatturare':st==='chiuso'?'🗄 Archiviato':'🏗 Riaperto');}
 function addLog(id){const s=byId(S.sites,id);const t=$('#sl-t').value.trim();if(!t){toast('Scrivi cosa è stato fatto');return;}
@@ -2131,7 +2148,7 @@ function contiRiepilogo(mk){
   const emax=Math.max(e.pellet,e.man,e.cant,0.001);
   const ebar=(ic,label,val,col)=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--t2)">${ic} ${label}</span><span style="font-family:var(--mono);color:var(--teal)">CHF ${fmtQty(val)}</span></div><div class="ck-bar" style="height:6px"><i style="width:${Math.round(val/emax*100)}%;background:${col}"></i></div></div>`;
   return`${monthBar(mk)}
-  <div class="card" style="border-color:rgba(0,229,192,.4);background:rgba(0,229,192,.05);text-align:center;padding:14px">
+  <div class="card" style="border-color:rgba(46,158,94,.4);background:rgba(46,158,94,.05);text-align:center;padding:14px">
     <div class="subtle" style="font-size:11px;letter-spacing:.5px">UTILE DI ${monthLabel(mk).toUpperCase()}</div>
     <div style="font-size:30px;font-weight:700;color:${ut>=0?'var(--teal)':'var(--coral)'};margin:3px 0">${ut>=0?'+':''}${fmtQty(ut)}<span style="font-size:14px;color:var(--t3);font-weight:400"> CHF</span></div>
     ${delta!=null?`<div style="font-size:10.5px;color:${delta>=0?'var(--teal)':'var(--coral)'}">${delta>=0?'▲':'▼'} ${Math.abs(delta)}% rispetto a ${MESI[+pmk.split('-')[1]-1]}</div>`:'<div class="subtle" style="font-size:10px">entrate − spese del mese</div>'}
@@ -2142,7 +2159,7 @@ function contiRiepilogo(mk){
   </div>
   ${contiTrend(mk)}
   <div class="card"><div class="sh"><span class="t">📥 Da dove arrivano le entrate</span></div>
-    ${ebar('🪵','Pellet',e.pellet,'#97C459')}
+    ${ebar('🪵','Pellet',e.pellet,'#5E9E2E')}
     ${ebar('🔧','Manutenzioni',e.man,'var(--amber)')}
     ${ebar('🏗','Cantieri',e.cant,'var(--blue)')}
   </div>
@@ -2163,7 +2180,7 @@ function contiSpese(mk){
       <div class="stat"><div class="subtle" style="font-size:11px">Media al mese</div><div style="font-size:18px;font-weight:700;color:var(--amber)">${fmtQty(avg)}</div><div class="subtle" style="font-size:10px">CHF</div></div>
     </div>
     ${addBtn}
-    <div class="card"><div class="sh"><span class="t">📊 Andamento mensile ${yr}</span></div>${barChart(months,'#FF5C7A')}</div>
+    <div class="card"><div class="sh"><span class="t">📊 Andamento mensile ${yr}</span></div>${barChart(months,'#D64528')}</div>
     <div class="card"><div class="sh"><span class="t">🏷 Per categoria</span></div>${catBars(speseCatAnno(yr))}</div>`;
   }
   const list=speseMese(mk).slice().sort((a,b)=>(a.date<b.date?1:-1));const tot=speseTot(mk);
@@ -2230,7 +2247,7 @@ let cliQ='';let cliGroup='all';let cliZone='all';let cliMaint='all';
 const clientGroups=()=>[...new Set(S.clients.map(c=>c.group).filter(Boolean))].sort();
 const clientZones=()=>[...new Set(S.clients.map(c=>c.zone).filter(Boolean))].sort();
 const cInitials=n=>{const p=String(n||'').trim().split(/\s+/);return((((p[0]||'')[0]||'')+((p[1]||'')[0]||'')).toUpperCase())||'?';};
-const AV_COLORS=['#00D4FF','#00E5C0','#FFB547','#FF8A3D','#6FA8FF','#FF5C7A'];
+const AV_COLORS=['#5BA02C','#2E9E5E','#C77F12','#E2722E','#A9742F','#D64528'];
 const avColor=n=>AV_COLORS[Math.abs([...String(n||'')].reduce((h,c)=>(h*31+c.charCodeAt(0))|0,0))%AV_COLORS.length];
 function renderClients(){
   const q=norm(cliQ);
@@ -2257,7 +2274,7 @@ function renderClients(){
   ${list.length?list.map(c=>{
     const nm=S.maintenances.filter(m=>m.clientId===c.id).length;
     const np=S.pellet.filter(p=>p.clientId===c.id).length;
-    const col=c.blocked?'#FF5C7A':avColor(c.name);
+    const col=c.blocked?'#D64528':avColor(c.name);
     const tags=[
       c.plant?c.plant.split(', ').map(x=>(PL[x]||'⚙️')+' '+x).join(' '):'',
       c.pellet==='sfuso'?'🪵 sfuso':c.pellet==='sacchi'?'📦 sacchi':'',
@@ -2267,7 +2284,7 @@ function renderClients(){
     <div style="width:38px;height:38px;border-radius:50%;background:${col}22;color:${col};border:1px solid ${col}55;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${esc(cInitials(c.name))}</div>
     <div class="bd"><div class="ti"${c.blocked?' style="color:var(--coral)"':''}>${esc(c.name)}${c.blocked?' <span class="badge" style="border-color:var(--coral);color:var(--coral)">🚫 BLOCCATO</span>':''}</div>
     <div class="su">${esc([c.group,c.zone,c.phone].filter(Boolean).join(' · '))||'—'}</div>
-    <div class="mt">${tags.map(t=>`<span class="badge" style="border-color:var(--line2);color:var(--t2);margin-right:5px">${esc(t)}</span>`).join('')}${nm?' 🔧'+nm:''}${np?' 🪵'+np:''}</div></div>${c.phone?`<a href="tel:${esc(c.phone)}" onclick="event.stopPropagation()" class="avat" style="width:34px;height:34px;border:1px solid rgba(0,229,192,.35);color:var(--teal);text-decoration:none;font-size:14px;margin-top:2px">📞</a>`:''}</div>`;
+    <div class="mt">${tags.map(t=>`<span class="badge" style="border-color:var(--line2);color:var(--t2);margin-right:5px">${esc(t)}</span>`).join('')}${nm?' 🔧'+nm:''}${np?' 🪵'+np:''}</div></div>${c.phone?`<a href="tel:${esc(c.phone)}" onclick="event.stopPropagation()" class="avat" style="width:34px;height:34px;border:1px solid rgba(46,158,94,.35);color:var(--teal);text-decoration:none;font-size:14px;margin-top:2px">📞</a>`:''}</div>`;
   }).join(''):'<div class="empty"><div class="big">👥</div>Nessun cliente con questi filtri.</div>'}
   </div>
   <button class="fab" onclick="editClient(null)">+</button>`;
@@ -2288,7 +2305,7 @@ function openClient(id){
     c.zone?['Zona',c.zone]:null,
   ].filter(Boolean);
   openSheet(`<h3>${c.blocked?'🚫 ':''}${esc(c.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
-  ${c.blocked?`<div class="card" style="border-color:var(--coral);background:rgba(255,92,122,.08);padding:10px 12px;margin-bottom:10px;color:var(--coral)">🚫 <b>Cliente bloccato.</b> Non puoi assegnargli nuovi lavori finché non lo sblocchi.</div>`:''}
+  ${c.blocked?`<div class="card" style="border-color:var(--coral);background:rgba(214,69,40,.08);padding:10px 12px;margin-bottom:10px;color:var(--coral)">🚫 <b>Cliente bloccato.</b> Non puoi assegnargli nuovi lavori finché non lo sblocchi.</div>`:''}
   <div class="subtle" style="margin-bottom:10px">
     ${c.phone?`📞 <a href="tel:${esc(c.phone)}" style="color:var(--cy)">${esc(c.phone)}</a><br>`:''}
     ${c.address?'📍 '+esc(c.address)+'<br>':''}
@@ -2303,10 +2320,12 @@ function openClient(id){
   ${not.length?`<div class="subtle" style="margin:8px 0 2px;color:var(--teal)">📝 Note (${not.length})</div>${mini(not,n=>`<div class="subtle" style="padding:2px 0 2px 8px">• ${esc(n.text)}</div>`)}`:''}
   ${!man.length&&!pel.length&&!sit.length&&!app.length&&!not.length?'<div class="subtle">Ancora vuoto — si riempirà da solo man mano che registri.</div>':''}
   </div>
+  <div class="fld"><label>⚙️ Macchine installate</label><div id="cli-machines"><div class="subtle">…</div></div></div>
   <div class="actions" style="flex-wrap:wrap">
     <button class="btn danger" onclick="delClient('${id}')">Elimina</button>
     <button class="btn" style="border-color:var(--coral);color:var(--coral)" onclick="toggleBlock('${id}')">${c.blocked?'🔓 Sblocca':'🚫 Blocca'}</button>
     <button class="btn pri" onclick="editClient('${id}')">Modifica</button></div>`);
+  if(typeof macRenderClientMachines==='function') macRenderClientMachines(id,'cli-machines');
 }
 function toggleBlock(id){const c=byId(S.clients,id);if(!c)return;c.blocked=!c.blocked;save();closeSheet();render();toast(c.blocked?'🚫 Cliente bloccato':'🔓 Cliente sbloccato');}
 function editClient(id){
@@ -2374,10 +2393,10 @@ function renderEmps(){
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Personale <span class="subtle">(${S.employees.length})</span></div>
   ${S.employees.map(e=>{
-    const tasks=S.maintenances.filter(m=>m.employeeId===e.id&&m.status!=='fatta').length+S.appointments.filter(a=>a.employeeId===e.id&&!a.done).length;
+    const tasks=S.maintenances.filter(m=>empIdsOf(m).includes(e.id)&&m.status!=='fatta').length+S.appointments.filter(a=>empIdsOf(a).includes(e.id)&&!a.done).length;
     const sites=S.sites.filter(s=>s.status!=='chiuso'&&s.employees.includes(e.id)).length;
     const hrsM=S.sites.reduce((t,s)=>t+s.log.filter(l=>l.empId===e.id&&l.date&&l.date.startsWith(mKey)).reduce((a,l)=>a+(l.hours||0),0),0);
-    const col=e.isOwner?'#00D4FF':e.userId?(e.active?'#00E5C0':'#FF5C7A'):'#FFB547';
+    const col=e.isOwner?'#5BA02C':e.userId?(e.active?'#2E9E5E':'#D64528'):'#C77F12';
     const badge=e.isOwner?'TITOLARE':e.userId?(e.active?'✓ ATTIVO':'⛔ DISATTIVATO'):'🔑 IN ATTESA';
     const pending=!e.isOwner&&!e.userId&&e.inviteCode;
     return`<div class="card" style="padding:11px;margin-bottom:9px;cursor:pointer" onclick="editEmp('${e.id}')">
@@ -2388,7 +2407,7 @@ function renderEmps(){
       </div>
       ${!e.isOwner&&e.perms&&e.perms.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:9px">${e.perms.map(p=>`<span class="badge" style="border-color:var(--line2);color:var(--t2)">${(PI[p]||['','']) [0]} ${(PI[p]||['',p])[1]}</span>`).join('')}</div>`:''}
       ${!e.isOwner?`<div class="mt" style="margin-top:8px">${tasks} incarichi${sites?' · '+sites+' cantieri':''}${hrsM?' · ⏱ '+fmtQty(hrsM)+'h mese':''}</div>`:''}
-      ${pending?`<div onclick="event.stopPropagation();if(navigator.clipboard)navigator.clipboard.writeText('${e.inviteCode}');toast('📋 Codice copiato')" style="display:flex;align-items:center;gap:8px;margin-top:9px;background:var(--bg2);border:1px dashed rgba(255,181,71,.4);border-radius:10px;padding:8px 11px"><span style="font-size:9px;color:var(--t2)">CODICE INVITO</span><span style="font-family:var(--mono);font-size:13px;color:var(--amber);letter-spacing:1px">${esc(e.inviteCode)}</span><span style="margin-left:auto;font-size:10px;color:var(--cy)">📋 Copia</span></div>`:''}
+      ${pending?`<div onclick="event.stopPropagation();if(navigator.clipboard)navigator.clipboard.writeText('${e.inviteCode}');toast('📋 Codice copiato')" style="display:flex;align-items:center;gap:8px;margin-top:9px;background:var(--bg2);border:1px dashed rgba(199,127,18,.4);border-radius:10px;padding:8px 11px"><span style="font-size:9px;color:var(--t2)">CODICE INVITO</span><span style="font-family:var(--mono);font-size:13px;color:var(--amber);letter-spacing:1px">${esc(e.inviteCode)}</span><span style="margin-left:auto;font-size:10px;color:var(--cy)">📋 Copia</span></div>`:''}
     </div>`;
   }).join('')}
   <button class="fab" onclick="editEmp(null)">+</button>`;
@@ -2397,11 +2416,11 @@ function editEmp(id){
   const e=id?byId(S.employees,id):{name:'',role:'',phone:'',perms:['cal','man','chat'],isOwner:false};
   const isMe=!!(id&&S.session&&id===S.session.empId);
   const tasks=id?[
-    ...S.maintenances.filter(m=>m.employeeId===id&&m.status!=='fatta').map(m=>'🔧 '+(cName(m.clientId)||'')+' '+m.title+(m.date?' — '+fmtD(m.date):'')),
-    ...S.appointments.filter(a=>a.employeeId===id&&!a.done).map(a=>'📅 '+a.title+' — '+fmtD(a.date)),
+    ...S.maintenances.filter(m=>empIdsOf(m).includes(id)&&m.status!=='fatta').map(m=>'🔧 '+(cName(m.clientId)||'')+' '+m.title+(m.date?' — '+fmtD(m.date):'')),
+    ...S.appointments.filter(a=>empIdsOf(a).includes(id)&&!a.done).map(a=>'📅 '+a.title+' — '+fmtD(a.date)),
     ...S.sites.filter(s=>s.status!=='chiuso'&&s.employees.includes(id)).map(s=>'🏗 '+s.name)
   ]:[];
-  const PERMS=[['cal','📅 Calendario'],['man','🔧 Manutenzioni'],['pellet','🪵 Pellet'],['sites','🏗 Cantieri'],['notes','📝 Note'],['chat','💬 Chat'],['clients','👥 Clienti']];
+  const PERMS=[['cal','📅 Calendario'],['man','🔧 Manutenzioni'],['pellet','🪵 Pellet'],['sites','🏗 Cantieri'],['macchine','⚙️ Macchine'],['notes','📝 Note'],['chat','💬 Chat'],['clients','👥 Clienti']];
   openSheet(`<h3>${id?'Scheda personale':'Nuova persona'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="em-n" value="${esc(e.name)}"></div>
   <div class="frow"><div class="fld"><label>Ruolo</label><input id="em-r" value="${esc(e.role||'')}" placeholder="es. Tecnico"></div>
@@ -2563,7 +2582,7 @@ function saveBollettino(){
   let extra='';
   if(!wasFatta&&m.recur>0){
     const nextDate=addMonthsIso(m.date||todayIso(),m.recur);
-    S.maintenances.unshift({id:uid(),title:m.title,clientId:m.clientId,clientRaw:m.clientRaw,employeeId:m.employeeId,date:nextDate,time:m.time,status:'programmata',notes:'',recur:m.recur,via:'ricorrenza',created:Date.now()});
+    S.maintenances.unshift({id:uid(),title:m.title,clientId:m.clientId,clientRaw:m.clientRaw,employees:empIdsOf(m),date:nextDate,time:m.time,status:'programmata',notes:'',recur:m.recur,via:'ricorrenza',created:Date.now()});
     extra=' · 🔁 prossima creata per '+fmtD(nextDate);
   }
   save();closeSheet();render();
@@ -2753,7 +2772,7 @@ function csvPellet(){
 }
 function csvMan(){
   csvDownload('manutenzioni',['Data','Cliente','Descrizione','Tecnico','Stato','Tariffa CHF','Bollettino','Esito'],
-    S.maintenances.map(m=>[m.date||'',cName(m.clientId)||m.clientRaw||'',m.title,eName(m.employeeId)||'',m.status,m.price||'',m.report?'sì':'',m.report?m.report.outcome:'']));
+    S.maintenances.map(m=>[m.date||'',cName(m.clientId)||m.clientRaw||'',m.title,empNames(m)||'',m.status,m.price||'',m.report?'sì':'',m.report?m.report.outcome:'']));
 }
 function csvOre(){
   const rows=[];
@@ -2794,5 +2813,6 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   setTimeout(checkUpdate,4000);
 })();
 </script>
+<script src="./macchine.js"></script>
 </body>
 </html>
