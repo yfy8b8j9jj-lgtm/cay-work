@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./macchine.css">
+<script>try{if(localStorage.getItem('caywork_theme')==='dark'){document.documentElement.dataset.theme='dark';var _m=document.querySelector('meta[name=theme-color]');if(_m)_m.content='#14160F';}}catch(e){}</script>
 <style>
 :root{
   --bg0:#F5F2EA; --bg1:#FFFFFF; --bg2:#F2EEE4; --bg3:#E9E3D5;
@@ -26,6 +27,14 @@
   --r:14px;
   --disp:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
 }
+/* ---------- TEMA SCURO (notte natura, accento verde invariato) ---------- */
+html[data-theme="dark"]{
+  --bg0:#14160F; --bg1:#1D2016; --bg2:#24281A; --bg3:#303525;
+  --line:rgba(170,200,120,.13); --line2:rgba(170,200,120,.27);
+  --t1:#ECEADF; --t2:#A8A793; --t3:#75745F;
+  --glow:0 0 18px rgba(111,178,58,.32);
+}
+html[data-theme="dark"] .nav-bottom{background:rgba(20,22,15,.95)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg0);color:var(--t1);font-family:var(--body);font-size:14px;overflow:hidden}
@@ -288,7 +297,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.18-122550';
+const APP_VERSION='2026.06.18-130020';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -720,6 +729,10 @@ function nav(v){view=v;render();window.scrollTo(0,0);}
 /* barra in basso (mobile) personalizzabile — salvata sul dispositivo, una per utente */
 const NAV_DEFAULT=['hub','cal','man','pellet','sites'];
 let bottomNavMem={};
+function getTheme(){try{return localStorage.getItem('caywork_theme')==='dark'?'dark':'light';}catch(e){return 'light';}}
+function applyTheme(t){const dark=t==='dark';if(dark)document.documentElement.dataset.theme='dark';else document.documentElement.removeAttribute('data-theme');const m=document.querySelector('meta[name=theme-color]');if(m)m.content=dark?'#14160F':'#F5F2EA';}
+function setTheme(t){try{localStorage.setItem('caywork_theme',t);}catch(e){}applyTheme(t);if(typeof renderNav==='function')renderNav();}
+function toggleTheme(){setTheme(getTheme()==='dark'?'light':'dark');}
 function navKey(){return 'caywork_nav_'+(S.session?S.session.empId:'x');}
 function getBottomNav(){const k=navKey();if(bottomNavMem[k])return bottomNavMem[k];try{const v=JSON.parse(localStorage.getItem(k)||'null');if(Array.isArray(v)&&v.length){bottomNavMem[k]=v;return v;}}catch(e){}return NAV_DEFAULT;}
 function setBottomNav(ids){const k=navKey();bottomNavMem[k]=ids.slice();try{localStorage.setItem(k,JSON.stringify(ids));}catch(e){}}
@@ -733,6 +746,7 @@ function renderNav(){
   $('#navside').innerHTML=vis.map(v=>{const c=v.id==='notif'?notifCount():0;return`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}${c?` <span class="badge" style="margin-left:auto;border-color:var(--cy);color:var(--cy)">${c}</span>`:''}</div>`;}).join('')
     +pushNav
     +(isOwner()?`<div class="ni" style="${ps==='unsupported'?sep:''}" onclick="openBackup()"><span class="ic">💾</span>Backup dati</div>`:'')
+    +`<div class="ni" onclick="toggleTheme()"><span class="ic">${getTheme()==='dark'?'☀️':'🌙'}</span>${getTheme()==='dark'?'Tema chiaro':'Tema scuro'}</div>`
     +`<div class="ni" onclick="logout()"><span class="ic">🚪</span>Esci (${esc(me().name)})</div>`;
   const allowed=new Set(vis.map(v=>v.id));
   let chosen=getBottomNav().filter(id=>allowed.has(id)).slice(0,5);
@@ -761,6 +775,7 @@ function openMenu(){
     <div class="sg" style="padding:13px;border-color:var(--cy);color:var(--cy)" onclick="closeSheet();editBottomNav()">⚙️ Personalizza la barra in basso</div>
     ${pushRow}
     ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openBackup()">💾 Backup dati</div>`:''}
+    <div class="sg" style="padding:13px" onclick="closeSheet();toggleTheme()">${getTheme()==='dark'?'☀️ Tema chiaro':'🌙 Tema scuro'}</div>
     <div class="sg" style="padding:13px;border-color:rgba(214,69,40,.35);color:var(--coral)" onclick="logout()">🚪 Esci (${esc(me().name)})</div>
   </div>`);
 }
