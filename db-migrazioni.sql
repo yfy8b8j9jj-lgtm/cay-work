@@ -308,3 +308,33 @@ create policy man_update on storage.objects for update to authenticated
 drop policy if exists man_delete on storage.objects;
 create policy man_delete on storage.objects for delete to authenticated
   using (bucket_id in ('manuali','macchine') and (public.is_owner() or public.has_perm('macchine')));
+
+-- ------------------------------------------------------------
+-- 18 giu 2026 — 📷 Foto/file collegati ai CLIENTI (storico cliente)
+-- Tabella gemella di public.attachments ma legata al cliente. Bucket 'allegati'
+-- (lo stesso dei cantieri), path 'client/<id>/...'. RLS: titolare o permesso 'clients'.
+-- GDPR: cancellazione a cascata col cliente (le foto nello Storage le rimuove l'app).
+-- ------------------------------------------------------------
+create table if not exists public.client_attachments(
+  id uuid primary key,
+  client_id uuid not null references public.clients(id) on delete cascade,
+  name text,
+  type text,                           -- 'img' | 'file'
+  storage_path text,
+  date date,
+  created_at timestamptz not null default now()
+);
+alter table public.client_attachments enable row level security;
+drop policy if exists ca_sel on public.client_attachments;
+drop policy if exists ca_ins on public.client_attachments;
+drop policy if exists ca_del on public.client_attachments;
+create policy ca_sel on public.client_attachments for select to authenticated
+  using (public.is_owner() or public.has_perm('clients'));
+create policy ca_ins on public.client_attachments for insert to authenticated
+  with check (public.is_owner() or public.has_perm('clients'));
+create policy ca_del on public.client_attachments for delete to authenticated
+  using (public.is_owner() or public.has_perm('clients'));
+create index if not exists ca_client_idx on public.client_attachments(client_id);
+do $$ begin
+  alter publication supabase_realtime add table public.client_attachments;
+exception when others then null; end $$;

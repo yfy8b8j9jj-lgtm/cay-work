@@ -979,3 +979,20 @@ async function macFromMaint(maintId){
   macOpenScheda(key||MACHINES[0].id,{tab:'tagliando',maint:maintId});
 }
 
+
+/* Feature: collega al cliente le macchine scelte dal catalogo nel form cliente.
+   Inserisce in site_machines le macchine non ancora collegate. */
+async function macLinkClientMachines(clientId,keys){
+  if(typeof sb==='undefined'||!clientId||!keys||!keys.length) return;
+  try{
+    const {data}=await sb.from('site_machines').select('machine_key').eq('client_id',clientId);
+    const existing=new Set((data||[]).map(r=>r.machine_key));
+    const toAdd=keys.filter(k=>!existing.has(k));
+    if(!toAdd.length){ if(typeof toast==='function')toast('Macchine già collegate al cliente'); return; }
+    const myId=(typeof S!=='undefined'&&S.session&&S.session.empId)||null;
+    const rows=toAdd.map(k=>({id:uid(),client_id:clientId,site_id:null,machine_key:k,serial:null,
+      install_date:(typeof todayIso==='function'?todayIso():null),note:null,created_by:macIsUuid(myId)?myId:null}));
+    const {error}=await sb.from('site_machines').insert(rows); if(error) throw error;
+    if(typeof toast==='function')toast('⚙️ '+toAdd.length+' macchina/e collegata/e al cliente');
+  }catch(e){ if(typeof toast==='function')toast('⚠ Collegamento macchine: '+(e.message||e)); }
+}

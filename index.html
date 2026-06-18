@@ -288,7 +288,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.18-111613';
+const APP_VERSION='2026.06.18-113508';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -2031,6 +2031,78 @@ async function delAtt(sid,aid){
     openSite(sid);toast('Eliminato');
   }catch(e){toast('⚠ '+(e.message||e));}
 }
+/* ===== Allegati CLIENTE (foto/file collegati al cliente) — tabella client_attachments, bucket 'allegati' ===== */
+const clientAtt={};const clientAttUrl={};let clientAttFetching={};
+async function loadClientAtt(clientId){
+  if(typeof sb==='undefined')return;
+  try{const{data,error}=await sb.from('client_attachments').select('*').eq('client_id',clientId).order('date',{ascending:false});
+    if(!error)clientAtt[clientId]=(data||[]).map(r=>({id:r.id,name:r.name,type:r.type,storagePath:r.storage_path,date:r.date}));}catch(e){}
+  renderClientAtt(clientId);
+}
+function ensureClientAttUrls(clientId){
+  const arr=clientAtt[clientId]||[];const miss=arr.filter(a=>!clientAttUrl[a.id]&&!clientAttFetching[a.id]&&a.storagePath);
+  if(!miss.length)return;miss.forEach(a=>clientAttFetching[a.id]=true);
+  Promise.all(miss.map(a=>sb.storage.from('allegati').createSignedUrl(a.storagePath,3600).then(({data})=>{if(data)clientAttUrl[a.id]=data.signedUrl;}))).then(()=>renderClientAtt(clientId)).catch(()=>{});
+}
+function renderClientAtt(clientId){
+  const host=$('#cli-att');if(!host)return;const arr=clientAtt[clientId]||[];ensureClientAttUrls(clientId);
+  const grid=arr.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;margin-bottom:8px">${arr.map(a=>a.type==='img'
+    ?`<div>${clientAttUrl[a.id]?`<img src="${clientAttUrl[a.id]}" onclick="viewClientAtt('${clientId}','${a.id}')" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;border:1px solid var(--line);cursor:pointer">`:`<div onclick="viewClientAtt('${clientId}','${a.id}')" style="width:100%;aspect-ratio:1;border-radius:9px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:11px;cursor:pointer">…</div>`}</div>`
+    :`<div onclick="viewClientAtt('${clientId}','${a.id}')" style="aspect-ratio:1;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;background:var(--bg2)"><span style="font-size:20px">${(a.name||'').match(/\.pdf$/i)?'📄':'📊'}</span><span style="font-size:8px;color:var(--t3);padding:0 4px;text-align:center;overflow:hidden;max-height:22px">${esc((a.name||'').slice(0,18))}</span></div>`).join('')}</div>`:'';
+  host.innerHTML=grid+`<div style="display:flex;gap:8px">
+    <button class="btn sm" onclick="$('#cli-att-photo').click()">📷 Foto</button>
+    <button class="btn sm" onclick="$('#cli-att-file').click()">📎 PDF / Excel</button>
+    <input type="file" id="cli-att-photo" accept="image/*" style="display:none" onchange="addClientPhoto('${clientId}',event)">
+    <input type="file" id="cli-att-file" accept=".pdf,.xls,.xlsx,.csv,.doc,.docx" style="display:none" onchange="addClientFile('${clientId}',event)">
+  </div>`;
+}
+async function addClientPhoto(clientId,ev){
+  const f=ev.target.files[0];if(!f)return;
+  const img=new Image();const r=new FileReader();
+  r.onload=()=>{img.onload=()=>{
+    const max=1280;let w=img.width,h=img.height;
+    if(w>max||h>max){const k=max/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);
+    cv.toBlob(async blob=>{try{
+      const name='foto-'+todayIso()+'.jpg';const path='client/'+clientId+'/'+uid()+'-'+name;
+      const{error:e1}=await sb.storage.from('allegati').upload(path,blob,{contentType:'image/jpeg'});if(e1)throw e1;
+      const row={id:uid(),client_id:clientId,name,type:'img',storage_path:path,date:todayIso()};
+      const{error:e2}=await sb.from('client_attachments').insert(row);if(e2)throw e2;
+      (clientAtt[clientId]=clientAtt[clientId]||[]).unshift({id:row.id,name,type:'img',storagePath:path,date:row.date});
+      renderClientAtt(clientId);toast('📷 Foto caricata ('+Math.round(blob.size/1024)+'KB)');
+    }catch(err){toast('⚠ Upload: '+(err.message||err));}},'image/jpeg',.72);
+  };img.src=r.result;};r.readAsDataURL(f);
+}
+async function addClientFile(clientId,ev){
+  const f=ev.target.files[0];if(!f)return;if(f.size>25*1024*1024){toast('⚠ File oltre 25MB');return;}
+  try{
+    const path='client/'+clientId+'/'+uid()+'-'+f.name;
+    const{error:e1}=await sb.storage.from('allegati').upload(path,f,{contentType:f.type||'application/octet-stream'});if(e1)throw e1;
+    const row={id:uid(),client_id:clientId,name:f.name,type:'file',storage_path:path,date:todayIso()};
+    const{error:e2}=await sb.from('client_attachments').insert(row);if(e2)throw e2;
+    (clientAtt[clientId]=clientAtt[clientId]||[]).unshift({id:row.id,name:f.name,type:'file',storagePath:path,date:row.date});
+    renderClientAtt(clientId);toast('📎 '+f.name+' caricato');
+  }catch(err){toast('⚠ Upload: '+(err.message||err));}
+}
+function viewClientAtt(clientId,aid){
+  const a=byId(clientAtt[clientId]||[],aid);if(!a)return;const url=clientAttUrl[a.id]||'';
+  openSheet(`<h3>${a.type==='img'?'📷':'📎'} ${esc(a.name)} <span class="x" onclick="openClient('${clientId}')">✕</span></h3>
+  ${a.type==='img'?(url?`<img src="${url}" style="width:100%;border-radius:12px">`:'<div class="empty">Carico…</div>'):`<div class="empty"><div class="big">${(a.name||'').match(/\.pdf$/i)?'📄':'📊'}</div>${esc(a.name)}<br>aggiunto ${fmtD(a.date)}</div>`}
+  <div class="actions">
+    <button class="btn danger" onclick="delClientAtt('${clientId}','${aid}')">Elimina</button>
+    ${url?`<a class="btn pri" style="text-align:center;text-decoration:none" href="${url}" target="_blank" download="${esc(a.name)}">⬇ Apri / Scarica</a>`:''}
+  </div>`);
+}
+async function delClientAtt(clientId,aid){
+  if(!confirm("Eliminare l'allegato?"))return;
+  const a=byId(clientAtt[clientId]||[],aid);
+  try{
+    if(a&&a.storagePath)await sb.storage.from('allegati').remove([a.storagePath]);
+    await sb.from('client_attachments').delete().eq('id',aid);
+    clientAtt[clientId]=(clientAtt[clientId]||[]).filter(x=>x.id!==aid);
+    openClient(clientId);toast('Eliminato');
+  }catch(e){toast('⚠ '+(e.message||e));}
+}
 /* cancellazione cantiere: rimuove anche foto/file dallo Storage (i log spariscono via sync) */
 async function delSite(id){
   const s=byId(S.sites,id);if(!s)return;
@@ -2321,11 +2393,13 @@ function openClient(id){
   ${!man.length&&!pel.length&&!sit.length&&!app.length&&!not.length?'<div class="subtle">Ancora vuoto — si riempirà da solo man mano che registri.</div>':''}
   </div>
   <div class="fld"><label>⚙️ Macchine installate</label><div id="cli-machines"><div class="subtle">…</div></div></div>
+  <div class="fld"><label>📷 Foto e file del cliente</label><div id="cli-att"><div class="subtle">…</div></div></div>
   <div class="actions" style="flex-wrap:wrap">
     <button class="btn danger" onclick="delClient('${id}')">Elimina</button>
     <button class="btn" style="border-color:var(--coral);color:var(--coral)" onclick="toggleBlock('${id}')">${c.blocked?'🔓 Sblocca':'🚫 Blocca'}</button>
     <button class="btn pri" onclick="editClient('${id}')">Modifica</button></div>`);
   if(typeof macRenderClientMachines==='function') macRenderClientMachines(id,'cli-machines');
+  loadClientAtt(id);
 }
 function toggleBlock(id){const c=byId(S.clients,id);if(!c)return;c.blocked=!c.blocked;save();closeSheet();render();toast(c.blocked?'🚫 Cliente bloccato':'🔓 Cliente sbloccato');}
 function editClient(id){
@@ -2339,6 +2413,7 @@ function editClient(id){
   <div class="fld"><label>Gruppo (scrivi o scegli)</label><input id="cl-g" list="cl-glist" value="${esc(c.group||'')}" placeholder="es. Grono e dintorni, Gruppo A"><datalist id="cl-glist">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist></div>
   <div class="fld"><label>Indirizzo</label><input id="cl-a" value="${esc(c.address||'')}"></div>
   <div class="fld"><label>Tipo impianto (anche più di uno)</label><div class="seg" id="cl-pl">${[['Stufa','🔥 Stufa'],['Caldaia','♨️ Caldaia'],['Camino','🪵 Camino']].map(([v,l])=>`<div class="sg ${(c.plant||'').includes(v)?'on':''}" data-v="${v}" onclick="this.classList.toggle('on')">${l}</div>`).join('')}</div></div>
+  ${typeof MACHINES!=='undefined'?`<div class="fld"><label>⚙️ Macchina dal catalogo (collega al cliente; gestione completa nella scheda)</label><div class="seg" id="cl-mac" style="flex-wrap:wrap;gap:7px">${MACHINES.map(m=>`<div class="sg" data-v="${esc(m.id)}" onclick="this.classList.toggle('on')">${esc(m.marca+' '+m.nome)}</div>`).join('')}</div></div>`:''}
   <div class="fld"><label>Prende pellet?</label>${seg('cl-pe',[['sfuso','🪵 Sfuso'],['sacchi','📦 Sacchi'],['no','No'],['','—']],c.pellet||'')}</div>
   <div class="fld"><label>Fa la manutenzione?</label>${seg('cl-ma',[['si','✓ Sì'],['no','✗ No'],['','—']],c.maintenance||'')}</div>
   <div class="fld"><label>Note</label><textarea id="cl-no">${esc(c.notes||'')}</textarea></div>
@@ -2349,8 +2424,11 @@ function saveClient(id){
   const sv=idd=>$('#'+idd+' .sg.on')?.dataset.v||'';
   const plant=[...document.querySelectorAll('#cl-pl .sg.on')].map(x=>x.dataset.v).join(', ');
   const data={name,phone:$('#cl-p').value.trim(),zone:$('#cl-z').value.trim(),group:$('#cl-g').value.trim(),address:$('#cl-a').value.trim(),plant,pellet:sv('cl-pe'),maintenance:sv('cl-ma'),notes:$('#cl-no').value.trim()};
-  if(id){Object.assign(byId(S.clients,id),data);}else{S.clients.unshift({id:uid(),created:Date.now(),...data});}
+  let cid=id;
+  if(id){Object.assign(byId(S.clients,id),data);}else{cid=uid();S.clients.unshift({id:cid,created:Date.now(),...data});}
+  const macSel=[...document.querySelectorAll('#cl-mac .sg.on')].map(x=>x.dataset.v);
   save();closeSheet();render();toast('👥 Salvato');
+  if(macSel.length&&typeof macLinkClientMachines==='function')macLinkClientMachines(cid,macSel);
 }
 /* cancellazione cliente a cascata (GDPR art.17): rimuove anche figli + foto/file nello Storage */
 async function delClient(id){
@@ -2375,6 +2453,10 @@ async function delClient(id){
     if(paths.length)await sb.storage.from('allegati').remove(paths);
     const aids=atts.map(a=>a.id);
     if(aids.length)await sb.from('attachments').delete().in('id',aids);
+    // foto/file collegati direttamente al cliente: rimuovi i file dallo Storage (le righe spariscono via cascade FK)
+    const{data:cAtt}=await sb.from('client_attachments').select('storage_path').eq('client_id',id);
+    const cPaths=(cAtt||[]).map(r=>r.storage_path).filter(Boolean);
+    if(cPaths.length)await sb.storage.from('allegati').remove(cPaths);
   }catch(e){toast('⚠ Pulizia allegati: '+(e.message||e));}
   S.maintenances=S.maintenances.filter(m=>m.clientId!==id);
   S.appointments=S.appointments.filter(a=>a.clientId!==id);
