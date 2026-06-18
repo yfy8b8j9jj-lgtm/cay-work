@@ -144,3 +144,29 @@ create policy man_delete on storage.objects for delete to authenticated
 
 -- FATTO. Ora: carica i manuali nel bucket 'manuali' (o dal pulsante in-app) e
 -- dai il permesso 'macchine' ai dipendenti in Personale.
+
+-- ------------------------------------------------------------
+-- 18 giu 2026 — 📝 Note-soluzione degli allarmi (condivise col team)
+-- Una nota per (macchina, codice allarme): "come si risolve". Visibile a chi
+-- ha accesso alle Macchine/Manutenzioni. machine_key = id macchina nell'app.
+-- ------------------------------------------------------------
+create table if not exists public.alarm_notes(
+  id uuid primary key,
+  machine_key text not null,
+  alarm_code text not null,
+  note text,
+  updated_by uuid,
+  updated_at timestamptz not null default now(),
+  unique(machine_key, alarm_code)
+);
+alter table public.alarm_notes enable row level security;
+drop policy if exists an_sel on public.alarm_notes;
+drop policy if exists an_ins on public.alarm_notes;
+drop policy if exists an_upd on public.alarm_notes;
+create policy an_sel on public.alarm_notes for select to authenticated
+  using (public.is_owner() or public.has_perm('macchine') or public.has_perm('man'));
+create policy an_ins on public.alarm_notes for insert to authenticated
+  with check (public.is_owner() or public.has_perm('macchine') or public.has_perm('man'));
+create policy an_upd on public.alarm_notes for update to authenticated
+  using (public.is_owner() or public.has_perm('macchine') or public.has_perm('man'))
+  with check (public.is_owner() or public.has_perm('macchine') or public.has_perm('man'));

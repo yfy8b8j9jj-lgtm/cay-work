@@ -251,6 +251,7 @@ function openDetail(id){
   renderInstall();
   setTab('allarmi'); setView('schema');
   macLoadHist(m.id);                       // carica installazioni/storico da Supabase (async)
+  macLoadAlarmNotes(m.id);                  // carica le note-soluzione degli allarmi (async)
 }
 function showList(){ macTargetMaint=null; document.getElementById('detail').classList.remove('on'); document.getElementById('list').classList.add('on'); }
 
@@ -286,13 +287,47 @@ function renderAlarms(){
   document.getElementById('alarmList').innerHTML = list.map(a=>{
     const [code,name,sev,cause,fix,parts]=a;
     const pl = parts.map(n=>{const c=MACHINE.componenti.find(x=>x.n==n);return c?`<span class="partlink" onclick="popComp(${n})">→ ${c.nome.split('(')[0].trim()}</span>`:''}).join('');
+    const note=(typeof macAlarmNotes!=='undefined')?(macAlarmNotes[MACHINE.id+'|'+code]||''):'';
     return `<div class="al sev-${sev}">
       <div class="alh"><span class="code">${code}</span><span class="alname">${name}</span></div>
       <div class="row"><span class="lab">CAUSA</span><span class="val">${cause}</span></div>
       <div class="row"><span class="lab">RIMEDIO</span><span class="val">${fix}</span></div>
       ${pl?`<div>${pl}</div>`:''}
+      <div class="alnote-bar ${note?'has':''}" onclick="macToggleAlarmNote('${code}')">📝 ${note?'Nota soluzione — tocca per vedere/modificare':'Aggiungi nota: come si risolve'}</div>
+      <div class="alnote" id="alnote-${code}" style="display:none">
+        <textarea id="alnote-t-${code}" placeholder="Scrivi come hai risolto questo allarme (visibile a tutto lo staff, utile la prossima volta)">${esc(note)}</textarea>
+        <button class="alnote-save" onclick="macSaveAlarmNote('${code}')">💾 Salva nota</button>
+      </div>
     </div>`;
   }).join('') || `<div class="note" style="text-align:center;padding:16px">Nessun allarme corrisponde a “${esc(q)}”.</div>`;
+}
+/* note-soluzione per allarme, condivise col team (tabella alarm_notes) */
+const macAlarmNotes={};
+async function macLoadAlarmNotes(machineKey){
+  if(typeof sb==='undefined') return;
+  try{
+    const {data,error}=await sb.from('alarm_notes').select('alarm_code,note').eq('machine_key',machineKey);
+    if(!error){ (data||[]).forEach(r=>{ macAlarmNotes[machineKey+'|'+r.alarm_code]=r.note||''; }); }
+  }catch(e){}
+  if(MACHINE&&MACHINE.id===machineKey) renderAlarms();
+}
+function macToggleAlarmNote(code){
+  const el=document.getElementById('alnote-'+code); if(!el) return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+async function macSaveAlarmNote(code){
+  const ta=document.getElementById('alnote-t-'+code); if(!ta) return;
+  const note=ta.value.trim();
+  const key=MACHINE.id+'|'+code;
+  if(typeof sb==='undefined'){ if(typeof toast==='function')toast('Accedi per salvare'); return; }
+  const row={id:uid(),machine_key:MACHINE.id,alarm_code:code,note,
+    updated_by:macIsUuid(typeof S!=='undefined'&&S.session&&S.session.empId)?S.session.empId:null};
+  try{
+    const {error}=await sb.from('alarm_notes').upsert(row,{onConflict:'machine_key,alarm_code'}); if(error) throw error;
+    macAlarmNotes[key]=note;
+    if(typeof toast==='function')toast(note?'📝 Nota salvata':'Nota svuotata');
+    renderAlarms();
+  }catch(e){ if(typeof toast==='function')toast('⚠ Nota non salvata: '+(e.message||e)); }
 }
 function renderParts(){
   document.getElementById('partList').innerHTML = MACHINE.fragili.map(p=>{
@@ -637,7 +672,8 @@ function renderInstall(){
     <div class="card">
       <div class="mc-h" style="display:flex;align-items:center;gap:8px"><b style="flex:1">${esc(cn(it.client_id))}</b>${it.serial?`<span class="mono">matr. ${esc(it.serial)}</span>`:''}${macCanCatalog()?`<span style="${MAC_DEL_BTN}" onclick="macUnlinkMachine('${it.id}','install')">scollega</span>`:''}</div>
       <div class="note">Installata il ${fmt(it.install_date)}</div>
-      <div class="mc-parts">${partsFor(it.id)}</div>
+      <div class="mc-collapse" onclick="macToggleInstallParts('${it.id}')"><span id="insttog-${it.id}">▸</span> Ricambi / sostituzioni</div>
+      <div class="mc-parts" id="instparts-${it.id}" style="display:none">${partsFor(it.id)}</div>
     </div>`).join('') || `<div class="note">Nessuna installazione registrata per questo modello.</div>`;
   const clientOpts=(((typeof S!=='undefined'&&S.clients)?S.clients.slice():[]))
     .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
@@ -659,8 +695,18 @@ function renderInstall(){
     </div>
     <div class="mc-sec">Installazioni${macHist.loading?' · <span class="mono">carico…</span>':''}</div>
     ${installCards}
-    <div class="mc-sec">Storico tagliandi</div>
-    ${histRows}`;
+    <div class="mc-sec mc-collapse" onclick="macToggleStorico()"><span id="stortog">▸</span> Storico tagliandi (${checklists.length})</div>
+    <div id="stor-list" style="display:none">${histRows}</div>`;
+}
+function macToggleInstallParts(id){
+  const el=document.getElementById('instparts-'+id); if(!el) return;
+  const open=el.style.display==='none'; el.style.display=open?'block':'none';
+  const t=document.getElementById('insttog-'+id); if(t)t.textContent=open?'▾':'▸';
+}
+function macToggleStorico(){
+  const el=document.getElementById('stor-list'); if(!el) return;
+  const open=el.style.display==='none'; el.style.display=open?'block':'none';
+  const t=document.getElementById('stortog'); if(t)t.textContent=open?'▾':'▸';
 }
 async function macAddInstall(){
   if(typeof sb==='undefined'){ if(typeof toast==='function')toast('Accedi per registrare'); return; }
