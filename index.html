@@ -288,7 +288,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.18-121129';
+const APP_VERSION='2026.06.18-122550';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -298,8 +298,8 @@ const uid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xx
 const num=v=>(v===''||v==null)?null:+v;
 const MAPS={
  clients:{tbl:'clients',
-  toDb:c=>({id:c.id,name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||'',blocked:!!c.blocked}),
-  fromDb:r=>({id:r.id,name:r.name,phone:r.phone||'',zone:r.zone||'',group:r.group||'',address:r.address||'',plant:r.plant||'',pellet:r.pellet||'',maintenance:r.maintenance||'',notes:r.notes||'',blocked:!!r.blocked,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:c=>({id:c.id,name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||'',blocked:!!c.blocked,first_name:c.firstName||'',last_name:c.lastName||'',street:c.street||'',street_no:c.streetNo||'',cap:c.cap||'',town:c.town||'',email:c.email||''}),
+  fromDb:r=>({id:r.id,name:r.name,phone:r.phone||'',zone:r.zone||'',group:r.group||'',address:r.address||'',plant:r.plant||'',pellet:r.pellet||'',maintenance:r.maintenance||'',notes:r.notes||'',blocked:!!r.blocked,firstName:r.first_name||'',lastName:r.last_name||'',street:r.street||'',streetNo:r.street_no||'',cap:r.cap||'',town:r.town||'',email:r.email||'',created:Date.parse(r.created_at)||Date.now()})},
  employees:{tbl:'employees',
   toDb:e=>({id:e.id,name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||[],is_owner:!!e.isOwner,active:e.active!==false,invite_code:e.inviteCode||null,user_id:e.userId||null}),
   fromDb:r=>({id:r.id,name:r.name,role:r.role||'',phone:r.phone||'',perms:r.perms||[],isOwner:!!r.is_owner,active:r.active!==false,inviteCode:r.invite_code,userId:r.user_id})},
@@ -494,6 +494,20 @@ const cName=id=>{const c=byId(S.clients,id);return c?c.name:''};
 const eName=id=>{const e=byId(S.employees,id);return e?e.name:''};
 /* opzioni cliente per i menù a tendina: nasconde i bloccati, ma mantiene quello già scelto in un record esistente */
 const cOpt=sel=>S.clients.filter(c=>!c.blocked||c.id===sel).map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.name)}${c.blocked?' 🚫':''}</option>`).join('');
+/* indirizzo composto + anteprima dati cliente (nei form: sai già dove andare) */
+const cAddr=c=>!c?'':([[c.street,c.streetNo].filter(Boolean).join(' '),[c.cap,c.town||c.zone].filter(Boolean).join(' ')].filter(Boolean).join(', ')||c.address||'');
+function clientPreviewHTML(id){
+  const c=id?byId(S.clients,id):null;if(!c)return '';
+  const addr=cAddr(c);
+  const rows=[
+    addr?`📍 ${esc(addr)}`:'',
+    c.phone?`📞 <a href="tel:${esc(c.phone)}" style="color:var(--cy)" onclick="event.stopPropagation()">${esc(c.phone)}</a>`:'',
+    c.email?`✉️ ${esc(c.email)}`:'',
+    c.plant?`⚙️ ${esc(c.plant)}`:''
+  ].filter(Boolean);
+  return rows.length?`<div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-top:7px;font-size:12.5px;color:var(--t2);line-height:1.7">${rows.join('<br>')}</div>`:'';
+}
+function updClientPrev(sel,targetId){const t=document.getElementById(targetId);if(t)t.innerHTML=clientPreviewHTML(sel.value);}
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
 /* ================= PARSER (no AI — pattern matching IT) ================= */
@@ -1402,7 +1416,7 @@ function openApp(id){
   if(!a)return;
   openSheet(`<h3>${id?'Appuntamento':'Nuovo appuntamento'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Titolo</label><input id="ap-t" value="${esc(a.title)}" placeholder="es. Sopralluogo Via Roma"></div>
-  <div class="fld"><label>Cliente</label><select id="ap-c"><option value="">${(a.clientRaw&&!a.clientId)?'🆕 '+esc(a.clientRaw)+' (nuovo)':'—'}</option>${cOpt(a.clientId)}</select></div>
+  <div class="fld"><label>Cliente</label><select id="ap-c" onchange="updClientPrev(this,'ap-cprev')"><option value="">${(a.clientRaw&&!a.clientId)?'🆕 '+esc(a.clientRaw)+' (nuovo)':'—'}</option>${cOpt(a.clientId)}</select><div id="ap-cprev">${clientPreviewHTML(a.clientId)}</div></div>
   <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('ap-e',empIdsOf(a))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="ap-d" type="date" value="${a.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="ap-h" type="time" value="${a.time||''}"></div></div>
@@ -1603,7 +1617,7 @@ function openMan(id){
   const m=id?byId(S.maintenances,id):{title:'',clientId:null,employeeId:null,date:'',time:'',status:'da_fare',notes:'',recur:0};
   openSheet(`<h3>${id?'Manutenzione':'Nuova manutenzione'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Descrizione</label><input id="mn-t" value="${esc(m.title)}" placeholder="es. Pulizia caldaia pellet"></div>
-  <div class="fld"><label>Cliente</label><select id="mn-c"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${cOpt(m.clientId)}</select></div>
+  <div class="fld"><label>Cliente</label><select id="mn-c" onchange="updClientPrev(this,'mn-cprev')"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${cOpt(m.clientId)}</select><div id="mn-cprev">${clientPreviewHTML(m.clientId)}</div></div>
   <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('mn-e',empIdsOf(m))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="mn-d" type="date" value="${m.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="mn-h" type="time" value="${m.time||''}"></div></div>
@@ -1825,7 +1839,7 @@ function openPel(id,preset){
   <div class="frow">
   <div class="fld"><label>Quantità</label><input id="pl-q" type="number" inputmode="decimal" step="any" value="${p.qty||''}"></div>
   <div class="fld"><label>Unità</label><select id="pl-u">${(p.kind==='sfuso'?['t']:['sacchi','kg']).map(u=>`<option ${p.unit===u?'selected':''}>${u}</option>`).join('')}</select></div></div>
-  <div class="fld"><label>Cliente</label><select id="pl-c"><option value="">—</option>${cOpt(p.clientId)}</select></div>
+  <div class="fld"><label>Cliente</label><select id="pl-c" onchange="updClientPrev(this,'pl-cprev')"><option value="">—</option>${cOpt(p.clientId)}</select><div id="pl-cprev">${clientPreviewHTML(p.clientId)}</div></div>
   <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('pl-e',empIdsOf(p))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="pl-d" type="date" value="${p.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="pl-h" type="time" value="${p.time||''}"></div></div>
@@ -2315,35 +2329,31 @@ function saveListino(){
   save();render();toast('🏷 Listino salvato');
 }
 /* ================= CLIENTI ================= */
-let cliQ='';let cliGroup='all';let cliZone='all';let cliMaint='all';
+let cliQ='';let cliGroup='all';let cliTown='all';let cliMaint='all';
 const clientGroups=()=>[...new Set(S.clients.map(c=>c.group).filter(Boolean))].sort();
 const clientZones=()=>[...new Set(S.clients.map(c=>c.zone).filter(Boolean))].sort();
+const cTown=c=>c.town||c.zone||'';
+const clientTowns=()=>[...new Set(S.clients.map(cTown).filter(Boolean))].sort();
 const cInitials=n=>{const p=String(n||'').trim().split(/\s+/);return((((p[0]||'')[0]||'')+((p[1]||'')[0]||'')).toUpperCase())||'?';};
 const AV_COLORS=['#5BA02C','#2E9E5E','#C77F12','#E2722E','#A9742F','#D64528'];
 const avColor=n=>AV_COLORS[Math.abs([...String(n||'')].reduce((h,c)=>(h*31+c.charCodeAt(0))|0,0))%AV_COLORS.length];
 function renderClients(){
   const q=norm(cliQ);
-  let list=S.clients.filter(c=>!q||norm(c.name+' '+(c.zone||'')+' '+(c.group||'')+' '+(c.phone||'')).includes(q));
+  let list=S.clients.filter(c=>!q||norm(c.name+' '+cTown(c)+' '+(c.group||'')+' '+(c.phone||'')+' '+(c.street||'')).includes(q));
   if(cliGroup!=='all')list=list.filter(c=>c.group===cliGroup);
-  if(cliZone!=='all')list=list.filter(c=>(c.zone||'')===cliZone);
+  if(cliTown!=='all')list=list.filter(c=>cTown(c)===cliTown);
   if(cliMaint==='si')list=list.filter(c=>c.maintenance==='si');
   else if(cliMaint==='no')list=list.filter(c=>c.maintenance!=='si');
-  list.sort((a,b)=>a.name.localeCompare(b.name));
-  const groups=clientGroups();const zones=clientZones();
+  const groups=clientGroups();const towns=clientTowns();
   const PL={'Stufa':'🔥','Caldaia':'♨️','Camino':'🪵'};
   const fld=inner=>`<div class="fld" style="margin-bottom:0;flex:1;min-width:130px">${inner}</div>`;
   const filterBar=`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    ${towns.length?fld(`<select onchange="cliTown=this.value;render()"><option value="all"${cliTown==='all'?' selected':''}>📍 Tutti i paesi</option>${towns.map(t=>`<option value="${esc(t)}"${cliTown===t?' selected':''}>${esc(t)}</option>`).join('')}</select>`):''}
     ${groups.length?fld(`<select onchange="cliGroup=this.value;render()"><option value="all"${cliGroup==='all'?' selected':''}>🗂 Tutti i gruppi</option>${groups.map(g=>`<option value="${esc(g)}"${cliGroup===g?' selected':''}>${esc(g)}</option>`).join('')}</select>`):''}
-    ${zones.length?fld(`<select onchange="cliZone=this.value;render()"><option value="all"${cliZone==='all'?' selected':''}>🗺 Tutte le zone</option>${zones.map(z=>`<option value="${esc(z)}"${cliZone===z?' selected':''}>${esc(z)}</option>`).join('')}</select>`):''}
     ${fld(`<select onchange="cliMaint=this.value;render()"><option value="all"${cliMaint==='all'?' selected':''}>🔧 Manut.: tutti</option><option value="si"${cliMaint==='si'?' selected':''}>🔧 Fa manutenzione</option><option value="no"${cliMaint==='no'?' selected':''}>✗ No manutenzione</option></select>`)}
   </div>`;
-  const shown=(cliGroup!=='all'||cliZone!=='all'||cliMaint!=='all'||q)?` <span class="subtle">· ${list.length} filtrati</span>`:'';
-  $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Clienti <span class="subtle">(${S.clients.length})</span>${shown}</div>
-  <input class="searchbar" placeholder="🔍 Cerca nome, gruppo, zona, telefono…" value="${esc(cliQ)}" oninput="cliQ=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">
-  ${filterBar}
-  <div class="card">
-  ${list.length?list.map(c=>{
+  const shown=(cliGroup!=='all'||cliTown!=='all'||cliMaint!=='all'||q)?` <span class="subtle">· ${list.length} filtrati</span>`:'';
+  const itemHTML=c=>{
     const nm=S.maintenances.filter(m=>m.clientId===c.id).length;
     const np=S.pellet.filter(p=>p.clientId===c.id).length;
     const col=c.blocked?'#D64528':avColor(c.name);
@@ -2355,10 +2365,22 @@ function renderClients(){
     return`<div class="item" onclick="openClient('${c.id}')">
     <div style="width:38px;height:38px;border-radius:50%;background:${col}22;color:${col};border:1px solid ${col}55;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${esc(cInitials(c.name))}</div>
     <div class="bd"><div class="ti"${c.blocked?' style="color:var(--coral)"':''}>${esc(c.name)}${c.blocked?' <span class="badge" style="border-color:var(--coral);color:var(--coral)">🚫 BLOCCATO</span>':''}</div>
-    <div class="su">${esc([c.group,c.zone,c.phone].filter(Boolean).join(' · '))||'—'}</div>
+    <div class="su">${esc([c.group,c.phone].filter(Boolean).join(' · '))||'—'}</div>
     <div class="mt">${tags.map(t=>`<span class="badge" style="border-color:var(--line2);color:var(--t2);margin-right:5px">${esc(t)}</span>`).join('')}${nm?' 🔧'+nm:''}${np?' 🪵'+np:''}</div></div>${c.phone?`<a href="tel:${esc(c.phone)}" onclick="event.stopPropagation()" class="avat" style="width:34px;height:34px;border:1px solid rgba(46,158,94,.35);color:var(--teal);text-decoration:none;font-size:14px;margin-top:2px">📞</a>`:''}</div>`;
-  }).join(''):'<div class="empty"><div class="big">👥</div>Nessun cliente con questi filtri.</div>'}
-  </div>
+  };
+  // raggruppa per Paese (tutto già diviso)
+  const byTown={};list.forEach(c=>{const k=cTown(c)||'— senza paese —';(byTown[k]=byTown[k]||[]).push(c);});
+  const townKeys=Object.keys(byTown).sort((a,b)=>a.localeCompare(b));
+  const body=list.length?townKeys.map(tk=>{
+    const cls=byTown[tk].sort((a,b)=>a.name.localeCompare(b.name));
+    return `<div style="display:flex;align-items:center;gap:8px;margin:14px 2px 7px;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--t2)"><span style="color:var(--teal)">📍 ${esc(tk)}</span><span class="badge" style="border-color:var(--line2);color:var(--t3)">${cls.length}</span></div>
+      <div class="card">${cls.map(itemHTML).join('')}</div>`;
+  }).join(''):'<div class="card"><div class="empty"><div class="big">👥</div>Nessun cliente con questi filtri.</div></div>';
+  $('#main').innerHTML=`
+  <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Clienti <span class="subtle">(${S.clients.length})</span>${shown}</div>
+  <input class="searchbar" placeholder="🔍 Cerca nome, paese, gruppo, telefono, via…" value="${esc(cliQ)}" oninput="cliQ=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">
+  ${filterBar}
+  ${body}
   <button class="fab" onclick="editClient(null)">+</button>`;
 }
 function openClient(id){
@@ -2374,13 +2396,14 @@ function openClient(id){
     c.pellet?['Pellet',c.pellet==='no'?'non lo prende':c.pellet]:null,
     c.maintenance?['Manutenzione',c.maintenance==='si'?'sì, la fa':'no']:null,
     c.group?['Gruppo',c.group]:null,
-    c.zone?['Zona',c.zone]:null,
+    cTown(c)?['Paese',cTown(c)]:null,
   ].filter(Boolean);
   openSheet(`<h3>${c.blocked?'🚫 ':''}${esc(c.name)} <span class="x" onclick="closeSheet()">✕</span></h3>
   ${c.blocked?`<div class="card" style="border-color:var(--coral);background:rgba(214,69,40,.08);padding:10px 12px;margin-bottom:10px;color:var(--coral)">🚫 <b>Cliente bloccato.</b> Non puoi assegnargli nuovi lavori finché non lo sblocchi.</div>`:''}
   <div class="subtle" style="margin-bottom:10px">
     ${c.phone?`📞 <a href="tel:${esc(c.phone)}" style="color:var(--cy)">${esc(c.phone)}</a><br>`:''}
-    ${c.address?'📍 '+esc(c.address)+'<br>':''}
+    ${c.email?'✉️ '+esc(c.email)+'<br>':''}
+    ${cAddr(c)?'📍 '+esc(cAddr(c))+'<br>':''}
     ${c.notes?'✎ '+esc(c.notes):''}
   </div>
   ${info.length?`<div class="fld"><label>Profilo</label><div style="display:flex;flex-wrap:wrap;gap:6px">${info.map(([k,v])=>`<span class="badge" style="border-color:var(--line2);color:var(--t1);padding:5px 10px;font-size:11px">${k}: <b>${esc(v)}</b></span>`).join('')}</div></div>`:''}
@@ -2407,11 +2430,15 @@ function editClient(id){
   const groups=clientGroups();
   const seg=(idd,opts,cur)=>`<div class="seg" id="${idd}">${opts.map(([v,l])=>`<div class="sg ${cur===v?'on':''}" data-v="${v}" onclick="segPick(this)">${l}</div>`).join('')}</div>`;
   openSheet(`<h3>${id?'Modifica cliente':'Nuovo cliente'} <span class="x" onclick="closeSheet()">✕</span></h3>
-  <div class="fld"><label>Nome</label><input id="cl-n" value="${esc(c.name)}"></div>
+  <div class="frow"><div class="fld"><label>Nome</label><input id="cl-fn" value="${esc(c.firstName||c.name||'')}"></div>
+  <div class="fld"><label>Cognome</label><input id="cl-ln" value="${esc(c.lastName||'')}"></div></div>
   <div class="frow"><div class="fld"><label>Telefono</label><input id="cl-p" inputmode="tel" value="${esc(c.phone||'')}"></div>
-  <div class="fld"><label>Zona (scrivi o scegli)</label><input id="cl-z" list="cl-zlist" value="${esc(c.zone||'')}" placeholder="es. Valle, Grono, Roveredo"><datalist id="cl-zlist">${clientZones().map(z=>`<option value="${esc(z)}">`).join('')}</datalist></div></div>
+  <div class="fld"><label>Email</label><input id="cl-em" inputmode="email" value="${esc(c.email||'')}"></div></div>
+  <div class="frow"><div class="fld" style="flex:3"><label>Via</label><input id="cl-st" value="${esc(c.street||c.address||'')}"></div>
+  <div class="fld" style="flex:1"><label>N°</label><input id="cl-snr" value="${esc(c.streetNo||'')}"></div></div>
+  <div class="frow"><div class="fld" style="flex:1"><label>CAP</label><input id="cl-cap" inputmode="numeric" value="${esc(c.cap||'')}"></div>
+  <div class="fld" style="flex:2"><label>Paese</label><input id="cl-tw" list="cl-twlist" value="${esc(c.town||c.zone||'')}" placeholder="es. Grono, Roveredo"><datalist id="cl-twlist">${clientTowns().map(t=>`<option value="${esc(t)}">`).join('')}</datalist></div></div>
   <div class="fld"><label>Gruppo (scrivi o scegli)</label><input id="cl-g" list="cl-glist" value="${esc(c.group||'')}" placeholder="es. Grono e dintorni, Gruppo A"><datalist id="cl-glist">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist></div>
-  <div class="fld"><label>Indirizzo</label><input id="cl-a" value="${esc(c.address||'')}"></div>
   <div class="fld"><label>Tipo impianto (anche più di uno)</label><div class="seg" id="cl-pl">${[['Stufa','🔥 Stufa'],['Caldaia','♨️ Caldaia'],['Camino','🪵 Camino']].map(([v,l])=>`<div class="sg ${(c.plant||'').includes(v)?'on':''}" data-v="${v}" onclick="this.classList.toggle('on')">${l}</div>`).join('')}</div></div>
   ${typeof MACHINES!=='undefined'?`<div class="fld"><label>⚙️ Macchina dal catalogo (collega al cliente; gestione completa nella scheda)</label><div class="seg" id="cl-mac" style="flex-wrap:wrap;gap:7px">${MACHINES.map(m=>`<div class="sg" data-v="${esc(m.id)}" onclick="this.classList.toggle('on')">${esc(m.marca+' '+m.nome)}</div>`).join('')}</div></div>`:''}
   <div class="fld"><label>Prende pellet?</label>${seg('cl-pe',[['sfuso','🪵 Sfuso'],['sacchi','📦 Sacchi'],['no','No'],['','—']],c.pellet||'')}</div>
@@ -2420,10 +2447,13 @@ function editClient(id){
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="saveClient('${id||''}')">Salva</button></div>`);
 }
 function saveClient(id){
-  const name=$('#cl-n').value.trim();if(!name){toast('Manca il nome');return;}
+  const fn=$('#cl-fn').value.trim(),ln=$('#cl-ln').value.trim();
+  const name=(fn+' '+ln).trim();if(!name){toast('Manca il nome');return;}
   const sv=idd=>$('#'+idd+' .sg.on')?.dataset.v||'';
   const plant=[...document.querySelectorAll('#cl-pl .sg.on')].map(x=>x.dataset.v).join(', ');
-  const data={name,phone:$('#cl-p').value.trim(),zone:$('#cl-z').value.trim(),group:$('#cl-g').value.trim(),address:$('#cl-a').value.trim(),plant,pellet:sv('cl-pe'),maintenance:sv('cl-ma'),notes:$('#cl-no').value.trim()};
+  const st=$('#cl-st').value.trim(),snr=$('#cl-snr').value.trim(),cap=$('#cl-cap').value.trim(),tw=$('#cl-tw').value.trim();
+  const address=[[st,snr].filter(Boolean).join(' '),[cap,tw].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const data={name,firstName:fn,lastName:ln,phone:$('#cl-p').value.trim(),email:$('#cl-em').value.trim(),street:st,streetNo:snr,cap:cap,town:tw,address,group:$('#cl-g').value.trim(),plant,pellet:sv('cl-pe'),maintenance:sv('cl-ma'),notes:$('#cl-no').value.trim()};
   let cid=id;
   if(id){Object.assign(byId(S.clients,id),data);}else{cid=uid();S.clients.unshift({id:cid,created:Date.now(),...data});}
   const macSel=[...document.querySelectorAll('#cl-mac .sg.on')].map(x=>x.dataset.v);

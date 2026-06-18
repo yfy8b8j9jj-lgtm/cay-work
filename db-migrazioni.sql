@@ -364,3 +364,15 @@ create policy an_ins on public.alarm_notes for insert to authenticated
 create policy an_upd on public.alarm_notes for update to authenticated
   using (public.is_owner() or public.has_perm('macchine') or public.has_perm('man'))
   with check (public.is_owner() or public.has_perm('macchine') or public.has_perm('man'));
+
+-- ------------------------------------------------------------
+-- 18 giu 2026 — Anagrafica cliente in campi separati (nome/cognome/via/civico/CAP/paese/email)
+-- I dati restano nel `name`/`address` composti (compatibilità) + nei campi nuovi.
+-- ------------------------------------------------------------
+alter table public.clients add column if not exists first_name text;
+alter table public.clients add column if not exists last_name  text;
+alter table public.clients add column if not exists street     text;
+alter table public.clients add column if not exists street_no  text;
+alter table public.clients add column if not exists cap        text;
+alter table public.clients add column if not exists town       text;
+alter table public.clients add column if not exists email      text;
