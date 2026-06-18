@@ -635,7 +635,7 @@ function renderInstall(){
   }).join('');
   const installCards=installs.map(it=>`
     <div class="card">
-      <div class="mc-h"><b>${esc(cn(it.client_id))}</b>${it.serial?` · <span class="mono">matr. ${esc(it.serial)}</span>`:''}</div>
+      <div class="mc-h" style="display:flex;align-items:center;gap:8px"><b style="flex:1">${esc(cn(it.client_id))}</b>${it.serial?`<span class="mono">matr. ${esc(it.serial)}</span>`:''}${macCanCatalog()?`<span style="${MAC_DEL_BTN}" onclick="macUnlinkMachine('${it.id}','install')">scollega</span>`:''}</div>
       <div class="note">Installata il ${fmt(it.install_date)}</div>
       <div class="mc-parts">${partsFor(it.id)}</div>
     </div>`).join('') || `<div class="note">Nessuna installazione registrata per questo modello.</div>`;
@@ -894,7 +894,22 @@ window.renderMacchine=renderMacchine;
 function macModelName(key){ const m=MACHINES.find(x=>x.id===key); return m?(m.marca+' '+m.nome):(key||'Macchina'); }
 function macCanCatalog(){ return (typeof isOwner==='function'&&isOwner())||(typeof can==='function'&&can('macchine')); }
 const MAC_OPEN_BTN='font-family:var(--mono);font-size:10.5px;color:var(--cy);border:1px solid rgba(91,160,44,.4);border-radius:99px;padding:3px 9px;cursor:pointer;white-space:nowrap';
+const MAC_DEL_BTN='font-family:var(--mono);font-size:10.5px;color:var(--coral);border:1px solid rgba(214,69,40,.4);border-radius:99px;padding:3px 9px;cursor:pointer;white-space:nowrap';
 const MAC_FMT=d=>(d&&typeof fmtD==='function')?fmtD(d):(d||'');
+/* scollega/elimina un'installazione (site_machines). Solo titolare o permesso 'macchine'. */
+async function macUnlinkMachine(id,kind,a,b){
+  if(!macCanCatalog()){ if(typeof toast==='function')toast('Serve il permesso «Macchine»'); return; }
+  if(typeof sb==='undefined') return;
+  if(!confirm('Scollegare questa macchina? Verrà rimossa l\'installazione (e l\'eventuale storico ricambi collegato a questa installazione).')) return;
+  try{
+    const {error}=await sb.from('site_machines').delete().eq('id',id); if(error) throw error;
+    if(typeof macHist!=='undefined'&&macHist.installs) macHist.installs=macHist.installs.filter(x=>x.id!==id);
+    if(typeof toast==='function')toast('Macchina scollegata');
+    if(kind==='client') macRenderClientMachines(a,b||'cli-machines');
+    else if(kind==='site') macRenderSiteMachines(a,b,'site-machines');
+    else if(kind==='install') renderInstall();
+  }catch(e){ if(typeof toast==='function')toast('⚠ Non rimossa: '+(e.message||e)); }
+}
 
 /* apre la scheda nella sezione Macchine (opz: tab attiva, e manutenzione target per l'export) */
 let macTargetMaint=null;
@@ -920,6 +935,7 @@ async function macRenderClientMachines(clientId,containerId){
   const list=rows.map(r=>`<div class="subtle" style="padding:3px 0 3px 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span style="flex:1">• ⚙️ ${esc(macModelName(r.machine_key))}${r.serial?' · matr. '+esc(r.serial):''}${r.install_date?' · '+esc(MAC_FMT(r.install_date)):''}</span>
     ${macCanCatalog()?`<span style="${MAC_OPEN_BTN}" onclick="macOpenScheda('${esc(r.machine_key)}')">apri scheda ›</span>`:''}
+    ${macCanCatalog()?`<span style="${MAC_DEL_BTN}" onclick="macUnlinkMachine('${r.id}','client','${clientId}','${containerId}')">scollega</span>`:''}
   </div>`).join('') || '<div class="subtle">Nessuna macchina collegata.</div>';
   el.innerHTML=list+`
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
@@ -951,6 +967,7 @@ async function macRenderSiteMachines(siteId,clientId,containerId){
   const list=rows.map(r=>`<div class="subtle" style="padding:3px 0 3px 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span style="flex:1">• ⚙️ ${esc(macModelName(r.machine_key))}${r.serial?' · matr. '+esc(r.serial):''}</span>
     ${macCanCatalog()?`<span style="${MAC_OPEN_BTN}" onclick="macOpenScheda('${esc(r.machine_key)}')">apri scheda ›</span>`:''}
+    ${macCanCatalog()?`<span style="${MAC_DEL_BTN}" onclick="macUnlinkMachine('${r.id}','site','${siteId}','${clientId||''}')">scollega</span>`:''}
   </div>`).join('') || '<div class="subtle">Nessuna macchina su questo cantiere.</div>';
   el.innerHTML=list+`
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
