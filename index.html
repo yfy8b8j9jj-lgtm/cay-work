@@ -299,7 +299,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.19-122903';
+const APP_VERSION='2026.06.19-124747';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -892,14 +892,129 @@ let importDraft=null,lastImportBatch=null;
 const impKey=s=>norm(s).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).sort().join(' ');
 function openImport(){
   if(!isOwner()){toast('Solo il titolare può importare');return;}
-  const undo=lastImportBatch?`<button class="btn" style="border-color:var(--amber);color:var(--amber)" onclick="undoImport()">↩ Annulla ultimo import (${lastImportBatch.count} record)</button>`:'';
+  const undo=lastImportBatch?`<div class="actions" style="flex-direction:column"><button class="btn" style="border-color:var(--amber);color:var(--amber)" onclick="undoImport()">↩ Annulla ultimo import (${lastImportBatch.count} record)</button></div>`:'';
   openSheet(`<h3>📥 Importa dati <span class="x" onclick="closeSheet()">✕</span></h3>
-  <div class="subtle" style="margin-bottom:14px">Carica un file <b>ptek-import.json</b> preparato con la skill «importa-dati» (legge i tuoi PDF/Excel e li mette in ordine). Vedrai un'anteprima di cosa verrà aggiunto <b>prima</b> di confermare. I dati restano su questo dispositivo finché non confermi.</div>
-  <div class="actions" style="flex-direction:column">
-    <button class="btn pri" onclick="$('#imp-data-file').click()">📂 Scegli file ptek-import.json</button>
+  <div class="subtle" style="margin-bottom:12px">Aggiungi in blocco clienti, consegne pellet, manutenzioni o appuntamenti da un file. Vedrai sempre un'<b>anteprima</b> prima di scrivere; i dati restano su questo dispositivo finché non confermi.</div>
+  <div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px">
+    <div style="font-weight:600;margin-bottom:3px">📊 Da Excel o CSV</div>
+    <div class="subtle" style="margin-bottom:8px">.xlsx, .xls, .csv — la lista esportata dal tuo gestionale o da Excel. Colleghi tu le colonne ai campi dell'app (provo a indovinare). Non serve Claude.</div>
+    <button class="btn pri" style="width:100%" onclick="$('#imp-sheet-file').click()">Scegli Excel / CSV</button>
+    <input type="file" id="imp-sheet-file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" onchange="loadSheetFile(event)">
+  </div>
+  <div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px">
+    <div style="font-weight:600;margin-bottom:3px">🤖 Da file preparato con Claude</div>
+    <div class="subtle" style="margin-bottom:8px">Un <b>ptek-import.json</b> creato con la skill «importa-dati» — per PDF, scansioni o file complicati.</div>
+    <button class="btn" style="width:100%" onclick="$('#imp-data-file').click()">Scegli ptek-import.json</button>
     <input type="file" id="imp-data-file" accept=".json,application/json" style="display:none" onchange="loadImportFile(event)">
-    ${undo}
-  </div>`);
+  </div>
+  ${undo}`);
+}
+/* lettura diretta Excel/CSV in-app (SheetJS caricato on-demand) */
+let _xlsxP=null;
+function ensureXLSX(){
+  if(window.XLSX)return Promise.resolve();
+  if(_xlsxP)return _xlsxP;
+  _xlsxP=new Promise((res,rej)=>{const s=document.createElement('script');s.src='./vendor/xlsx.full.min.js';s.onload=()=>res();s.onerror=()=>{_xlsxP=null;rej();};document.head.appendChild(s);});
+  return _xlsxP;
+}
+let importRows=[],importHeaders=[],importEntity='clients',importUnit='sacchi';
+const IMP_ENT_LABEL={clients:'👥 Clienti',pellet:'🪵 Pellet',maintenances:'🔧 Manut.',appointments:'📅 Appunt.'};
+const IMP_FIELDS={
+  clients:[
+    {k:'lastName',label:'Cognome / Ditta',hints:['cognome','ditta','surname','azienda','ragione']},
+    {k:'firstName',label:'Nome',hints:['nome','first','vorname','prenom']},
+    {k:'name',label:'Nome completo (se non separato)',hints:['nominativo','denominazione','intestatario','cliente','contatto']},
+    {k:'street',label:'Via',hints:['via','indirizzo','street','strasse','adresse','rue']},
+    {k:'streetNo',label:'Civico',hints:['civico','nr','numero','hausnummer']},
+    {k:'cap',label:'CAP',hints:['cap','plz','postal']},
+    {k:'town',label:'Paese / Luogo',hints:['luogo','paese','citta','comune','town','city','ort','localita']},
+    {k:'phone',label:'Telefono',hints:['tel','cell','phone','telefono','natel','mobil']},
+    {k:'email',label:'Email',hints:['email','mail','posta']},
+    {k:'group',label:'Gruppo / Zona',hints:['gruppo','zona','group','categoria']},
+    {k:'notes',label:'Note',hints:['note','nota','osserv','bemerk']},
+  ],
+  pellet:[
+    {k:'clientName',label:'Cliente',hints:['cliente','client','cognome','ditta','nominativo']},
+    {k:'qty',label:'Quantità',hints:['quant','qta','sacchi','peso','kg']},
+    {k:'date',label:'Data',hints:['data','date','giorno','consegna']},
+    {k:'price',label:'Prezzo',hints:['prezzo','importo','price','chf','costo']},
+    {k:'notes',label:'Note',hints:['note','nota']},
+  ],
+  maintenances:[
+    {k:'clientName',label:'Cliente',hints:['cliente','client','cognome','ditta','nominativo']},
+    {k:'title',label:'Titolo / Descrizione',hints:['titolo','descr','lavoro','interv','oggetto','title']},
+    {k:'date',label:'Data',hints:['data','date','giorno','scadenza']},
+    {k:'type',label:'Tipo',hints:['tipo','type','impianto','macchina']},
+    {k:'price',label:'Prezzo',hints:['prezzo','importo','price','chf','costo']},
+    {k:'notes',label:'Note',hints:['note','nota']},
+  ],
+  appointments:[
+    {k:'clientName',label:'Cliente',hints:['cliente','client','cognome','ditta','nominativo']},
+    {k:'title',label:'Titolo',hints:['titolo','oggetto','descr','title','motivo']},
+    {k:'date',label:'Data',hints:['data','date','giorno']},
+    {k:'time',label:'Ora',hints:['ora','orario','time']},
+  ],
+};
+const cleanCell=v=>{
+  if(v==null)return'';
+  if(v instanceof Date){const z=n=>String(n).padStart(2,'0');return v.getFullYear()+'-'+z(v.getMonth()+1)+'-'+z(v.getDate());}
+  const s=String(v).trim();return(s===','||s==='-')?'':s;
+};
+function rowsFromWorkbook(wb){
+  const ws=wb.Sheets[wb.SheetNames[0]];if(!ws)return{headers:[],rows:[]};
+  const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,cellDates:true,defval:''});
+  const hi=aoa.findIndex(r=>r&&r.some(c=>String(c==null?'':c).trim()));
+  if(hi<0)return{headers:[],rows:[]};
+  const BAD=new Set(['__proto__','constructor','prototype']);
+  const headers=aoa[hi].map((h,i)=>{const c=cleanCell(h)||('Colonna '+(i+1));return BAD.has(c)?('Colonna '+(i+1)):c;});
+  const rows=aoa.slice(hi+1).filter(r=>r&&r.some(c=>String(c==null?'':c).trim())).map(r=>{const o=Object.create(null);headers.forEach((h,i)=>{o[h]=cleanCell(r[i]);});return o;});
+  return{headers,rows};
+}
+function loadSheetFile(ev){
+  const f=ev.target.files[0];if(!f)return;ev.target.value='';
+  toast('⏳ Leggo il file…');
+  ensureXLSX().then(()=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(r.result),{type:'array',cellDates:true});
+        const o=rowsFromWorkbook(wb);
+        if(!o.rows.length){toast('Il file sembra vuoto o senza righe');return;}
+        importHeaders=o.headers;importRows=o.rows;importEntity='clients';importUnit='sacchi';
+        openColumnMap();
+      }catch(e){console.error(e);toast('⚠️ Non riesco a leggere questo file');}
+    };
+    r.readAsArrayBuffer(f);
+  }).catch(()=>toast('⚠️ Libreria Excel non disponibile (serve connessione la prima volta)'));
+}
+function autoMap(ent){
+  const used=new Set(),m={};
+  IMP_FIELDS[ent].forEach(f=>{const h=importHeaders.find(h=>!used.has(h)&&f.hints.some(t=>norm(h).includes(t)));if(h){m[f.k]=h;used.add(h);}});
+  return m;
+}
+function openColumnMap(){
+  const ent=importEntity,auto=autoMap(ent);
+  const colOpts=sel=>`<option value="">— nessuna —</option>`+importHeaders.map(h=>`<option value="${esc(h)}" ${sel===h?'selected':''}>${esc(h)}</option>`).join('');
+  const entSeg=Object.keys(IMP_ENT_LABEL).map(k=>`<div class="sg ${ent===k?'on':''}" onclick="importEntity='${k}';openColumnMap()">${IMP_ENT_LABEL[k]}</div>`).join('');
+  const unitRow=ent==='pellet'?`<div class="fld"><label>Unità delle quantità</label><select onchange="importUnit=this.value">${[['sacchi','📦 Sacchi'],['t','🪵 Sfuso (ton)']].map(([v,l])=>`<option value="${v}" ${importUnit===v?'selected':''}>${l}</option>`).join('')}</select></div>`:'';
+  const fields=IMP_FIELDS[ent].map(f=>`<div class="frow" style="align-items:center;gap:8px"><div style="flex:1;font-size:13px;color:var(--t2)">${f.label}</div><div class="fld" style="flex:1;margin:0"><select id="map-${f.k}">${colOpts(auto[f.k])}</select></div></div>`).join('');
+  openSheet(`<h3>📊 Collega le colonne <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:8px">Trovate <b>${importRows.length}</b> righe. Scegli che dati sono e collega ogni colonna del file al campo giusto (ho già provato a indovinare).</div>
+  <div class="fld"><label>Che dati sono?</label><div class="seg">${entSeg}</div></div>
+  ${unitRow}
+  <div style="border-top:1px solid var(--line);margin:8px 0 10px"></div>
+  ${fields}
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="importMapPreview()">Anteprima →</button></div>`);
+}
+function importMapPreview(){
+  const ent=importEntity,map={};
+  IMP_FIELDS[ent].forEach(f=>{const v=$('#map-'+f.k)?.value;if(v)map[f.k]=v;});
+  const need=ent==='clients'?(map.lastName||map.firstName||map.name):map.clientName;
+  if(!need){toast('Collega almeno '+(ent==='clients'?'Cognome, Nome o Nome completo':'la colonna Cliente'));return;}
+  const arr=importRows.map(r=>{const o={};IMP_FIELDS[ent].forEach(f=>{if(map[f.k])o[f.k]=r[map[f.k]]||'';});if(ent==='pellet')o.unit=importUnit;return o;});
+  importDraft=buildImportDraft({format:'ptek-import',version:1,entities:{[ent]:arr}});
+  if(!importDraft.total){toast('Nessuna riga valida con questa mappatura');return;}
+  showImportPreview();
 }
 function loadImportFile(ev){
   const f=ev.target.files[0];if(!f)return;ev.target.value='';
