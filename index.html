@@ -16,6 +16,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./macchine.css">
+<link rel="stylesheet" href="./vendor/leaflet.css">
+<link rel="stylesheet" href="./zone.css">
 <script>try{if(localStorage.getItem('caywork_theme')==='dark'){document.documentElement.dataset.theme='dark';var _m=document.querySelector('meta[name=theme-color]');if(_m)_m.content='#14160F';}}catch(e){}</script>
 <style>
 :root{
@@ -297,7 +299,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.18-130020';
+const APP_VERSION='2026.06.19-110940';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -714,6 +716,7 @@ const VIEWS=[
   {id:'sites',ic:'🏗',label:'Cantieri'},
   {id:'macchine',ic:'⚙️',label:'Macchine'},
   {id:'clients',ic:'👥',label:'Clienti'},
+  {id:'zone',ic:'🗺️',label:'Zone'},
   {id:'conti',ic:'💰',label:'Conti'},
   {id:'emps',ic:'👷',label:'Personale'},
 ];
@@ -737,7 +740,7 @@ function navKey(){return 'caywork_nav_'+(S.session?S.session.empId:'x');}
 function getBottomNav(){const k=navKey();if(bottomNavMem[k])return bottomNavMem[k];try{const v=JSON.parse(localStorage.getItem(k)||'null');if(Array.isArray(v)&&v.length){bottomNavMem[k]=v;return v;}}catch(e){}return NAV_DEFAULT;}
 function setBottomNav(ids){const k=navKey();bottomNavMem[k]=ids.slice();try{localStorage.setItem(k,JSON.stringify(ids));}catch(e){}}
 function renderNav(){
-  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
+  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||(v.id==='zone'?can('clients'):can(v.id)));
   const ps=pushState();const sep='margin-top:10px;border-top:1px solid var(--line);border-radius:0;padding-top:14px';
   const pushNav=ps==='unsupported'?''
     :ps==='on'?`<div class="ni" style="${sep};color:var(--cy)" onclick="pushTest()"><span class="ic">📩</span>Notifica di prova</div><div class="ni" style="color:var(--teal)" onclick="disablePush()"><span class="ic">🔔</span>Notifiche attive — disattiva</div>`
@@ -761,7 +764,7 @@ function renderNav(){
   }).join('');
 }
 function openMenu(){
-  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
+  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||(v.id==='zone'?can('clients'):can(v.id)));
   const inBar=new Set(getBottomNav().filter(id=>vis.some(v=>v.id===id)).slice(0,5));
   const overflow=vis.filter(v=>!inBar.has(v.id));
   const ps=pushState();
@@ -781,7 +784,7 @@ function openMenu(){
 }
 /* personalizzazione barra in basso */
 function editBottomNav(){
-  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||can(v.id));
+  const vis=VIEWS.filter(v=>v.id==='hub'||v.id==='notif'||(v.id==='zone'?can('clients'):can(v.id)));
   const cur=getBottomNav().filter(id=>vis.some(v=>v.id===id));
   openSheet(`<h3>⚙️ Barra in basso <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="subtle" style="margin-bottom:10px">Tocca le sezioni che vuoi nella barra in basso (massimo 5). Le altre restano dentro «☰ Altro».</div>
@@ -807,6 +810,7 @@ function openBackup(){
   const counts=`${S.clients.length} clienti · ${S.maintenances.length} manutenzioni · ${S.pellet.length} consegne · ${S.sites.length} cantieri · ${S.appointments.length} appuntamenti · ${S.notes.length} note · ${S.lists.length} liste`;
   openSheet(`<h3>💾 Backup & impostazioni <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Intestazione azienda (per i bollettini stampati)</label><input id="set-co" value="${esc(S.settings.companyName||'')}" placeholder="es. Rossi Riscaldamenti Sagl — Via X, Lugano" onchange="S.settings.companyName=this.value.trim();save();toast('Intestazione salvata')"></div>
+  <div class="fld"><label>📍 Base / officina (paese di partenza per i giri di consegna · salvata su questo dispositivo)</label><input id="set-base" list="set-baselist" value="${esc(typeof zoneBaseTown==='function'?zoneBaseTown():'')}" placeholder="es. San Vittore, Roveredo" onchange="zoneSetBase(this.value)"><datalist id="set-baselist">${typeof ZONE_PAESI!=='undefined'?[...new Set(ZONE_PAESI.map(t=>t.p))].sort().map(p=>`<option value="${esc(p)}">`).join(''):''}</datalist></div>
   <div class="frow">
     <div class="fld"><label>Prezzo sfuso CHF/t</label><input type="number" inputmode="decimal" value="${S.settings.pricePerTon||''}" onchange="S.settings.pricePerTon=parseFloat(this.value)||null;save();toast('Prezzo salvato')"></div>
     <div class="fld"><label>Prezzo CHF/sacco</label><input type="number" inputmode="decimal" step="any" value="${S.settings.pricePerBag||''}" onchange="S.settings.pricePerBag=parseFloat(this.value)||null;save();toast('Prezzo salvato')"></div>
@@ -889,7 +893,7 @@ function render(){
   S.speaker=S.session.empId;
   renderNav();
   $('#todaypill').textContent=GG[new Date().getDay()].slice(0,3)+' '+new Date().getDate()+' '+MESI[new Date().getMonth()].slice(0,3);
-  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,macchine:window.renderMacchine,clients:renderClients,conti:renderConti,emps:renderEmps};
+  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,macchine:window.renderMacchine,clients:renderClients,zone:window.renderZone,conti:renderConti,emps:renderEmps};
   $('#main').innerHTML='';(R[view]||renderHub)();
   if(view==='notif'&&notifTab==='chat'){const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;}
 }
@@ -1063,6 +1067,7 @@ function renderHub(){
   ${contiCard}
   ${cantieriCard}
   ${late.length?`<div class="card" style="border-color:rgba(214,69,40,.35)"><div class="sh"><span class="t" style="color:var(--coral)">⚠ In ritardo</span></div>${late.map(evRow).join('')}</div>`:''}
+  ${typeof zoneHubCardHTML==='function'?zoneHubCardHTML():''}
   <div class="card hl"><div class="sh"><span class="t">Oggi</span><span class="a" onclick="nav('cal')">Calendario →</span></div>
     ${todayEv.length?todayEv.map(evRow).join(''):'<div class="empty"><div class="big">🌊</div>Niente in programma oggi.</div>'}
   </div>
@@ -1644,6 +1649,7 @@ function openMan(id){
   ${id&&m.status!=='fatta'?`<button class="btn pri" style="width:100%;margin-bottom:10px" onclick="startBollettino('${id}')">▶ Avvia intervento (bollettino)</button>`:''}
   ${id&&typeof macCanCatalog==='function'&&macCanCatalog()?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--cy);color:var(--cy)" onclick="macFromMaint('${id}')">⚙️ Scheda macchina · compila tagliando</button>`:''}
   ${id&&m.report?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--teal);color:var(--teal)" onclick="viewBollettino('${id}')">📄 Vedi bollettino firmato</button>`:''}
+  ${m.clientId?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--blue);color:var(--blue)" onclick="zoneFromSheet('mn-c')">📍 Vedi il cliente sulla mappa</button>`:''}
   <div class="actions">
     ${id?`<button class="btn danger" onclick="delItem('maintenances','${id}')">Elimina</button>`:''}
     <button class="btn pri" onclick="saveMan('${id||''}')">Salva</button></div>`);
@@ -1863,6 +1869,7 @@ function openPel(id,preset){
   <div class="fld"><label>Note</label><textarea id="pl-n">${esc(p.notes||'')}</textarea></div>
   ${id&&p.status!=='consegnato'?`<button class="btn pri" style="width:100%;margin-bottom:10px" onclick="startBolla('${id}')">✍ Consegna con firma (bolla)</button>`:''}
   ${id&&p.signature?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--teal);color:var(--teal)" onclick="printBolla('${id}')">📄 Stampa bolla firmata</button>`:''}
+  ${p.clientId?`<button class="btn" style="width:100%;margin-bottom:10px;border-color:var(--blue);color:var(--blue)" onclick="zoneFromSheet('pl-c')">📍 Vedi il cliente sulla mappa</button>`:''}
   <div class="actions">
     ${id?`<button class="btn danger" onclick="delItem('pellet','${id}')">Elimina</button>
     <button class="btn" onclick="togglePel('${id}')">${p.status==='consegnato'?'Riapri':'✓ Consegnato'}</button>`:''}
@@ -1979,6 +1986,7 @@ function openSite(id){
   <div class="fld"><label>⚙️ Macchine sul cantiere</label><div id="site-machines"><div class="subtle">…</div></div></div>
   <div class="actions" style="flex-wrap:wrap">
     <button class="btn danger" onclick="delSite('${id}')">Elimina</button>
+    ${s.clientId?`<button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="zoneFocusClient('${s.clientId}')">📍 Mappa</button>`:''}
     ${s.status==='previsto'?`<button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="setSiteStatus('${id}','aperto')">▶ Avvia → cantiere attivo</button>`:''}
     ${s.status==='aperto'?`<button class="btn" style="border-color:var(--amber);color:var(--amber)" onclick="setSiteStatus('${id}','da_fatturare')">✓ Finito → fattura</button>`:''}
     ${s.status==='da_fatturare'?`<button class="btn" onclick="setSiteStatus('${id}','aperto')">↩ Riapri</button>
@@ -2434,6 +2442,7 @@ function openClient(id){
   <div class="fld"><label>📷 Foto e file del cliente</label><div id="cli-att"><div class="subtle">…</div></div></div>
   <div class="actions" style="flex-wrap:wrap">
     <button class="btn danger" onclick="delClient('${id}')">Elimina</button>
+    <button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="zoneFocusClient('${id}')">📍 Mappa</button>
     <button class="btn" style="border-color:var(--coral);color:var(--coral)" onclick="toggleBlock('${id}')">${c.blocked?'🔓 Sblocca':'🚫 Blocca'}</button>
     <button class="btn pri" onclick="editClient('${id}')">Modifica</button></div>`);
   if(typeof macRenderClientMachines==='function') macRenderClientMachines(id,'cli-machines');
@@ -2469,6 +2478,7 @@ function saveClient(id){
   const st=$('#cl-st').value.trim(),snr=$('#cl-snr').value.trim(),cap=$('#cl-cap').value.trim(),tw=$('#cl-tw').value.trim();
   const address=[[st,snr].filter(Boolean).join(' '),[cap,tw].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   const data={name,firstName:fn,lastName:ln,phone:$('#cl-p').value.trim(),email:$('#cl-em').value.trim(),street:st,streetNo:snr,cap:cap,town:tw,address,group:$('#cl-g').value.trim(),plant,pellet:sv('cl-pe'),maintenance:sv('cl-ma'),notes:$('#cl-no').value.trim()};
+  if(!data.group&&typeof zoneOfClient==='function'){const _z=zoneOfClient(data);if(_z)data.group=ZONE_LABEL(_z);} // gruppo = zona dal paese
   let cid=id;
   if(id){Object.assign(byId(S.clients,id),data);}else{cid=uid();S.clients.unshift({id:cid,created:Date.now(),...data});}
   const macSel=[...document.querySelectorAll('#cl-mac .sg.on')].map(x=>x.dataset.v);
@@ -2941,5 +2951,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 })();
 </script>
 <script src="./macchine.js"></script>
+<script src="./vendor/leaflet.js"></script>
+<script src="./zone-data.js"></script>
+<script src="./zone.js"></script>
 </body>
 </html>

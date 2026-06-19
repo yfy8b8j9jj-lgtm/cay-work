@@ -8,3 +8,7 @@ vapid_public.txt
 # Restano sul disco locale come riferimento, ma non si pubblicano (~23MB di PDF).
 prototipo-schede-macchine/
 server.js
+# File Excel/CSV con dati clienti (PII) — non vanno mai pubblicati su GitHub Pages
+*.xlsx
+*.xls
+*.csv
