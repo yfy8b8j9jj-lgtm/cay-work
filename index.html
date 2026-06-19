@@ -134,6 +134,13 @@ body::before{content:'';position:fixed;inset:0;background:
 .badge{display:inline-block;font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:99px;border:1px solid;letter-spacing:.4px}
 .empty{text-align:center;color:var(--t3);padding:34px 16px;font-size:13px;line-height:1.6}
 .empty .big{font-size:26px;margin-bottom:8px;opacity:.6}
+.empty.tall{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;padding:40px 16px}
+.empty .cta{margin-top:16px}
+/* griglia clienti su desktop: piu' densita', meno scroll (telefono resta 1 colonna) */
+@media(min-width:900px){
+  .clients-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));column-gap:22px;padding-top:8px;padding-bottom:8px}
+  .clients-grid .item{border-bottom:1px solid var(--line)}
+}
 /* design 2026: contatori compatti, righe a fascia, avatar, intestazioni gruppo */
 .kpis{display:grid;gap:7px;margin-bottom:12px}
 .kpi{background:var(--bg1);border:1px solid var(--line);border-radius:12px;padding:9px 4px;text-align:center;min-width:0}
@@ -299,7 +306,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.19-124747';
+const APP_VERSION='2026.06.19-135159';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -1473,7 +1480,6 @@ function renderCal(){
       <span class="dn">${d}</span><span class="cal-dots">${dots}</span>${evs.length>4?`<span class="more">+${evs.length-4}</span>`:''}</div>`;
     if(i>=startDow+daysIn-1&&(i+1)%7===0)break;
   }
-  const selEv=(map[calSel]||[]);
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Calendario</div>
   ${calTabs}
@@ -1486,9 +1492,6 @@ function renderCal(){
     </div>
     <div class="cal-grid">${['LU','MA','ME','GI','VE','SA','DO'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}${cells}</div>
     <div class="legend">${Object.values(TYPE_META).filter(t=>t.label!=='Lista').map(t=>`<span><i style="background:${t.hex}"></i>${t.label}</span>`).join('')}</div>
-  </div>
-  <div class="card"><div class="sh"><span class="t">${fmtD(calSel)}</span><span class="a" onclick="openQuickAdd('${calSel}')">+ Aggiungi</span></div>
-    ${selEv.length?selEv.map(evRow).join(''):`<div class="empty">Giornata libera.<br><button class="btn pri sm" style="margin-top:10px" onclick="openQuickAdd('${calSel}')">+ Aggiungi evento</button></div>`}
   </div>
   <button class="fab" onclick="openQuickAdd('${calSel}')">+</button>`;
 }
@@ -1513,7 +1516,14 @@ function renderAgenda(){
   ${daysHtml||'<div class="card"><div class="empty"><div class="big">🌊</div>Prossime 2 settimane libere.</div></div>'}`;
 }
 function calToday(){calCur=new Date();calSel=todayIso();render();}
-function calPick(d){calSel=d;render();}
+function calPick(d){calSel=d;render();openDayPreview(d);}
+function openDayPreview(d){
+  const evs=allEvents().filter(e=>e.date===d).sort((a,b)=>((a.time||'99:99')<(b.time||'99:99')?-1:1));
+  const isToday=d===todayIso();
+  openSheet(`<h3><span>📅 ${fmtD(d)}${isToday?' <span class="badge" style="border-color:var(--cy);color:var(--cy)">oggi</span>':''} <span class="subtle">(${evs.length})</span></span><span class="x" onclick="closeSheet()">✕</span></h3>
+    ${evs.length?evs.map(evRow).join(''):'<div class="empty"><div class="big">🌊</div>Niente in programma.<br>Giornata libera.</div>'}
+    <button class="btn pri" style="width:100%;margin-top:14px" onclick="closeSheet();openQuickAdd('${d}')">+ Aggiungi cosa da fare</button>`);
+}
 function openQuickAdd(date){
   openSheet(`<h3>Aggiungi al ${fmtD(date)} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Cosa</label><input id="qa-t" placeholder="es. Sopralluogo da Bernasconi"></div>
@@ -1690,7 +1700,7 @@ function renderInbox(w){
       <button class="qbtn" onclick="event.stopPropagation();markPelDone('${p.id}')">✓ Consegnata</button></div>`;
     }).join(''));
   }
-  $('#notifbody').innerHTML=(w.total?greet:'')+(blocks.length?blocks.join(''):`<div class="empty"><div class="big">✅</div>Nessuna cosa da fare assegnata a te.<br><span class="subtle">Qui arrivano manutenzioni, appuntamenti, cantieri e consegne assegnati a te.</span></div>`);
+  $('#notifbody').innerHTML=(w.total?greet:'')+(blocks.length?blocks.join(''):`<div class="empty tall"><div class="big">✅</div>Nessuna cosa da fare assegnata a te.<br><span class="subtle">Qui arrivano manutenzioni, appuntamenti, cantieri e consegne assegnati a te.</span></div>`);
 }
 function markManDone(id){const m=byId(S.maintenances,id);if(!m)return;m.status='fatta';const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'✓ Manutenzione fatta',`${doer}: ${cName(m.clientId)||m.clientRaw||''} — ${m.title}`);save();render();toast('✓ Manutenzione segnata come fatta');}
 function markAppDone(id){const a=byId(S.appointments,id);if(!a)return;a.done=true;const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'✓ Appuntamento fatto',`${doer}: ${a.title}`);save();render();toast('✓ Appuntamento fatto');}
@@ -1795,7 +1805,7 @@ function renderMan(){
     body=(late.length?`<div class="grp" style="color:var(--coral)">⚠ IN RITARDO (${late.length})</div>`+late.map(manRow).join(''):'')
       +(upc.length?`<div class="grp">📅 PROSSIME (${upc.length})</div>`+upc.map(manRow).join(''):'')
       +(noD.length?`<div class="grp">◷ DA PROGRAMMARE (${noD.length})</div>`+noD.map(manRow).join(''):'')
-      +(!open.length?'<div class="empty"><div class="big">🔧</div>Niente da fare. 👌</div>':'');
+      +(!open.length?'<div class="empty tall"><div class="big">🔧</div>Niente da fare. 👌<button class="btn pri sm cta" onclick="openMan(null)">+ Nuova manutenzione</button></div>':'');
   }else{
     let list=all.slice();
     if(manTab==='fatte')list=list.filter(m=>m.status==='fatta');
@@ -1803,7 +1813,7 @@ function renderMan(){
     body=list.length?list.map(manRow).join(''):'<div class="empty"><div class="big">🔧</div>Nessuna manutenzione qui.</div>';
   }
   $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--amber)"></span>Manutenzioni</div>
+  <div class="pagetitle"><span class="accent" style="background:var(--amber)"></span>Manutenzioni <span class="subtle">(${all.length})</span></div>
   <div class="tabs">
     <div class="tb ${manTab==='aperte'?'on':''}" onclick="manTab='aperte';render()">Aperte (${nOpen})</div>
     <div class="tb ${manTab==='fatte'?'on':''}" onclick="manTab='fatte';render()">Fatte</div>
@@ -2042,7 +2052,7 @@ function renderPelDash(){
   const fc=sfusoForecast();const alerts=fc.filter(f=>f.days!=null&&f.days<=30);
   const all=S.pellet.slice().sort((a,b)=>((a.date||'')>(b.date||'')?-1:1));
   $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--fire)"></span>Pellet</div>
+  <div class="pagetitle"><span class="accent" style="background:var(--fire)"></span>Pellet <span class="subtle">(${S.pellet.length})</span></div>
   <div class="tabs">
     <div class="tb on">📊 Dashboard</div>
     <div class="tb" onclick="pelView='sfuso';render()">🪵 Sfuso</div>
@@ -2188,8 +2198,9 @@ function renderSites(){
     </div></div>`;
   };
   const totFatt=groups.da_fatturare.reduce((t,s)=>t+(s.amount||0),0);
+  const totSites=groups.aperto.length+groups.da_fatturare.length+groups.chiuso.length;
   $('#main').innerHTML=`
-  <div class="pagetitle"><span class="accent" style="background:var(--blue)"></span>Cantieri</div>
+  <div class="pagetitle"><span class="accent" style="background:var(--blue)"></span>Cantieri <span class="subtle">(${totSites})</span></div>
   <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
     <div class="kpi"><div class="n" style="color:var(--blue)">${groups.aperto.length}</div><div class="l">In corso</div></div>
     <div class="kpi"><div class="n" style="color:var(--amber)">${groups.da_fatturare.length}</div><div class="l">Da fatturare</div></div>
@@ -2200,7 +2211,7 @@ function renderSites(){
     <div class="tb ${siteTab==='da_fatturare'?'on':''}" onclick="siteTab='da_fatturare';render()" style="${groups.da_fatturare.length?'border-color:var(--amber);color:var(--amber)':''}">💰 Da fatturare (${groups.da_fatturare.length})</div>
     <div class="tb ${siteTab==='chiuso'?'on':''}" onclick="siteTab='chiuso';render()">🗄 Archivio (${groups.chiuso.length})</div>
   </div>
-  ${list.length?list.map(card).join(''):`<div class="empty"><div class="big">${siteTab==='da_fatturare'?'💰':siteTab==='chiuso'?'🗄':'🏗'}</div>${siteTab==='aperto'?'Nessun cantiere in corso.':siteTab==='da_fatturare'?'Niente da fatturare. 👌':'Archivio vuoto.'}</div>`}
+  ${list.length?list.map(card).join(''):`<div class="empty tall"><div class="big">${siteTab==='da_fatturare'?'💰':siteTab==='chiuso'?'🗄':'🏗'}</div>${siteTab==='aperto'?'Nessun cantiere in corso.':siteTab==='da_fatturare'?'Niente da fatturare. 👌':'Archivio vuoto.'}${siteTab==='aperto'?'<button class="btn pri sm cta" onclick="editSite(null)">+ Nuovo cantiere</button>':''}</div>`}
   <button class="fab" onclick="editSite(null)">+</button>`;
 }
 function openSite(id){
@@ -2660,7 +2671,7 @@ function renderClients(){
   const body=list.length?townKeys.map(tk=>{
     const cls=byTown[tk].sort((a,b)=>a.name.localeCompare(b.name));
     return `<div style="display:flex;align-items:center;gap:8px;margin:14px 2px 7px;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--t2)"><span style="color:var(--teal)">📍 ${esc(tk)}</span><span class="badge" style="border-color:var(--line2);color:var(--t3)">${cls.length}</span></div>
-      <div class="card">${cls.map(itemHTML).join('')}</div>`;
+      <div class="card clients-grid">${cls.map(itemHTML).join('')}</div>`;
   }).join(''):'<div class="card"><div class="empty"><div class="big">👥</div>Nessun cliente con questi filtri.</div></div>';
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--teal)"></span>Clienti <span class="subtle">(${S.clients.length})</span>${shown}</div>
