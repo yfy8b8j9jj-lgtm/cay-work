@@ -1,4 +1,9 @@
 /* ===== Vista Zone + mappa Leaflet ===== */
+/* segnaposto a goccia per la casa esatta del cliente (pin Fase 2) */
+.zpin{background:none!important;border:none!important}
+.zpin i{display:block;width:18px;height:18px;margin:0 auto;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c,#2E9E8F);border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.45)}
+.zpin i::after{content:'';position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff}
+.zpin-edit i{width:22px;height:22px}
 .zone-map{height:clamp(320px,52vh,560px);width:100%;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-bottom:12px;z-index:0;background:var(--bg2)}
 .zchips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px}
 .zchip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;border:1px solid var(--line2);background:var(--bg1);color:var(--t1);font-family:var(--disp);font-weight:700;font-size:13px;cursor:pointer;user-select:none;transition:border-color .12s}

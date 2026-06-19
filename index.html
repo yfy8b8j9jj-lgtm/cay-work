@@ -299,7 +299,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.19-110940';
+const APP_VERSION='2026.06.19-115455';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -309,8 +309,8 @@ const uid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xx
 const num=v=>(v===''||v==null)?null:+v;
 const MAPS={
  clients:{tbl:'clients',
-  toDb:c=>({id:c.id,name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||'',blocked:!!c.blocked,first_name:c.firstName||'',last_name:c.lastName||'',street:c.street||'',street_no:c.streetNo||'',cap:c.cap||'',town:c.town||'',email:c.email||''}),
-  fromDb:r=>({id:r.id,name:r.name,phone:r.phone||'',zone:r.zone||'',group:r.group||'',address:r.address||'',plant:r.plant||'',pellet:r.pellet||'',maintenance:r.maintenance||'',notes:r.notes||'',blocked:!!r.blocked,firstName:r.first_name||'',lastName:r.last_name||'',street:r.street||'',streetNo:r.street_no||'',cap:r.cap||'',town:r.town||'',email:r.email||'',created:Date.parse(r.created_at)||Date.now()})},
+  toDb:c=>({id:c.id,name:c.name,phone:c.phone||'',zone:c.zone||'',group:c.group||'',address:c.address||'',plant:c.plant||'',pellet:c.pellet||'',maintenance:c.maintenance||'',notes:c.notes||'',blocked:!!c.blocked,first_name:c.firstName||'',last_name:c.lastName||'',street:c.street||'',street_no:c.streetNo||'',cap:c.cap||'',town:c.town||'',email:c.email||'',lat:(typeof c.lat==='number'?c.lat:null),lng:(typeof c.lng==='number'?c.lng:null),geo_src:c.geoSrc||null}),
+  fromDb:r=>({id:r.id,name:r.name,phone:r.phone||'',zone:r.zone||'',group:r.group||'',address:r.address||'',plant:r.plant||'',pellet:r.pellet||'',maintenance:r.maintenance||'',notes:r.notes||'',blocked:!!r.blocked,firstName:r.first_name||'',lastName:r.last_name||'',street:r.street||'',streetNo:r.street_no||'',cap:r.cap||'',town:r.town||'',email:r.email||'',lat:(typeof r.lat==='number'?r.lat:null),lng:(typeof r.lng==='number'?r.lng:null),geoSrc:r.geo_src||null,created:Date.parse(r.created_at)||Date.now()})},
  employees:{tbl:'employees',
   toDb:e=>({id:e.id,name:e.name,role:e.role||'',phone:e.phone||'',perms:e.perms||[],is_owner:!!e.isOwner,active:e.active!==false,invite_code:e.inviteCode||null,user_id:e.userId||null}),
   fromDb:r=>({id:r.id,name:r.name,role:r.role||'',phone:r.phone||'',perms:r.perms||[],isOwner:!!r.is_owner,active:r.active!==false,inviteCode:r.invite_code,userId:r.user_id})},
@@ -2443,6 +2443,7 @@ function openClient(id){
   <div class="actions" style="flex-wrap:wrap">
     <button class="btn danger" onclick="delClient('${id}')">Elimina</button>
     <button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="zoneFocusClient('${id}')">📍 Mappa</button>
+    <button class="btn" style="border-color:var(--teal);color:var(--teal)" onclick="openClientGeo('${id}')">🎯 Posizione${(c.lat!=null&&c.lng!=null)?' ✓':''}</button>
     <button class="btn" style="border-color:var(--coral);color:var(--coral)" onclick="toggleBlock('${id}')">${c.blocked?'🔓 Sblocca':'🚫 Blocca'}</button>
     <button class="btn pri" onclick="editClient('${id}')">Modifica</button></div>`);
   if(typeof macRenderClientMachines==='function') macRenderClientMachines(id,'cli-machines');
