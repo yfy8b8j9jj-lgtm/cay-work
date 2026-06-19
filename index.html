@@ -299,7 +299,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.19-115455';
+const APP_VERSION='2026.06.19-122903';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -749,6 +749,7 @@ function renderNav(){
   $('#navside').innerHTML=vis.map(v=>{const c=v.id==='notif'?notifCount():0;return`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}${c?` <span class="badge" style="margin-left:auto;border-color:var(--cy);color:var(--cy)">${c}</span>`:''}</div>`;}).join('')
     +pushNav
     +(isOwner()?`<div class="ni" style="${ps==='unsupported'?sep:''}" onclick="openBackup()"><span class="ic">💾</span>Backup dati</div>`:'')
+    +(isOwner()?`<div class="ni" onclick="openImport()"><span class="ic">📥</span>Importa dati</div>`:'')
     +`<div class="ni" onclick="toggleTheme()"><span class="ic">${getTheme()==='dark'?'☀️':'🌙'}</span>${getTheme()==='dark'?'Tema chiaro':'Tema scuro'}</div>`
     +`<div class="ni" onclick="logout()"><span class="ic">🚪</span>Esci (${esc(me().name)})</div>`;
   const allowed=new Set(vis.map(v=>v.id));
@@ -778,6 +779,7 @@ function openMenu(){
     <div class="sg" style="padding:13px;border-color:var(--cy);color:var(--cy)" onclick="closeSheet();editBottomNav()">⚙️ Personalizza la barra in basso</div>
     ${pushRow}
     ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openBackup()">💾 Backup dati</div>`:''}
+    ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openImport()">📥 Importa dati</div>`:''}
     <div class="sg" style="padding:13px" onclick="closeSheet();toggleTheme()">${getTheme()==='dark'?'☀️ Tema chiaro':'🌙 Tema scuro'}</div>
     <div class="sg" style="padding:13px;border-color:rgba(214,69,40,.35);color:var(--coral)" onclick="logout()">🚪 Esci (${esc(me().name)})</div>
   </div>`);
@@ -885,6 +887,152 @@ function importBackup(ev){
   r.readAsText(f);
 }
 
+/* ===== Import dati da file "ptek-import" (prodotto dalla skill importa-dati) ===== */
+let importDraft=null,lastImportBatch=null;
+const impKey=s=>norm(s).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).sort().join(' ');
+function openImport(){
+  if(!isOwner()){toast('Solo il titolare può importare');return;}
+  const undo=lastImportBatch?`<button class="btn" style="border-color:var(--amber);color:var(--amber)" onclick="undoImport()">↩ Annulla ultimo import (${lastImportBatch.count} record)</button>`:'';
+  openSheet(`<h3>📥 Importa dati <span class="x" onclick="closeSheet()">✕</span></h3>
+  <div class="subtle" style="margin-bottom:14px">Carica un file <b>ptek-import.json</b> preparato con la skill «importa-dati» (legge i tuoi PDF/Excel e li mette in ordine). Vedrai un'anteprima di cosa verrà aggiunto <b>prima</b> di confermare. I dati restano su questo dispositivo finché non confermi.</div>
+  <div class="actions" style="flex-direction:column">
+    <button class="btn pri" onclick="$('#imp-data-file').click()">📂 Scegli file ptek-import.json</button>
+    <input type="file" id="imp-data-file" accept=".json,application/json" style="display:none" onchange="loadImportFile(event)">
+    ${undo}
+  </div>`);
+}
+function loadImportFile(ev){
+  const f=ev.target.files[0];if(!f)return;ev.target.value='';
+  const r=new FileReader();
+  r.onload=()=>{
+    let d;try{d=JSON.parse(r.result);}catch(e){toast('⚠️ File non valido (JSON)');return;}
+    if(!d||d.format!=='ptek-import'){toast('⚠️ Non è un file ptek-import');return;}
+    try{importDraft=buildImportDraft(d);}catch(e){console.error(e);toast('⚠️ '+(e.message||'file non valido'));return;}
+    if(!importDraft.total){toast('Nessun dato da importare nel file');return;}
+    showImportPreview();
+  };
+  r.readAsText(f);
+}
+function buildImportDraft(raw){
+  const ent=raw.entities||{};const CAP=5000;
+  const isoOk=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''))?String(s):null;
+  const timeOk=s=>{s=String(s||'').trim();return /^\d{1,2}:\d{2}$/.test(s)?s:null;};
+  const numOr=v=>(v===''||v==null||isNaN(+v))?null:+v;
+  const d={warnings:[]};
+  // indice clienti esistenti (per nome, ordine parole indifferente)
+  const idx=new Map();
+  S.clients.forEach(c=>{const k=impKey(c.name||((c.firstName||'')+' '+(c.lastName||'')));if(k&&!idx.has(k))idx.set(k,c.id);});
+  // ----- clienti -----
+  const rawC=(ent.clients||[]).slice(0,CAP);
+  const clients=rawC.map(c=>{
+    const fn=String(c.firstName||'').trim(),ln=String(c.lastName||'').trim();
+    const name=((fn+' '+ln).trim())||String(c.name||'').trim();
+    const st=String(c.street||'').trim(),snr=String(c.streetNo||'').trim(),cap=String(c.cap||'').trim(),tw=String(c.town||'').trim();
+    const address=[[st,snr].filter(Boolean).join(' '),[cap,tw].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    return{name,firstName:fn,lastName:ln,phone:String(c.phone||'').trim(),email:String(c.email||'').trim(),street:st,streetNo:snr,cap,town:tw,address,group:String(c.group||'').trim(),plant:'',pellet:'',maintenance:'',notes:String(c.notes||'').trim()};
+  }).filter(c=>c.name);
+  clients.forEach(c=>{c._key=impKey(c.name);c._dup=idx.has(c._key);});
+  d.clients=clients;
+  // insieme nomi "collegabili" = clienti già esistenti + clienti in questo file
+  const linkable=new Set(idx.keys());clients.forEach(c=>{if(c._key)linkable.add(c._key);});
+  const child=(arr,map)=>(arr||[]).slice(0,CAP).map(map).filter(Boolean);
+  const tagLink=x=>{x._linked=!!(x._clientName&&linkable.has(impKey(x._clientName)));return x;};
+  // ----- pellet -----
+  d.pellet=child(ent.pellet,p=>{
+    const cn=String(p.clientName||'').trim();if(!cn)return null;
+    const ton=(p.unit==='ton'||p.unit==='t');const qty=numOr(p.qty);
+    const o={qty,unit:ton?'t':'sacchi',kind:ton?'sfuso':'sacchi',date:isoOk(p.date),time:timeOk(p.time),status:(p.status==='consegnato'?'consegnato':'da_consegnare'),price:numOr(p.price),notes:String(p.notes||'').trim()};
+    o._clientName=cn;o._desc=((qty!=null?qty+(ton?' t':' sacchi'):'')+(o.date?' · '+o.date:'')).trim();return tagLink(o);
+  });
+  // ----- manutenzioni -----
+  d.maintenances=child(ent.maintenances,m=>{
+    const cn=String(m.clientName||'').trim();const title=String(m.title||'').trim();if(!cn&&!title)return null;
+    const o={title:title||'Manutenzione',date:isoOk(m.date),time:timeOk(m.time),type:String(m.type||'').trim()||null,status:['da_fare','programmata','fatta'].includes(m.status)?m.status:'da_fare',price:numOr(m.price),notes:String(m.notes||'').trim()};
+    o._clientName=cn;o._desc=(o.title+(o.date?' · '+o.date:'')).trim();return tagLink(o);
+  });
+  // ----- appuntamenti -----
+  d.appointments=child(ent.appointments,a=>{
+    const cn=String(a.clientName||'').trim();const title=String(a.title||'').trim();if(!cn&&!title)return null;
+    const o={title:title||'Appuntamento',date:isoOk(a.date),time:timeOk(a.time),done:!!a.done};
+    o._clientName=cn;o._desc=(o.title+(o.date?' · '+o.date:'')).trim();return tagLink(o);
+  });
+  // ----- avvisi -----
+  if(rawC.length-clients.length>0)d.warnings.push(`${rawC.length-clients.length} clienti senza nome saltati`);
+  const unl=['pellet','maintenances','appointments'].reduce((n,k)=>n+d[k].filter(x=>!x._linked).length,0);
+  if(unl)d.warnings.push(`${unl} record senza cliente corrispondente: verranno aggiunti come "non collegati" (il nome resta come testo)`);
+  d.total=clients.length+d.pellet.length+d.maintenances.length+d.appointments.length;
+  return d;
+}
+function showImportPreview(){
+  const d=importDraft;if(!d)return;
+  const box=(key,title,ic)=>{
+    const a=d[key];if(!a||!a.length)return'';
+    let meta='',extra='';
+    if(key==='clients'){
+      const nuovi=a.filter(x=>!x._dup).length,dup=a.length-nuovi;
+      meta=`${nuovi} nuovi${dup?` · <span style="color:var(--amber)">${dup} già presenti</span>`:''}`;
+      if(dup)extra=` <label style="margin-left:6px"><input type="checkbox" id="imp-dup"> importa anche i già presenti</label>`;
+    }else{
+      const lk=a.filter(x=>x._linked).length,un=a.length-lk;
+      meta=`${lk} collegati${un?` · <span style="color:var(--amber)">${un} non collegati</span>`:''}`;
+    }
+    const rows=a.slice(0,5).map(x=>{
+      const txt=key==='clients'?`${x._dup?'⚠️ ':'• '}${esc(x.name)}${x.town?' — '+esc(x.town):''}${x.phone?' · '+esc(x.phone):''}`
+        :`• ${esc(x._clientName||'—')}${x._linked?'':' <span style="color:var(--amber)">(non collegato)</span>'}${x._desc?' — '+esc(x._desc):''}`;
+      return`<div class="subtle" style="padding:1px 0">${txt}</div>`;
+    }).join('');
+    return`<div style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="imp-inc-${key}" checked> ${ic} ${title}<span style="margin-left:auto;font-weight:400;font-size:12px;color:var(--t2)">${a.length}</span></label>
+      <div style="font-size:12px;color:var(--t2);margin:4px 0 6px">${meta}${extra}</div>
+      ${rows}${a.length>5?`<div class="subtle">…e altri ${a.length-5}</div>`:''}
+    </div>`;
+  };
+  const warn=d.warnings.length?`<div class="subtle" style="color:var(--amber);margin-bottom:10px">⚠️ ${d.warnings.map(esc).join('<br>⚠️ ')}</div>`:'';
+  openSheet(`<h3>📥 Anteprima import <span class="x" onclick="closeSheet()">✕</span></h3>
+  ${warn}
+  ${box('clients','Clienti','👥')}
+  ${box('pellet','Consegne pellet','🪵')}
+  ${box('maintenances','Manutenzioni','🔧')}
+  ${box('appointments','Appuntamenti','📅')}
+  <div class="subtle" style="margin-bottom:12px">I clienti con lo stesso nome di uno già in archivio sono saltati di default. Niente viene scritto finché non premi Conferma.</div>
+  <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="confirmImport()">✓ Conferma e importa</button></div>`);
+}
+function confirmImport(){
+  if(!isOwner()){toast('Solo il titolare può importare');return;}
+  const d=importDraft;if(!d)return;
+  const inc=k=>{const el=$('#imp-inc-'+k);return!el||el.checked;};
+  const inclDup=!!$('#imp-dup')?.checked;
+  const batch={clients:[],pellet:[],maintenances:[],appointments:[],count:0};
+  const idx=new Map();
+  S.clients.forEach(c=>{const k=impKey(c.name||((c.firstName||'')+' '+(c.lastName||'')));if(k&&!idx.has(k))idx.set(k,c.id);});
+  if(inc('clients')&&d.clients){
+    d.clients.forEach(c=>{
+      if(c._dup&&!inclDup)return;
+      const id=uid();const{_dup,_key,...data}=c;
+      if(!data.group&&typeof zoneOfClient==='function'){const z=zoneOfClient(data);if(z&&typeof ZONE_LABEL==='function')data.group=ZONE_LABEL(z);}
+      S.clients.unshift({id,created:Date.now(),...data});batch.clients.push(id);
+      if(c._key&&!idx.has(c._key))idx.set(c._key,id);
+    });
+  }
+  const resolve=name=>{const k=impKey(name);return k&&idx.has(k)?idx.get(k):null;};
+  if(inc('pellet'))d.pellet.forEach(p=>{const id=uid(),cid=resolve(p._clientName);const{_clientName,_linked,_desc,...r}=p;S.pellet.unshift({id,clientId:cid,clientRaw:cid?null:(p._clientName||null),employeeId:null,employees:[],signature:null,signedName:'',...r,via:'import',created:Date.now()});batch.pellet.push(id);});
+  if(inc('maintenances'))d.maintenances.forEach(m=>{const id=uid(),cid=resolve(m._clientName);const{_clientName,_linked,_desc,...r}=m;S.maintenances.unshift({id,clientId:cid,clientRaw:cid?null:(m._clientName||null),employeeId:null,employees:[],recur:0,report:null,...r,via:'import',created:Date.now()});batch.maintenances.push(id);});
+  if(inc('appointments'))d.appointments.forEach(a=>{const id=uid(),cid=resolve(a._clientName);const{_clientName,_linked,_desc,...r}=a;S.appointments.unshift({id,clientId:cid,clientRaw:cid?null:(a._clientName||null),employeeId:null,employees:[],...r,via:'import',created:Date.now()});batch.appointments.push(id);});
+  batch.count=batch.clients.length+batch.pellet.length+batch.maintenances.length+batch.appointments.length;
+  if(!batch.count){toast('Niente da importare (tutto deselezionato o saltato)');return;}
+  lastImportBatch=batch;importDraft=null;
+  save();closeSheet();render();
+  const parts=[];if(batch.clients.length)parts.push(batch.clients.length+' clienti');if(batch.pellet.length)parts.push(batch.pellet.length+' pellet');if(batch.maintenances.length)parts.push(batch.maintenances.length+' manut.');if(batch.appointments.length)parts.push(batch.appointments.length+' appunt.');
+  toast('✓ Importati: '+parts.join(' · '));
+}
+function undoImport(){
+  const b=lastImportBatch;if(!b)return;
+  if(!confirm(`Annullare l'ultimo import? Verranno rimossi ${b.count} record dal cloud.`))return;
+  const rm=(arr,ids)=>{const set=new Set(ids);return arr.filter(x=>!set.has(x.id));};
+  S.clients=rm(S.clients,b.clients);S.pellet=rm(S.pellet,b.pellet);
+  S.maintenances=rm(S.maintenances,b.maintenances);S.appointments=rm(S.appointments,b.appointments);
+  lastImportBatch=null;save();closeSheet();render();toast('↩ Import annullato');
+}
 
 function render(){
   if(!S.session||!me()){renderLock();return;}

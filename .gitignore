@@ -12,3 +12,6 @@ server.js
 *.xlsx
 *.xls
 *.csv
+# File di import/backup generati (contengono dati clienti, PII)
+ptek-import-*.json
+ptek-backup-*.json
