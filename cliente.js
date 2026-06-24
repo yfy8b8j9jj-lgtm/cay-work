@@ -12,7 +12,7 @@
 const AZIENDA = {
   nome:  'Ptek — Pellet Tek',
   tel:   '+41 00 000 00 00',          // telefono pubblico (per il tasto «Chiama»)
-  wa:    '',                          // WhatsApp pubblico (es. '+41791234567'); vuoto = usa `tel`
+  wa:    '+41 76 432 80 10',          // WhatsApp pubblico; vuoto = usa `tel`
   email: 'info@ptek.ch',              // email pubblica
   citta: ''                           // es. 'Bellinzona (TI)' — opzionale, mostrata nel footer
 };
