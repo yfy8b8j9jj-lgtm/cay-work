@@ -69,7 +69,14 @@ body::before{content:'';position:fixed;inset:0;background:
   .topbar .today-pill{font-size:10px;padding:5px 9px}
   .nav-bottom{display:none!important}
 }
-@media(max-width:899px){.sidewrap .nav-side{display:none}.sidewrap{padding:0}}
+@media(max-width:899px){.sidewrap .nav-side{display:none}.sidewrap{padding:0}
+  /* su telefono: titolo/tab/KPI restano in alto, la lista si centra nello spazio
+     che avanza quando gli elementi sono pochi; con molti elementi le auto-margin
+     si annullano e la pagina scorre normalmente dall'alto (nessun taglio) */
+  .main{display:flex;flex-direction:column}
+  .main>*{flex-shrink:0}
+  .main>.listwrap{margin-top:auto;margin-bottom:auto}
+}
 
 .nav-side{display:flex;flex-direction:column;gap:2px;margin-top:6px}
 .nav-side .ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;color:var(--t2);cursor:pointer;font-size:13px;font-weight:500;border:1px solid transparent}
@@ -306,7 +313,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.24-075103';
+const APP_VERSION='2026.06.24-080734';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -2039,7 +2046,7 @@ function renderMan(){
     <div class="kpi"><div class="n" style="color:var(--amber)">${nOpen}</div><div class="l">Da fare</div></div>
     <div class="kpi"><div class="n" style="color:var(--teal)">${nDoneM}</div><div class="l">Fatte (mese)</div></div>
   </div>
-  ${body}
+  <div class="listwrap">${body}</div>
   <button class="fab" onclick="openMan(null)">+</button>`;
 }
 /* ---- campagna chiamate stagionali ---- */
@@ -2425,7 +2432,7 @@ function renderSites(){
     <div class="tb ${siteTab==='da_fatturare'?'on':''}" onclick="siteTab='da_fatturare';render()" style="${groups.da_fatturare.length?'border-color:var(--amber);color:var(--amber)':''}">💰 Da fatturare (${groups.da_fatturare.length})</div>
     <div class="tb ${siteTab==='chiuso'?'on':''}" onclick="siteTab='chiuso';render()">🗄 Archivio (${groups.chiuso.length})</div>
   </div>
-  ${list.length?list.map(card).join(''):`<div class="empty tall"><div class="big">${siteTab==='da_fatturare'?'💰':siteTab==='chiuso'?'🗄':'🏗'}</div>${siteTab==='aperto'?'Nessun cantiere in corso.':siteTab==='da_fatturare'?'Niente da fatturare. 👌':'Archivio vuoto.'}${siteTab==='aperto'?'<button class="btn pri sm cta" onclick="editSite(null)">+ Nuovo cantiere</button>':''}</div>`}
+  <div class="listwrap">${list.length?list.map(card).join(''):`<div class="empty tall"><div class="big">${siteTab==='da_fatturare'?'💰':siteTab==='chiuso'?'🗄':'🏗'}</div>${siteTab==='aperto'?'Nessun cantiere in corso.':siteTab==='da_fatturare'?'Niente da fatturare. 👌':'Archivio vuoto.'}${siteTab==='aperto'?'<button class="btn pri sm cta" onclick="editSite(null)">+ Nuovo cantiere</button>':''}</div>`}</div>
   <button class="fab" onclick="editSite(null)">+</button>`;
 }
 function openSite(id){
