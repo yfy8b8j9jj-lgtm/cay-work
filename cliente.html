@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ptek — Macchine, assistenza e pellet</title>
+<meta name="description" content="Ptek (Pellet Tek): catalogo stufe e caldaie a pellet, codici di errore, offerte e occasioni. Prenota assistenza, un sopralluogo o una consegna di pellet.">
+<meta name="theme-color" content="#0E0D0B">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./cliente.css">
+</head>
+<body>
+<header>
+  <div class="bar">
+    <a class="brand" href="./cliente.html" aria-label="Ptek">
+      <img src="./logo.png" alt="Ptek" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+      <span class="dot" style="display:none"></span>
+      <span>Ptek</span>
+    </a>
+    <span class="sp"></span>
+    <a class="callbtn wa ghost" id="hdr-wa" href="#" target="_blank" rel="noopener">💬<span class="lbl"> WhatsApp</span></a>
+    <a class="callbtn" id="hdr-call" href="#">📞<span class="lbl"> Chiama</span></a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">🔥 Pellet Tek · Energie rinnovabili</div>
+    <h1>Stufe, caldaie e <span class="fire">pellet</span><br>con assistenza vicino a te</h1>
+    <p>Sfoglia il catalogo macchine con i codici di errore, scopri offerte e occasioni e prenota in un minuto assistenza, un sopralluogo o la tua consegna di pellet.</p>
+    <div class="hero-cta">
+      <button class="btn" type="button" onclick="openForm('assistenza')">🔧 Prenota assistenza</button>
+      <a class="btn ghost" id="hero-wa" href="#" target="_blank" rel="noopener">💬 Scrivici su WhatsApp</a>
+    </div>
+  </div>
+
+  <!-- DIAGNOSI RAPIDA: cerca un codice di errore -->
+  <section id="sec-diag">
+    <div class="diag">
+      <div class="diag-h">
+        <div class="ic">🔎</div>
+        <div>
+          <h2>La tua stufa segnala un errore?</h2>
+          <p class="muted">Scegli prima il <b>modello</b> — ogni stufa ha i suoi codici. Poi ti diciamo cosa significano e cosa fare.</p>
+        </div>
+      </div>
+      <input class="search" id="diagq" type="search" placeholder="Cerca la tua stufa per marca o modello… (es. Nobis)" oninput="diagModels()" autocomplete="off">
+      <div id="diagres" class="diagres"></div>
+    </div>
+  </section>
+
+  <!-- OFFERTE E OCCASIONI -->
+  <section id="sec-offerte">
+    <div class="shead"><h2>Offerte e occasioni</h2><span class="count" id="off-count"></span></div>
+    <div id="offers" class="offers"></div>
+  </section>
+
+  <!-- WIDGET -->
+  <section id="sec-widget">
+    <div class="tiles">
+      <button class="tile" type="button" onclick="openCatalog()">
+        <div class="ic">⚙️</div>
+        <div class="ti">Le nostre macchine</div>
+        <div class="de">Catalogo stufe e caldaie a pellet, con i codici di errore spiegati.</div>
+        <div class="go">Sfoglia il catalogo ›</div>
+      </button>
+      <button class="tile" type="button" onclick="openForm('assistenza')">
+        <div class="ic">🔧</div>
+        <div class="ti">Prenota assistenza o pellet</div>
+        <div class="de">Richiedi un intervento di manutenzione o ordina la tua consegna di pellet.</div>
+        <div class="go">Invia una richiesta ›</div>
+      </button>
+      <button class="tile" type="button" onclick="openForm('sopralluogo')">
+        <div class="ic">📋</div>
+        <div class="ti">Prenota sopralluogo</div>
+        <div class="de">Vuoi un preventivo o un sopralluogo? Ti richiamiamo per fissarlo.</div>
+        <div class="go">Chiedi un sopralluogo ›</div>
+      </button>
+    </div>
+  </section>
+
+  <!-- CTA: consulenza senza impegno (stile social) -->
+  <section id="sec-cta">
+    <div class="ctaband">
+      <div class="ct">
+        <div class="ic">💬</div>
+        <div>
+          <div class="t">Richiedi una consulenza senza impegno</div>
+          <div class="d">Analizziamo insieme la soluzione più adatta a te.</div>
+        </div>
+      </div>
+      <div class="ctabtns">
+        <button class="btn" type="button" onclick="openForm('sopralluogo')">Richiedi consulenza</button>
+        <a class="btn ghost" id="cta-wa" href="#" target="_blank" rel="noopener">💬 WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="sec-faq">
+    <div class="shead"><h2>Domande frequenti</h2></div>
+    <div id="faq" class="faq"></div>
+  </section>
+
+  <footer>
+    <div id="ft-contacts"></div>
+    <div>© Ptek — Pellet Tek · Energie rinnovabili</div>
+    <div class="sub">I dati che invii servono solo a ricontattarti e non vengono ceduti a terzi.</div>
+  </footer>
+</div>
+
+<!-- contenitore overlay -->
+<div id="ov"></div>
+
+<!-- dati macchine (sola fonte dati, offline) -->
+<script src="./macchine.js"></script>
+<script src="./cliente.js"></script>
+</body>
+</html>
