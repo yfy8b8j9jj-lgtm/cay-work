@@ -321,7 +321,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.24-123526';
+const APP_VERSION='2026.06.24-130006';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -529,6 +529,8 @@ const byId=(arr,id)=>arr.find(x=>x.id===id);
 function addMonthsIso(s,m){const[y,mo,d]=s.split('-').map(Number);const dt=new Date(y,mo-1+m,1);const last=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();dt.setDate(Math.min(d,last));return iso(dt);}
 function shiftDate(inputId,days){const el=$('#'+inputId);const base=el.value||todayIso();const[y,m,d]=base.split('-').map(Number);const dt=new Date(y,m-1,d+days);el.value=iso(dt);}
 const dateChips=id=>`<div class="seg" style="margin:-4px 0 12px"><div class="sg" onclick="$('#${id}').value=todayIso()">oggi</div><div class="sg" onclick="shiftDate('${id}',1)">+1 giorno</div><div class="sg" onclick="shiftDate('${id}',7)">+1 settimana</div></div>`;
+/* chip orari rapidi: un tocco imposta l'ora (il campo nativo è scomodo) */
+const timeChips=id=>`<div class="seg" style="margin:-4px 0 12px;flex-wrap:wrap">${['08:00','09:00','10:00','11:00','14:00','16:00'].map(h=>`<div class="sg" onclick="$('#${id}').value='${h}'">${h}</div>`).join('')}<div class="sg" onclick="$('#${id}').value=''">↺</div></div>`;
 const cName=id=>{const c=byId(S.clients,id);return c?c.name:''};
 const eName=id=>{const e=byId(S.employees,id);return e?e.name:''};
 /* opzioni cliente per i menù a tendina: nasconde i bloccati, ma mantiene quello già scelto in un record esistente */
@@ -1780,6 +1782,7 @@ function openQuickAdd(date){
     <div class="fld"><label>Tipo</label><select id="qa-type"><option value="appointment">Appuntamento</option><option value="maintenance">Manutenzione</option><option value="pellet">Consegna pellet</option><option value="note">Nota</option></select></div>
     <div class="fld"><label>Ora</label><input id="qa-time" type="time"></div>
   </div>
+  ${timeChips('qa-time')}
   <div class="fld"><label>Cliente (opzionale)</label>${cSearch('qa-cl')}<select id="qa-cl"><option value="">—</option>${cOpt('')}</select></div>
   <div class="fld"><label>Note (facoltativo)</label><textarea id="qa-n" placeholder="Dettagli, indicazioni, cosa portare…"></textarea></div>
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="quickAddSave('${date}')">Salva</button></div>`);
@@ -1965,6 +1968,7 @@ function openApp(id){
   <div class="frow"><div class="fld"><label>Data</label><input id="ap-d" type="date" value="${a.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="ap-h" type="time" value="${a.time||''}"></div></div>
   ${dateChips('ap-d')}
+  ${timeChips('ap-h')}
   <div class="fld"><label>Stato</label><div class="seg" id="ap-s"><div class="sg ${!a.done?'on':''}" data-d="0" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">Da fare</div><div class="sg ${a.done?'on':''}" data-d="1" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">Fatto</div></div></div>
   <div class="fld"><label>Note</label><textarea id="ap-n" placeholder="Dettagli, indicazioni, cosa portare…">${esc(a.notes||'')}</textarea></div>
   <div class="actions">
