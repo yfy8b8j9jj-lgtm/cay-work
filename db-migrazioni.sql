@@ -484,3 +484,26 @@ create policy off_obj_write on storage.objects for all to authenticated
 -- aggiungere note libere, come già su manutenzioni e pellet.
 -- ============================================================
 alter table public.appointments add column if not exists notes text default '';
+
+-- ============================================================
+-- 24 giu 2026 — Appuntamenti gestibili da tutto lo staff (fix "non si salva")
+-- Prima un dipendente poteva MODIFICARE solo gli appuntamenti a cui era
+-- assegnato (policy app_asg_upd): aggiungendo un cliente a un appuntamento
+-- non suo, il salvataggio veniva rifiutato dalla RLS e alla riapertura il
+-- dato spariva. Ora chi ha accesso al calendario o alle manutenzioni può
+-- creare/modificare/eliminare gli appuntamenti (calendario condiviso del team).
+-- Policy permissive (additive): allargano l'accesso, non tolgono nulla.
+-- ============================================================
+drop policy if exists app_staff_sel on public.appointments;
+drop policy if exists app_staff_ins on public.appointments;
+drop policy if exists app_staff_upd on public.appointments;
+drop policy if exists app_staff_del on public.appointments;
+create policy app_staff_sel on public.appointments for select to authenticated
+  using (public.is_owner() or public.has_perm('cal') or public.has_perm('man') or public.my_emp() = any(employees));
+create policy app_staff_ins on public.appointments for insert to authenticated
+  with check (public.is_owner() or public.has_perm('cal') or public.has_perm('man'));
+create policy app_staff_upd on public.appointments for update to authenticated
+  using (public.is_owner() or public.has_perm('cal') or public.has_perm('man') or public.my_emp() = any(employees))
+  with check (public.is_owner() or public.has_perm('cal') or public.has_perm('man') or public.my_emp() = any(employees));
+create policy app_staff_del on public.appointments for delete to authenticated
+  using (public.is_owner() or public.has_perm('cal') or public.has_perm('man'));
