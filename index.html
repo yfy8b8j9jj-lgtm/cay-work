@@ -224,6 +224,14 @@ body::before{content:'';position:fixed;inset:0;background:
 .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--cy)}
 .fld textarea{resize:vertical;min-height:64px}
 .frow{display:flex;gap:10px}.frow .fld{flex:1}
+.cl-search{margin-bottom:6px}
+.cl-results{display:none}
+.cl-results.on{display:block;margin:0 0 8px;border:1px solid var(--line2);border-radius:10px;background:var(--bg2);max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.cl-row{padding:11px 13px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px;color:var(--t1)}
+.cl-row:last-child{border-bottom:none}
+.cl-row:hover,.cl-row:active{background:var(--bg3)}
+.cl-row.sel{color:var(--cy);font-weight:600}
+.cl-row.none{color:var(--t3);cursor:default;font-size:12.5px;line-height:1.5}
 .sheet .actions{display:flex;gap:10px;margin-top:16px}
 .sheet .actions .btn{flex:1}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
@@ -313,7 +321,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.24-080734';
+const APP_VERSION='2026.06.24-121524';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -525,19 +533,42 @@ const cName=id=>{const c=byId(S.clients,id);return c?c.name:''};
 const eName=id=>{const e=byId(S.employees,id);return e?e.name:''};
 /* opzioni cliente per i menù a tendina: nasconde i bloccati, ma mantiene quello già scelto in un record esistente */
 const cOpt=sel=>S.clients.filter(c=>!c.blocked||c.id===sel).map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.name)}${c.blocked?' 🚫':''}</option>`).join('');
-/* casella di ricerca sopra i menù cliente: filtra le opzioni per nome (comodo con tanti clienti) */
-const cSearch=selId=>`<input type="search" class="cl-search" placeholder="🔎 cerca cliente per nome…" autocomplete="off" oninput="filterCSel('${selId}',this.value)" style="margin-bottom:6px">`;
+/* casella di ricerca sopra i menù cliente: mentre scrivi mostra una lista
+   toccabile di clienti (comodo sul telefono, dove la tendina nativa non si
+   filtra a vista) e tiene aggiornato anche il <select> sottostante. */
+const cSearch=selId=>`<input type="search" class="cl-search" placeholder="🔎 cerca cliente per nome…" autocomplete="off" oninput="filterCSel('${selId}',this.value)" onfocus="filterCSel('${selId}',this.value)"><div class="cl-results" id="${selId}-res"></div>`;
 function filterCSel(selId,q){
   const sel=document.getElementById(selId);if(!sel)return;
   const cur=sel.value;
-  const ql=(q||'').trim().toLowerCase();
+  const nq=norm(q);
+  /* 1) tieni allineato il <select> (memorizza il valore + fallback nativo) */
   const ph=sel.querySelector('option[value=""]');
   const phHTML=ph?ph.outerHTML:'';
   const opts=S.clients.filter(c=>(!c.blocked||c.id===cur))
-    .filter(c=>!ql||c.id===cur||(c.name||'').toLowerCase().includes(ql))
+    .filter(c=>!nq||c.id===cur||norm(c.name).includes(nq))
     .map(c=>`<option value="${c.id}" ${cur===c.id?'selected':''}>${esc(c.name)}${c.blocked?' 🚫':''}</option>`).join('');
   sel.innerHTML=phHTML+opts;
   sel.value=cur;
+  /* 2) lista toccabile visibile sotto la casella di ricerca */
+  const res=document.getElementById(selId+'-res');if(!res)return;
+  if(!nq){res.innerHTML='';res.classList.remove('on');return;}
+  const list=S.clients.filter(c=>!c.blocked&&norm(c.name).includes(nq)).slice(0,40);
+  res.classList.add('on');
+  res.innerHTML=list.length
+    ? list.map(c=>`<div class="cl-row${c.id===cur?' sel':''}" onclick="pickCSel('${selId}','${c.id}')">${esc(c.name)}${c.id===cur?' ✓':''}</div>`).join('')
+    : `<div class="cl-row none">Nessun cliente per «${esc(q)}». Scrivilo nel titolo per registrarlo come nuovo.</div>`;
+}
+/* clic su un risultato: collega il cliente al selettore (e aggiorna l'anteprima) */
+function pickCSel(selId,clientId){
+  const sel=document.getElementById(selId);if(!sel)return;
+  if(![...sel.options].some(o=>o.value===clientId)){
+    const c=byId(S.clients,clientId);
+    if(c){const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);}
+  }
+  sel.value=clientId;
+  sel.dispatchEvent(new Event('change',{bubbles:true})); /* attiva updClientPrev dove presente */
+  const res=document.getElementById(selId+'-res');if(res){res.innerHTML='';res.classList.remove('on');}
+  const box=sel.parentNode.querySelector('.cl-search');if(box){const c=byId(S.clients,clientId);box.value=c?c.name:'';}
 }
 /* indirizzo composto + anteprima dati cliente (nei form: sai già dove andare) */
 const cAddr=c=>!c?'':([[c.street,c.streetNo].filter(Boolean).join(' '),[c.cap,c.town||c.zone].filter(Boolean).join(' ')].filter(Boolean).join(', ')||c.address||'');
