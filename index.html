@@ -321,7 +321,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.24-121524';
+const APP_VERSION='2026.06.24-123526';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -3462,7 +3462,10 @@ async function checkUpdate(){
       if(sessionStorage.getItem('cw_upd')===j.version)return; /* gia' tentato: evita loop */
       sessionStorage.setItem('cw_upd',j.version);
       try{toast('Aggiornamento in corso…');}catch(e){}
-      setTimeout(()=>location.reload(),1300);
+      /* ricarico con la versione in query: l'URL cambia → il browser NON serve
+         l'HTML vecchio dalla cache (altrimenti l'app restava bloccata sulla
+         versione precedente nonostante version.json fosse aggiornato) */
+      setTimeout(()=>{location.replace(location.pathname+'?v='+encodeURIComponent(j.version)+location.hash);},1300);
     }
   }catch(e){/* offline o errore: ignora, l'app continua a funzionare */}
 }
