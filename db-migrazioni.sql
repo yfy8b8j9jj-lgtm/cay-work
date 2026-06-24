@@ -376,3 +376,111 @@ alter table public.clients add column if not exists street_no  text;
 alter table public.clients add column if not exists cap        text;
 alter table public.clients add column if not exists town       text;
 alter table public.clients add column if not exists email      text;
+
+-- ============================================================
+-- 23 giu 2026 — Vetrina clienti (app pubblica cliente.html)
+-- App pubblica SENZA login: il ruolo `anon` (chiave publishable) è la sola
+-- identità. La RLS è l'unica barriera: `anon` può SOLO inserire richieste e
+-- leggere le offerte pubblicate. Non può leggere clients/pellet/requests/ecc.
+-- (le policy esistenti sono tutte `to authenticated`, quindi negano `anon`).
+-- ============================================================
+
+-- 1) OFFERTE / OCCASIONI mostrate in vetrina ------------------
+create table if not exists public.offers(
+  id          uuid primary key default gen_random_uuid(),
+  title       text not null,
+  body        text default '',
+  price       numeric,
+  kind        text default 'offerta',          -- offerta | usato | promo
+  image_path  text,                            -- path nel bucket Storage 'offerte'
+  published   boolean not null default false,
+  starts_at   timestamptz,
+  ends_at     timestamptz,
+  sort        int not null default 0,
+  created_at  timestamptz not null default now(),
+  constraint offers_title_len check (char_length(title) between 1 and 140),
+  constraint offers_body_len  check (char_length(coalesce(body,'')) <= 4000),
+  constraint offers_kind_ok   check (kind in ('offerta','usato','promo'))
+);
+alter table public.offers enable row level security;
+drop policy if exists off_pub_sel   on public.offers;
+drop policy if exists off_auth_sel  on public.offers;
+drop policy if exists off_owner_all on public.offers;
+-- pubblico (vetrina): solo offerte pubblicate e nel periodo valido
+create policy off_pub_sel on public.offers for select to anon
+  using (published
+         and (starts_at is null or now() >= starts_at)
+         and (ends_at   is null or now() <= ends_at));
+-- staff: vede tutto (anche le bozze) ...
+create policy off_auth_sel on public.offers for select to authenticated using (true);
+-- ... ma solo il titolare crea/modifica/elimina
+create policy off_owner_all on public.offers for all to authenticated
+  using (public.is_owner()) with check (public.is_owner());
+create index if not exists offers_pub_idx on public.offers(published, sort);
+
+-- 2) RICHIESTE inviate dai clienti dalla vetrina -------------
+create table if not exists public.requests(
+  id          uuid primary key default gen_random_uuid(),
+  type        text not null,                   -- assistenza|pellet|sopralluogo|preventivo|info
+  name        text not null,
+  phone       text default '',
+  email       text default '',
+  town        text default '',
+  message     text default '',
+  machine_ref text default '',                 -- modello scelto nel catalogo (opz.)
+  qty         text default '',                 -- quantità pellet (opz.)
+  status      text not null default 'nuova',   -- nuova | gestita
+  handled     boolean not null default false,
+  handled_by  uuid,
+  created_at  timestamptz not null default now(),
+  constraint req_type_ok    check (type in ('assistenza','pellet','sopralluogo','preventivo','info')),
+  constraint req_name_len   check (char_length(name) between 1 and 120),
+  constraint req_phone_len  check (char_length(coalesce(phone,'')) <= 40),
+  constraint req_email_len  check (char_length(coalesce(email,'')) <= 200),
+  constraint req_town_len   check (char_length(coalesce(town,'')) <= 120),
+  constraint req_msg_len    check (char_length(coalesce(message,'')) <= 2000),
+  constraint req_mach_len   check (char_length(coalesce(machine_ref,'')) <= 120),
+  constraint req_qty_len    check (char_length(coalesce(qty,'')) <= 80)
+);
+alter table public.requests enable row level security;
+drop policy if exists req_anon_ins  on public.requests;
+drop policy if exists req_staff_sel on public.requests;
+drop policy if exists req_staff_upd on public.requests;
+drop policy if exists req_owner_del on public.requests;
+-- inserimento pubblico VINCOLATO: status/handled forzati ai valori iniziali,
+-- così un anonimo non può creare richieste "già gestite" né impostare handled_by.
+create policy req_anon_ins on public.requests for insert to anon
+  with check (status = 'nuova' and handled = false and handled_by is null);
+-- NB: nessuna policy SELECT per `anon` → PostgREST nega: un cliente non può
+--     leggere le richieste (e i dati personali) di altri.
+-- staff con permesso 'richieste' (o titolare): legge e gestisce
+create policy req_staff_sel on public.requests for select to authenticated
+  using (public.is_owner() or public.has_perm('richieste'));
+create policy req_staff_upd on public.requests for update to authenticated
+  using (public.is_owner() or public.has_perm('richieste'))
+  with check (public.is_owner() or public.has_perm('richieste'));
+create policy req_owner_del on public.requests for delete to authenticated
+  using (public.is_owner());
+create index if not exists requests_status_idx on public.requests(status, created_at desc);
+
+-- 3) Bucket Storage 'offerte' (foto offerte, lettura pubblica) -
+insert into storage.buckets (id, name, public) values ('offerte','offerte',true)
+  on conflict (id) do nothing;
+drop policy if exists off_obj_read  on storage.objects;
+drop policy if exists off_obj_write on storage.objects;
+create policy off_obj_read on storage.objects for select to anon
+  using (bucket_id = 'offerte');
+create policy off_obj_write on storage.objects for all to authenticated
+  using (bucket_id = 'offerte' and public.is_owner())
+  with check (bucket_id = 'offerte' and public.is_owner());
+
+-- 4) Permesso 'richieste' (gestione richieste/vetrina): nessuno SQL.
+--    has_perm() legge l'array employees.perms — basta attivare il permesso
+--    «📨 Richieste» al dipendente in: app → Personale. Il titolare lo vede sempre.
+
+-- ============================================================
+-- 24 giu 2026 — Note sugli appuntamenti
+-- Quando crei un evento dal calendario (o un appuntamento) ora puoi
+-- aggiungere note libere, come già su manutenzioni e pellet.
+-- ============================================================
+alter table public.appointments add column if not exists notes text default '';

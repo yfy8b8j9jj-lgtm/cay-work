@@ -306,7 +306,7 @@ body::before{content:'';position:fixed;inset:0;background:
 const SB_URL='https://wlqqnfypmtfgulhfktbs.supabase.co';
 const SB_KEY='sb_publishable_QxT-HaFdiZEAhi6-fwgqAw_lTKRu8nA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const APP_VERSION='2026.06.19-135159';
+const APP_VERSION='2026.06.24-075103';
 
 const blank=()=>({clients:[],employees:[],notes:[],noteGroups:[],appointments:[],maintenances:[],pellet:[],sites:[],chat:[],lists:[],callLog:[],expenses:[],maintPrices:[],settings:{bagsPerPallet:70,companyName:'',pricePerTon:null,pricePerBag:null},speaker:null,session:null});
 let S=blank();
@@ -325,8 +325,8 @@ const MAPS={
   toDb:m=>({id:m.id,title:m.title,client_id:m.clientId||null,client_raw:m.clientRaw||null,employee_id:(m.employees&&m.employees[0])||m.employeeId||null,employees:m.employees||(m.employeeId?[m.employeeId]:[]),date:m.date||null,time:m.time||null,status:m.status||'da_fare',notes:m.notes||'',recur:m.recur||0,price:num(m.price),type:m.type||null,report:m.report||null,via:m.via||'manuale'}),
   fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,employees:(r.employees&&r.employees.length)?r.employees:(r.employee_id?[r.employee_id]:[]),date:r.date,time:r.time,status:r.status,notes:r.notes||'',recur:r.recur||0,price:r.price,type:r.type||'',report:r.report,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  appointments:{tbl:'appointments',
-  toDb:a=>({id:a.id,title:a.title,client_id:a.clientId||null,client_raw:a.clientRaw||null,employee_id:(a.employees&&a.employees[0])||a.employeeId||null,employees:a.employees||(a.employeeId?[a.employeeId]:[]),date:a.date||null,time:a.time||null,done:!!a.done,via:a.via||'manuale'}),
-  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,employees:(r.employees&&r.employees.length)?r.employees:(r.employee_id?[r.employee_id]:[]),date:r.date,time:r.time,done:!!r.done,via:r.via,created:Date.parse(r.created_at)||Date.now()})},
+  toDb:a=>({id:a.id,title:a.title,client_id:a.clientId||null,client_raw:a.clientRaw||null,employee_id:(a.employees&&a.employees[0])||a.employeeId||null,employees:a.employees||(a.employeeId?[a.employeeId]:[]),date:a.date||null,time:a.time||null,done:!!a.done,notes:a.notes||'',via:a.via||'manuale'}),
+  fromDb:r=>({id:r.id,title:r.title,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,employees:(r.employees&&r.employees.length)?r.employees:(r.employee_id?[r.employee_id]:[]),date:r.date,time:r.time,done:!!r.done,notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
  pellet:{tbl:'pellet',
   toDb:p=>({id:p.id,client_id:p.clientId||null,client_raw:p.clientRaw||null,employee_id:(p.employees&&p.employees[0])||p.employeeId||null,employees:p.employees||(p.employeeId?[p.employeeId]:[]),qty:num(p.qty),unit:p.unit||'sacchi',kind:p.kind||'sacchi',date:p.date||null,time:p.time||null,status:p.status||'da_consegnare',price:num(p.price),signature:p.signature||null,signed_name:p.signedName||'',notes:p.notes||'',via:p.via||'manuale'}),
   fromDb:r=>({id:r.id,clientId:r.client_id,clientRaw:r.client_raw,employeeId:r.employee_id,employees:(r.employees&&r.employees.length)?r.employees:(r.employee_id?[r.employee_id]:[]),qty:r.qty,unit:r.unit,kind:r.kind,date:r.date,time:r.time,status:r.status,price:r.price,signature:r.signature,signedName:r.signed_name||'',notes:r.notes||'',via:r.via,created:Date.parse(r.created_at)||Date.now()})},
@@ -419,26 +419,32 @@ async function syncNow(){
   if(!S.session)return;
   if(syncing){syncDirty=true;return;}
   syncing=true;syncDirty=false;
+  let firstErr=null;
   try{
     const rows=dbRows();
+    const failed=new Set();
     for(const k of UP_ORDER){
       if(k==='employees'&&!isOwner())continue;
       const prev=snapshot[k]||{};
       const ups=rows[k].filter(r=>prev[r.id]!==JSON.stringify(r));
-      if(ups.length){const{error}=await sb.from(TBL[k]).upsert(ups);if(error)throw error;}
+      if(ups.length){const{error}=await sb.from(TBL[k]).upsert(ups);if(error){console.error('sync up',k,error);failed.add(k);firstErr=firstErr||error;}}
     }
     for(const k of DEL_ORDER){
       if(k==='employees'&&!isOwner())continue;
       const prev=snapshot[k]||{};
       const cur=new Set(rows[k].map(r=>r.id));
       const dels=Object.keys(prev).filter(id=>!cur.has(id));
-      if(dels.length){const{error}=await sb.from(TBL[k]).delete().in('id',dels);if(error)throw error;}
+      if(dels.length){const{error}=await sb.from(TBL[k]).delete().in('id',dels);if(error){console.error('sync del',k,error);failed.add(k);firstErr=firstErr||error;}}
     }
+    /* aggiorna lo snapshot solo per le tabelle riuscite: una tabella in errore
+       (es. colonna non ancora migrata) resta "sporca" e riprova al prossimo
+       salvataggio, senza bloccare la sincronizzazione di tutte le altre */
+    for(const k of UP_ORDER)if(!failed.has(k))snapRows(k,rows[k]);
     if(isOwner()&&snapshot._settings!==JSON.stringify(S.settings)){
       const{error}=await sb.from('settings').update({company_name:S.settings.companyName||'',bags_per_pallet:S.settings.bagsPerPallet||70,price_per_ton:num(S.settings.pricePerTon),price_per_bag:num(S.settings.pricePerBag)}).eq('id',1);
-      if(error)throw error;
+      if(error){console.error('sync settings',error);firstErr=firstErr||error;}else snapshot._settings=JSON.stringify(S.settings);
     }
-    rebuildSnapshot();
+    if(firstErr)toast('⚠ Una parte non si è sincronizzata: '+(firstErr.message||firstErr));
   }catch(e){console.error(e);toast('⚠ Sincronizzazione: '+(e.message||e));}
   finally{syncing=false;if(syncDirty)save();}
 }
@@ -512,6 +518,20 @@ const cName=id=>{const c=byId(S.clients,id);return c?c.name:''};
 const eName=id=>{const e=byId(S.employees,id);return e?e.name:''};
 /* opzioni cliente per i menù a tendina: nasconde i bloccati, ma mantiene quello già scelto in un record esistente */
 const cOpt=sel=>S.clients.filter(c=>!c.blocked||c.id===sel).map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.name)}${c.blocked?' 🚫':''}</option>`).join('');
+/* casella di ricerca sopra i menù cliente: filtra le opzioni per nome (comodo con tanti clienti) */
+const cSearch=selId=>`<input type="search" class="cl-search" placeholder="🔎 cerca cliente per nome…" autocomplete="off" oninput="filterCSel('${selId}',this.value)" style="margin-bottom:6px">`;
+function filterCSel(selId,q){
+  const sel=document.getElementById(selId);if(!sel)return;
+  const cur=sel.value;
+  const ql=(q||'').trim().toLowerCase();
+  const ph=sel.querySelector('option[value=""]');
+  const phHTML=ph?ph.outerHTML:'';
+  const opts=S.clients.filter(c=>(!c.blocked||c.id===cur))
+    .filter(c=>!ql||c.id===cur||(c.name||'').toLowerCase().includes(ql))
+    .map(c=>`<option value="${c.id}" ${cur===c.id?'selected':''}>${esc(c.name)}${c.blocked?' 🚫':''}</option>`).join('');
+  sel.innerHTML=phHTML+opts;
+  sel.value=cur;
+}
 /* indirizzo composto + anteprima dati cliente (nei form: sai già dove andare) */
 const cAddr=c=>!c?'':([[c.street,c.streetNo].filter(Boolean).join(' '),[c.cap,c.town||c.zone].filter(Boolean).join(' ')].filter(Boolean).join(', ')||c.address||'');
 function clientPreviewHTML(id){
@@ -678,14 +698,14 @@ function commitParsed(p,via){
   const personRaw=p.person&&p.person.kind==='raw'?p.person.name:null;
   let msg='';
   if(p.type==='maintenance'){
-    S.maintenances.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date,time:p.time,status:p.date?'programmata':'da_fare',notes:'',via,created:Date.now()});
+    S.maintenances.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date,time:p.time,status:p.date?'programmata':'da_fare',notes:p.notes||'',via,created:Date.now()});
     msg='🔧 Manutenzione registrata'+(p.person?' — '+p.person.name:'')+(p.employee?' · 👷 '+p.employee.name:'')+(p.date?' · '+fmtD(p.date):'')+(p.time?' '+p.time:'');
   }else if(p.type==='pellet'){
     const kind=(p.unit==='t'||/\bsfuso\b/i.test(p.raw||''))?'sfuso':'sacchi';
-    S.pellet.unshift({id:uid(),clientId,clientRaw:personRaw,employeeId,qty:p.qty,unit:kind==='sfuso'?'t':(p.unit||'sacchi'),kind,date:p.date,time:p.time,status:'da_consegnare',notes:p.title,via,created:Date.now()});
+    S.pellet.unshift({id:uid(),clientId,clientRaw:personRaw,employeeId,qty:p.qty,unit:kind==='sfuso'?'t':(p.unit||'sacchi'),kind,date:p.date,time:p.time,status:'da_consegnare',notes:[p.title,p.notes].filter(Boolean).join(' — '),via,created:Date.now()});
     msg='🪵 Consegna '+(kind==='sfuso'?'sfuso':'sacchi')+' registrata'+(p.qty?' — '+p.qty+' '+(kind==='sfuso'?'t':p.unit||'sacchi'):'')+(p.person?' · '+p.person.name:'')+(p.employee?' · 👷 '+p.employee.name:'')+(p.date?' · '+fmtD(p.date):'');
   }else if(p.type==='appointment'){
-    S.appointments.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date||todayIso(),time:p.time,done:false,via,created:Date.now()});
+    S.appointments.unshift({id:uid(),title:p.title,clientId,clientRaw:personRaw,employeeId,date:p.date||todayIso(),time:p.time,done:false,notes:p.notes||'',via,created:Date.now()});
     msg='📅 Appuntamento segnato — '+fmtD(p.date||todayIso())+(p.time?' '+p.time:'');
   }else if(p.type==='list'){
     const nm=norm(p.listName||'');
@@ -707,7 +727,7 @@ function commitParsed(p,via){
       msg='🏗 Cantiere creato — '+p.title;
     }
   }else{
-    S.notes.unshift({id:uid(),text:p.title,clientId,date:p.date,pinned:false,via,created:Date.now()});
+    S.notes.unshift({id:uid(),text:[p.title,p.notes].filter(Boolean).join('\n'),clientId,date:p.date,pinned:false,via,created:Date.now()});
     msg='📝 Nota salvata';
   }
   save();return msg;
@@ -722,6 +742,7 @@ const VIEWS=[
   {id:'pellet',ic:'🪵',label:'Pellet'},
   {id:'sites',ic:'🏗',label:'Cantieri'},
   {id:'macchine',ic:'⚙️',label:'Macchine'},
+  {id:'richieste',ic:'📨',label:'Richieste'},
   {id:'clients',ic:'👥',label:'Clienti'},
   {id:'zone',ic:'🗺️',label:'Zone'},
   {id:'conti',ic:'💰',label:'Conti'},
@@ -753,7 +774,8 @@ function renderNav(){
     :ps==='on'?`<div class="ni" style="${sep};color:var(--cy)" onclick="pushTest()"><span class="ic">📩</span>Notifica di prova</div><div class="ni" style="color:var(--teal)" onclick="disablePush()"><span class="ic">🔔</span>Notifiche attive — disattiva</div>`
     :ps==='blocked'?`<div class="ni" style="${sep};color:var(--t3)"><span class="ic">🔕</span>Notifiche bloccate dal dispositivo</div>`
     :`<div class="ni" style="${sep};color:var(--amber)" onclick="enablePush()"><span class="ic">🔔</span>Attiva notifiche</div>`;
-  $('#navside').innerHTML=vis.map(v=>{const c=v.id==='notif'?notifCount():0;return`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}${c?` <span class="badge" style="margin-left:auto;border-color:var(--cy);color:var(--cy)">${c}</span>`:''}</div>`;}).join('')
+  if(can('richieste'))reqLazyLoad();
+  $('#navside').innerHTML=vis.map(v=>{const c=v.id==='notif'?notifCount():(v.id==='richieste'?reqNewCount():0);return`<div class="ni ${view===v.id?'act':''}" onclick="nav('${v.id}')"><span class="ic">${v.ic}</span>${v.label}${c?` <span class="badge" style="margin-left:auto;border-color:var(--cy);color:var(--cy)">${c}</span>`:''}</div>`;}).join('')
     +pushNav
     +(isOwner()?`<div class="ni" style="${ps==='unsupported'?sep:''}" onclick="openBackup()"><span class="ic">💾</span>Backup dati</div>`:'')
     +(isOwner()?`<div class="ni" onclick="openImport()"><span class="ic">📥</span>Importa dati</div>`:'')
@@ -782,7 +804,7 @@ function openMenu(){
     :`<div class="sg" style="padding:13px;border-color:var(--amber);color:var(--amber)" onclick="closeSheet();enablePush()">🔔 Attiva notifiche su questo telefono</div>`;
   openSheet(`<h3>Sezioni <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="seg" style="flex-direction:column;gap:8px">
-    ${overflow.map(v=>`<div class="sg" style="padding:13px" onclick="closeSheet();nav('${v.id}')">${v.ic} ${v.label}${v.id==='notif'&&notifCount()?' ('+notifCount()+')':''}</div>`).join('')||'<div class="subtle" style="padding:4px 2px">Tutte le sezioni sono già nella barra in basso.</div>'}
+    ${overflow.map(v=>{const cc=v.id==='notif'?notifCount():(v.id==='richieste'?reqNewCount():0);return`<div class="sg" style="padding:13px" onclick="closeSheet();nav('${v.id}')">${v.ic} ${v.label}${cc?' ('+cc+')':''}</div>`;}).join('')||'<div class="subtle" style="padding:4px 2px">Tutte le sezioni sono già nella barra in basso.</div>'}
     <div class="sg" style="padding:13px;border-color:var(--cy);color:var(--cy)" onclick="closeSheet();editBottomNav()">⚙️ Personalizza la barra in basso</div>
     ${pushRow}
     ${isOwner()?`<div class="sg" style="padding:13px;border-color:var(--line2)" onclick="closeSheet();openBackup()">💾 Backup dati</div>`:''}
@@ -1163,11 +1185,200 @@ function render(){
   S.speaker=S.session.empId;
   renderNav();
   $('#todaypill').textContent=GG[new Date().getDay()].slice(0,3)+' '+new Date().getDate()+' '+MESI[new Date().getMonth()].slice(0,3);
-  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,macchine:window.renderMacchine,clients:renderClients,zone:window.renderZone,conti:renderConti,emps:renderEmps};
+  const R={hub:renderHub,cal:renderCal,notes:renderNotes,notif:renderNotif,man:renderMan,pellet:renderPellet,sites:renderSites,macchine:window.renderMacchine,richieste:renderRichieste,clients:renderClients,zone:window.renderZone,conti:renderConti,emps:renderEmps};
   $('#main').innerHTML='';(R[view]||renderHub)();
   if(view==='notif'&&notifTab==='chat'){const sc=$('#chatscroll');if(sc)sc.scrollTop=sc.scrollHeight;}
 }
 
+
+/* ================= RICHIESTE + OFFERTE (vetrina clienti) =================
+   Dati NON nel sync globale: caricati on-demand via Supabase.
+   - requests: richieste inviate dalla vetrina pubblica (cliente.html)
+   - offers:   offerte/occasioni mostrate in vetrina (gestione titolare)        */
+let reqItems=null, reqLoading=false, offItems=null, reqTab='richieste', reqFilter='nuove';
+const REQ_META={assistenza:['🔧','Assistenza'],pellet:['🪵','Pellet'],sopralluogo:['📋','Sopralluogo'],preventivo:['📋','Preventivo'],info:['💬','Info']};
+const reqNewCount=()=>reqItems?reqItems.filter(r=>!r.handled).length:0;
+function reqLazyLoad(){ if(reqItems!==null||reqLoading)return; reqLoading=true; loadReq().then(()=>{reqLoading=false;renderNav();}).catch(()=>{reqLoading=false;}); }
+async function loadReq(force){
+  if(reqItems&&!force)return reqItems;
+  const {data,error}=await sb.from('requests').select('*').order('created_at',{ascending:false});
+  if(error)throw error;
+  reqItems=data||[];return reqItems;
+}
+async function loadOffers(force){
+  if(offItems&&!force)return offItems;
+  const {data,error}=await sb.from('offers').select('*').order('sort',{ascending:true}).order('created_at',{ascending:false});
+  if(error)throw error;
+  offItems=data||[];return offItems;
+}
+async function renderRichieste(){
+  const title=`<div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>📨 Richieste</div>`;
+  $('#main').innerHTML=title+`<div class="subtle" style="padding:10px 2px">Carico…</div>`;
+  try{ await loadReq(); if(isOwner()) await loadOffers(); }
+  catch(e){ $('#main').innerHTML=title+`<div class="card"><div class="empty">Non riesco a caricare le richieste.<br><span class="subtle">${esc(e.message||e)}</span><br><span class="subtle">Hai eseguito il SQL «23 giu — Vetrina clienti» su Supabase?</span></div></div>`; return; }
+  renderNav();
+  if(reqTab==='offerte'&&!isOwner())reqTab='richieste';
+  $('#main').innerHTML=title+`
+   <div class="tabs">
+     <div class="tb ${reqTab==='richieste'?'on':''}" onclick="reqTab='richieste';renderRichieste()">📨 Richieste${reqNewCount()?' ('+reqNewCount()+')':''}</div>
+     ${isOwner()?`<div class="tb ${reqTab==='offerte'?'on':''}" onclick="reqTab='offerte';renderRichieste()">🏷️ Offerte vetrina</div>`:''}
+   </div>
+   <div id="reqbody"></div>`;
+  reqRenderBody();
+}
+function reqRenderBody(){ if(reqTab==='offerte'&&isOwner()){offRenderBody();return;} reqRenderList(); }
+
+/* ---- elenco richieste ---- */
+function reqRenderList(){
+  const items=reqItems.filter(r=> reqFilter==='tutte'?true : reqFilter==='gestite'? r.handled : !r.handled);
+  $('#reqbody').innerHTML=`
+   <div class="tabs" style="margin-bottom:10px">
+     ${[['nuove','🆕 Nuove ('+reqNewCount()+')'],['gestite','✓ Gestite'],['tutte','Tutte']].map(([f,l])=>`<div class="tb ${reqFilter===f?'on':''}" onclick="reqFilter='${f}';reqRenderList()">${l}</div>`).join('')}
+   </div>
+   <div class="card"><div class="sh"><span class="t">${items.length} richiest${items.length===1?'a':'e'}</span></div>
+   ${items.length?items.map(reqCard).join(''):'<div class="empty">Nessuna richiesta in questa vista.</div>'}
+   </div>`;
+}
+function reqCard(r){
+  const [ic,lbl]=REQ_META[r.type]||['📨',r.type||'Richiesta'];
+  const when=r.created_at?new Date(r.created_at).toLocaleString('it-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+  const ph=r.phone?`📞 <a href="tel:${esc(String(r.phone).replace(/[^\d+]/g,''))}">${esc(r.phone)}</a>`:'';
+  const meta=[ph,r.email?('✉️ '+esc(r.email)):'',r.town?('📍 '+esc(r.town)):''].filter(Boolean).join(' · ');
+  return `<div class="item" style="align-items:flex-start">
+   <span class="led" style="background:${r.handled?'var(--t3)':'var(--cy)'}"></span>
+   <div class="bd" style="flex:1">
+     <div class="ti">${ic} ${esc(lbl)} — ${esc(r.name)}${r.handled?' <span class="badge" style="border-color:var(--line2);color:var(--t3)">gestita</span>':''}</div>
+     ${meta?`<div class="su">${meta}</div>`:''}
+     ${r.machine_ref?`<div class="su">⚙️ ${esc(r.machine_ref)}</div>`:''}
+     ${r.qty?`<div class="su">🪵 ${esc(r.qty)}</div>`:''}
+     ${r.message?`<div class="su" style="white-space:pre-wrap;color:var(--t2);margin-top:4px">${esc(r.message)}</div>`:''}
+     <div class="su" style="color:var(--t3);margin-top:4px">${esc(when)}</div>
+     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">
+       <button class="btn ghost" style="padding:6px 11px" onclick="reqToAppt('${r.id}')">📅 Appuntamento</button>
+       <button class="btn ghost" style="padding:6px 11px" onclick="reqToPellet('${r.id}')">🪵 Pellet</button>
+       <button class="btn ghost" style="padding:6px 11px" onclick="reqToMan('${r.id}')">🔧 Manutenzione</button>
+       ${r.handled?`<button class="btn ghost" style="padding:6px 11px" onclick="reqMark('${r.id}',false)">↩ Riapri</button>`:`<button class="btn ghost" style="padding:6px 11px" onclick="reqMark('${r.id}',true)">✓ Segna gestita</button>`}
+       ${isOwner()?`<button class="btn ghost" style="padding:6px 11px;color:var(--coral)" onclick="reqDelete('${r.id}')">🗑</button>`:''}
+     </div>
+   </div></div>`;
+}
+async function reqMark(id,handled){
+  const r=reqItems.find(x=>x.id===id); if(!r)return;
+  const upd={handled:!!handled,status:handled?'gestita':'nuova',handled_by:handled?((S.session&&S.session.empId)||null):null};
+  try{ const {error}=await sb.from('requests').update(upd).eq('id',id); if(error)throw error; Object.assign(r,upd); renderRichieste(); }
+  catch(e){ toast('⚠ '+(e.message||e)); }
+}
+async function reqDelete(id){
+  if(!confirm('Eliminare definitivamente questa richiesta?'))return;
+  try{ const {error}=await sb.from('requests').delete().eq('id',id); if(error)throw error; reqItems=reqItems.filter(x=>x.id!==id); renderRichieste(); toast('🗑 Richiesta eliminata'); }
+  catch(e){ toast('⚠ '+(e.message||e)); }
+}
+/* collega il cliente per nome o telefono, se esiste in anagrafica */
+function reqLinkClient(r){
+  const nm=norm(r.name||'');
+  let c=nm?S.clients.find(x=>norm(x.name)===nm):null;
+  if(!c&&r.phone){const ph=String(r.phone).replace(/\D/g,'');if(ph)c=S.clients.find(x=>String(x.phone||'').replace(/\D/g,'')===ph);}
+  return c?c.id:null;
+}
+function reqParseQty(txt){
+  const m=String(txt||'').match(/[\d.,]+/);
+  const n=m?parseFloat(m[0].replace(',','.')):null;
+  const sfuso=/sfus|tonnel|\bt\b/i.test(txt||'');
+  return {qty:(n!=null&&isFinite(n))?n:null,kind:sfuso?'sfuso':'sacchi',unit:sfuso?'t':'sacchi'};
+}
+/* crea una BOZZA nella sezione giusta e segna la richiesta come gestita */
+function reqToAppt(id){
+  const r=reqItems.find(x=>x.id===id); if(!r)return;
+  const base=r.type==='preventivo'?'Preventivo':'Sopralluogo';
+  S.appointments.unshift({id:uid(),title:base+(r.machine_ref?(' — '+r.machine_ref):''),clientId:reqLinkClient(r),clientRaw:r.name,employees:[],date:todayIso(),time:null,done:false,via:'richiesta',created:Date.now()});
+  save(); reqMark(id,true); toast('📅 Bozza appuntamento creata');
+}
+function reqToPellet(id){
+  const r=reqItems.find(x=>x.id===id); if(!r)return;
+  const q=reqParseQty(r.qty);
+  const note=[r.message,r.qty?('Richiesto: '+r.qty):'',r.town?('Zona: '+r.town):''].filter(Boolean).join(' · ');
+  S.pellet.unshift({id:uid(),clientId:reqLinkClient(r),clientRaw:r.name,employees:[],qty:q.qty,unit:q.unit,kind:q.kind,date:null,time:null,status:'da_consegnare',price:null,signature:null,signedName:'',notes:note,via:'richiesta',created:Date.now()});
+  save(); reqMark(id,true); toast('🪵 Bozza consegna creata in Pellet');
+}
+function reqToMan(id){
+  const r=reqItems.find(x=>x.id===id); if(!r)return;
+  const note=[r.message,r.phone?('Tel: '+r.phone):''].filter(Boolean).join(' · ');
+  S.maintenances.unshift({id:uid(),title:'Assistenza'+(r.machine_ref?(' — '+r.machine_ref):''),clientId:reqLinkClient(r),clientRaw:r.name,employees:[],date:null,time:null,status:'da_fare',notes:note,via:'richiesta',created:Date.now()});
+  save(); reqMark(id,true); toast('🔧 Bozza manutenzione creata');
+}
+
+/* ---- gestione OFFERTE (solo titolare) ---- */
+function offRenderBody(){
+  $('#reqbody').innerHTML=`
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <span class="subtle">Le offerte pubblicate compaiono nella vetrina clienti.</span>
+     <button class="btn pri" style="width:auto" onclick="offEdit()">+ Nuova offerta</button>
+   </div>
+   <div class="card"><div class="sh"><span class="t">${offItems.length} offert${offItems.length===1?'a':'e'}</span></div>
+   ${offItems.length?offItems.map(offCard).join(''):'<div class="empty">Nessuna offerta. Creane una: comparirà nella vetrina pubblica.</div>'}
+   </div>`;
+}
+function offCard(o){
+  const pub=!!o.published;
+  return `<div class="item" style="align-items:flex-start">
+   <span class="led" style="background:${pub?'var(--cy)':'var(--t3)'}"></span>
+   <div class="bd" style="flex:1">
+     <div class="ti">${esc(o.title)} ${pub?'<span class="badge" style="border-color:var(--cy);color:var(--cy)">pubblicata</span>':'<span class="badge" style="border-color:var(--line2);color:var(--t3)">bozza</span>'} <span class="badge" style="border-color:var(--line2);color:var(--t2)">${esc(o.kind||'offerta')}</span></div>
+     ${o.body?`<div class="su" style="white-space:pre-wrap">${esc(o.body)}</div>`:''}
+     ${(o.price!=null&&o.price!=='')?`<div class="su">CHF ${esc(o.price)}</div>`:''}
+     ${o.image_path?`<div class="su" style="color:var(--t3)">🖼 ${esc(o.image_path)}</div>`:''}
+     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">
+       <button class="btn ghost" style="padding:6px 11px" onclick="offTogglePub('${o.id}')">${pub?'⤓ Ritira':'⤒ Pubblica'}</button>
+       <button class="btn ghost" style="padding:6px 11px" onclick="offEdit('${o.id}')">✏️ Modifica</button>
+       <button class="btn ghost" style="padding:6px 11px;color:var(--coral)" onclick="offDelete('${o.id}')">🗑</button>
+     </div>
+   </div></div>`;
+}
+function offEdit(id){
+  const o=id?offItems.find(x=>x.id===id):{title:'',body:'',price:'',kind:'offerta',published:false,image_path:null};
+  if(!o)return;
+  openSheet(`<h3>${id?'Modifica offerta':'Nuova offerta'} <span class="x" onclick="closeSheet()">✕</span></h3>
+   <input type="hidden" id="of-id" value="${id?esc(id):''}">
+   <div class="field"><label>Titolo</label><input id="of-title" maxlength="140" value="${esc(o.title||'')}" placeholder="Es. Stufa Nobis A10 in promo"></div>
+   <div class="field"><label>Descrizione</label><textarea id="of-body" maxlength="4000" placeholder="Dettagli dell'offerta…">${esc(o.body||'')}</textarea></div>
+   <div class="field"><label>Prezzo CHF (opzionale)</label><input id="of-price" inputmode="decimal" value="${(o.price!=null)?esc(o.price):''}"></div>
+   <div class="field"><label>Tipo</label><select id="of-kind">${['offerta','usato','promo'].map(k=>`<option value="${k}"${o.kind===k?' selected':''}>${k}</option>`).join('')}</select></div>
+   <div class="field"><label>Foto (opzionale)</label><input type="file" id="of-img" accept="image/*">${o.image_path?`<div class="subtle" style="margin-top:5px">Foto attuale presente — carica per sostituirla.</div>`:''}</div>
+   <div class="sg ${o.published?'on':''}" id="of-pub" onclick="this.classList.toggle('on')" style="padding:12px;cursor:pointer;justify-content:flex-start">✅ Pubblicata (visibile nella vetrina)</div>
+   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="offSave()">Salva</button></div>`);
+}
+async function offSave(){
+  const id=$('#of-id').value||uid();
+  const title=$('#of-title').value.trim(); if(!title){toast('Il titolo è obbligatorio');return;}
+  const btn=document.querySelector('#overlay .btn.pri'); if(btn){btn.disabled=true;btn.textContent='Salvo…';}
+  try{
+    const file=$('#of-img').files[0];
+    let image_path; // undefined = non toccare
+    if(file){
+      const ext=((file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,''))||'jpg';
+      const path='off-'+id+'-'+randCode(6).toLowerCase()+'.'+ext;
+      const {error:upErr}=await sb.storage.from('offerte').upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});
+      if(upErr)throw upErr; image_path=path;
+    }
+    const row={id,title:title.slice(0,140),body:$('#of-body').value.slice(0,4000),price:num($('#of-price').value),kind:$('#of-kind').value,published:$('#of-pub').classList.contains('on')};
+    if(image_path!==undefined)row.image_path=image_path;
+    const {error}=await sb.from('offers').upsert(row); if(error)throw error;
+    await loadOffers(true); closeSheet(); renderRichieste(); toast('✓ Offerta salvata');
+  }catch(e){ if(btn){btn.disabled=false;btn.textContent='Salva';} toast('⚠ '+(e.message||e)); }
+}
+async function offTogglePub(id){
+  const o=offItems.find(x=>x.id===id); if(!o)return;
+  try{ const {error}=await sb.from('offers').update({published:!o.published}).eq('id',id); if(error)throw error; o.published=!o.published; renderRichieste(); toast(o.published?'✓ Pubblicata':'Ritirata dalla vetrina'); }
+  catch(e){ toast('⚠ '+(e.message||e)); }
+}
+async function offDelete(id){
+  if(!confirm('Eliminare questa offerta?'))return;
+  const o=offItems.find(x=>x.id===id);
+  try{ const {error}=await sb.from('offers').delete().eq('id',id); if(error)throw error;
+    if(o&&o.image_path){try{await sb.storage.from('offerte').remove([o.image_path]);}catch(e){}}
+    offItems=offItems.filter(x=>x.id!==id); renderRichieste(); toast('🗑 Offerta eliminata'); }
+  catch(e){ toast('⚠ '+(e.message||e)); }
+}
 
 /* ================= ACCESSO (cloud) ================= */
 let authMode='login';let authBusy=false;
@@ -1531,13 +1742,15 @@ function openQuickAdd(date){
     <div class="fld"><label>Tipo</label><select id="qa-type"><option value="appointment">Appuntamento</option><option value="maintenance">Manutenzione</option><option value="pellet">Consegna pellet</option><option value="note">Nota</option></select></div>
     <div class="fld"><label>Ora</label><input id="qa-time" type="time"></div>
   </div>
-  <div class="fld"><label>Cliente (opzionale)</label><select id="qa-cl"><option value="">—</option>${cOpt('')}</select></div>
+  <div class="fld"><label>Cliente (opzionale)</label>${cSearch('qa-cl')}<select id="qa-cl"><option value="">—</option>${cOpt('')}</select></div>
+  <div class="fld"><label>Note (facoltativo)</label><textarea id="qa-n" placeholder="Dettagli, indicazioni, cosa portare…"></textarea></div>
   <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annulla</button><button class="btn pri" onclick="quickAddSave('${date}')">Salva</button></div>`);
 }
 function quickAddSave(date){
   const t=$('#qa-t').value.trim();if(!t){toast('Scrivi cosa devi fare');return;}
   const type=$('#qa-type').value,time=$('#qa-time').value||null,clientId=$('#qa-cl').value||null;
-  const p={type,title:t,date,time,person:clientId?{kind:'client',id:clientId,name:cName(clientId)}:null,qty:null,unit:null};
+  const notes=$('#qa-n').value.trim()||null;
+  const p={type,title:t,date,time,notes,person:clientId?{kind:'client',id:clientId,name:cName(clientId)}:null,qty:null,unit:null};
   const msg=commitParsed(p,'cal');closeSheet();toast(msg);render();
 }
 /* ================= NOTE & APPUNTAMENTI ================= */
@@ -1621,7 +1834,7 @@ function openNote(id){
   <div class="fld"><label>Testo</label><textarea id="en-t">${esc(n.text)}</textarea></div>
   <div class="fld"><label>Gruppo</label><select id="en-g">${groupOpts(n.groupId)}</select></div>
   <div class="frow"><div class="fld"><label>Data (va a calendario)</label><input id="en-d" type="date" value="${n.date||''}"></div>
-  <div class="fld"><label>Cliente</label><select id="en-c"><option value="">—</option>${cOpt(n.clientId)}</select></div></div>
+  <div class="fld"><label>Cliente</label>${cSearch('en-c')}<select id="en-c"><option value="">—</option>${cOpt(n.clientId)}</select></div></div>
   <div class="fld"><label>Assegna a (uno o più, facoltativo)</label>${empSeg('en-e',empIdsOf(n))}</div>
   <div class="actions">
     <button class="btn danger" onclick="delItem('notes','${id}')">Elimina</button>
@@ -1705,22 +1918,23 @@ function renderInbox(w){
 function markManDone(id){const m=byId(S.maintenances,id);if(!m)return;m.status='fatta';const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'✓ Manutenzione fatta',`${doer}: ${cName(m.clientId)||m.clientRaw||''} — ${m.title}`);save();render();toast('✓ Manutenzione segnata come fatta');}
 function markAppDone(id){const a=byId(S.appointments,id);if(!a)return;a.done=true;const doer=(me()&&me().name)||'';pushNotify(ownerIds(),'✓ Appuntamento fatto',`${doer}: ${a.title}`);save();render();toast('✓ Appuntamento fatto');}
 function openApp(id){
-  const a=id?byId(S.appointments,id):{title:'',clientId:null,clientRaw:null,employeeId:null,date:todayIso(),time:'',done:false};
+  const a=id?byId(S.appointments,id):{title:'',clientId:null,clientRaw:null,employeeId:null,date:todayIso(),time:'',done:false,notes:''};
   if(!a)return;
   openSheet(`<h3>${id?'Appuntamento':'Nuovo appuntamento'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Titolo</label><input id="ap-t" value="${esc(a.title)}" placeholder="es. Sopralluogo Via Roma"></div>
-  <div class="fld"><label>Cliente</label><select id="ap-c" onchange="updClientPrev(this,'ap-cprev')"><option value="">${(a.clientRaw&&!a.clientId)?'🆕 '+esc(a.clientRaw)+' (nuovo)':'—'}</option>${cOpt(a.clientId)}</select><div id="ap-cprev">${clientPreviewHTML(a.clientId)}</div></div>
+  <div class="fld"><label>Cliente</label>${cSearch('ap-c')}<select id="ap-c" onchange="updClientPrev(this,'ap-cprev')"><option value="">${(a.clientRaw&&!a.clientId)?'🆕 '+esc(a.clientRaw)+' (nuovo)':'—'}</option>${cOpt(a.clientId)}</select><div id="ap-cprev">${clientPreviewHTML(a.clientId)}</div></div>
   <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('ap-e',empIdsOf(a))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="ap-d" type="date" value="${a.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="ap-h" type="time" value="${a.time||''}"></div></div>
   ${dateChips('ap-d')}
   <div class="fld"><label>Stato</label><div class="seg" id="ap-s"><div class="sg ${!a.done?'on':''}" data-d="0" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">Da fare</div><div class="sg ${a.done?'on':''}" data-d="1" onclick="this.parentNode.querySelectorAll('.sg').forEach(x=>x.classList.remove('on'));this.classList.add('on')">Fatto</div></div></div>
+  <div class="fld"><label>Note</label><textarea id="ap-n" placeholder="Dettagli, indicazioni, cosa portare…">${esc(a.notes||'')}</textarea></div>
   <div class="actions">
     ${id?`<button class="btn danger" onclick="delApp('${id}')">Elimina</button>`:''}
     <button class="btn pri" onclick="saveApp('${id||''}')">Salva</button></div>`);
 }
 function saveApp(id){
-  const data={title:$('#ap-t').value.trim(),clientId:$('#ap-c').value||null,employees:empSegRead('ap-e'),date:$('#ap-d').value||null,time:$('#ap-h').value||null,done:$('#ap-s .sg.on')?.dataset.d==='1'};
+  const data={title:$('#ap-t').value.trim(),clientId:$('#ap-c').value||null,employees:empSegRead('ap-e'),date:$('#ap-d').value||null,time:$('#ap-h').value||null,done:$('#ap-s .sg.on')?.dataset.d==='1',notes:$('#ap-n').value.trim()};
   if(!data.title){toast('Manca il titolo');return;}
   const oldA=id?byId(S.appointments,id):null;const prevEmps=oldA?empIdsOf(oldA):[];
   if(id){Object.assign(oldA,data);}else{S.appointments.unshift({id:uid(),clientRaw:null,via:'manuale',created:Date.now(),...data});}
@@ -1910,7 +2124,7 @@ function openMan(id){
   const m=id?byId(S.maintenances,id):{title:'',clientId:null,employeeId:null,date:'',time:'',status:'da_fare',notes:'',recur:0};
   openSheet(`<h3>${id?'Manutenzione':'Nuova manutenzione'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Descrizione</label><input id="mn-t" value="${esc(m.title)}" placeholder="es. Pulizia caldaia pellet"></div>
-  <div class="fld"><label>Cliente</label><select id="mn-c" onchange="updClientPrev(this,'mn-cprev')"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${cOpt(m.clientId)}</select><div id="mn-cprev">${clientPreviewHTML(m.clientId)}</div></div>
+  <div class="fld"><label>Cliente</label>${cSearch('mn-c')}<select id="mn-c" onchange="updClientPrev(this,'mn-cprev')"><option value="">${(m.clientRaw&&!m.clientId)?'🆕 '+esc(m.clientRaw)+' (nuovo)':'—'}</option>${cOpt(m.clientId)}</select><div id="mn-cprev">${clientPreviewHTML(m.clientId)}</div></div>
   <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('mn-e',empIdsOf(m))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="mn-d" type="date" value="${m.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="mn-h" type="time" value="${m.time||''}"></div></div>
@@ -2133,7 +2347,7 @@ function openPel(id,preset){
   <div class="frow">
   <div class="fld"><label>Quantità</label><input id="pl-q" type="number" inputmode="decimal" step="any" value="${p.qty||''}"></div>
   <div class="fld"><label>Unità</label><select id="pl-u">${(p.kind==='sfuso'?['t']:['sacchi','kg']).map(u=>`<option ${p.unit===u?'selected':''}>${u}</option>`).join('')}</select></div></div>
-  <div class="fld"><label>Cliente</label><select id="pl-c" onchange="updClientPrev(this,'pl-cprev')"><option value="">—</option>${cOpt(p.clientId)}</select><div id="pl-cprev">${clientPreviewHTML(p.clientId)}</div></div>
+  <div class="fld"><label>Cliente</label>${cSearch('pl-c')}<select id="pl-c" onchange="updClientPrev(this,'pl-cprev')"><option value="">—</option>${cOpt(p.clientId)}</select><div id="pl-cprev">${clientPreviewHTML(p.clientId)}</div></div>
   <div class="fld"><label>Assegna a (uno o più)</label>${empSeg('pl-e',empIdsOf(p))}</div>
   <div class="frow"><div class="fld"><label>Data</label><input id="pl-d" type="date" value="${p.date||''}"></div>
   <div class="fld"><label>Ora</label><input id="pl-h" type="time" value="${p.time||''}"></div></div>
@@ -2433,7 +2647,7 @@ function editSite(id,preset){
   const SST=[['previsto','Previsto'],['aperto','In corso'],['da_fatturare','Da fatturare'],['chiuso','Archivio']];
   openSheet(`<h3>${id?'Modifica cantiere':(preset==='previsto'?'Nuovo lavoro futuro':'Nuovo cantiere')} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="st-n" value="${esc(s.name)}" placeholder="es. Installazione caldaia Via Roma"></div>
-  <div class="fld"><label>Cliente</label><select id="st-c"><option value="">—</option>${cOpt(s.clientId)}</select></div>
+  <div class="fld"><label>Cliente</label>${cSearch('st-c')}<select id="st-c"><option value="">—</option>${cOpt(s.clientId)}</select></div>
   <div class="frow">
     <div class="fld"><label>Stima ore lavoro</label><input id="st-h" type="number" inputmode="decimal" value="${s.estHours||''}" placeholder="es. 40"></div>
     ${isOwner()?`<div class="fld"><label>Importo CHF</label><input id="st-am" type="number" inputmode="decimal" step="any" value="${s.amount||''}" placeholder="da fatturare"></div>`:''}
@@ -2801,7 +3015,7 @@ async function delClient(id){
 /* ================= PERSONALE ================= */
 function renderEmps(){
   const mKey=todayIso().slice(0,7);
-  const PI={cal:['📅','Cal.'],man:['🔧','Manut.'],pellet:['🪵','Pellet'],sites:['🏗','Cant.'],notes:['📝','Note'],chat:['💬','Chat'],clients:['👥','Clienti']};
+  const PI={cal:['📅','Cal.'],man:['🔧','Manut.'],pellet:['🪵','Pellet'],sites:['🏗','Cant.'],notes:['📝','Note'],chat:['💬','Chat'],clients:['👥','Clienti'],richieste:['📨','Richieste']};
   $('#main').innerHTML=`
   <div class="pagetitle"><span class="accent" style="background:var(--cy)"></span>Personale <span class="subtle">(${S.employees.length})</span></div>
   ${S.employees.map(e=>{
@@ -2832,7 +3046,7 @@ function editEmp(id){
     ...S.appointments.filter(a=>empIdsOf(a).includes(id)&&!a.done).map(a=>'📅 '+a.title+' — '+fmtD(a.date)),
     ...S.sites.filter(s=>s.status!=='chiuso'&&s.employees.includes(id)).map(s=>'🏗 '+s.name)
   ]:[];
-  const PERMS=[['cal','📅 Calendario'],['man','🔧 Manutenzioni'],['pellet','🪵 Pellet'],['sites','🏗 Cantieri'],['macchine','⚙️ Macchine'],['notes','📝 Note'],['chat','💬 Chat'],['clients','👥 Clienti']];
+  const PERMS=[['cal','📅 Calendario'],['man','🔧 Manutenzioni'],['pellet','🪵 Pellet'],['sites','🏗 Cantieri'],['macchine','⚙️ Macchine'],['richieste','📨 Richieste'],['notes','📝 Note'],['chat','💬 Chat'],['clients','👥 Clienti']];
   openSheet(`<h3>${id?'Scheda personale':'Nuova persona'} <span class="x" onclick="closeSheet()">✕</span></h3>
   <div class="fld"><label>Nome</label><input id="em-n" value="${esc(e.name)}"></div>
   <div class="frow"><div class="fld"><label>Ruolo</label><input id="em-r" value="${esc(e.role||'')}" placeholder="es. Tecnico"></div>
@@ -2867,7 +3081,7 @@ function saveEmp(id){
   let perms=[...document.querySelectorAll('#em-perms .sg.on')].map(x=>x.dataset.v);
   const ot=$('#em-owner');
   const makeOwner=(ot&&isOwner())?ot.classList.contains('on'):null; // null = toggle non mostrato → non cambiare
-  if(makeOwner===true)perms=['hub','cal','notes','chat','man','pellet','sites','clients','emps']; // titolare = tutte le sezioni
+  if(makeOwner===true)perms=['hub','cal','notes','chat','man','pellet','sites','clients','richieste','emps']; // titolare = tutte le sezioni
   const data={name,role:$('#em-r').value.trim(),phone:$('#em-p').value.trim(),perms};
   if(makeOwner!==null)data.isOwner=makeOwner;
   if(id){Object.assign(byId(S.employees,id),data);}else{S.employees.push({id:uid(),inviteCode:genInvite(name),userId:null,isOwner:false,active:true,...data});toast('🔑 Codice invito generato — aprilo dalla scheda');}
